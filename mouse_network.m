@@ -1,4 +1,5 @@
-% pseudocode:
+function [performance, tau] = mouse_network(study_dir,time_end)
+%% pseudocode:
 
 % load spikes from mouse model - generated from...?
 %   mouse model mat file contents:
@@ -14,57 +15,28 @@
 %       disc
 % spikes processed with lateral inhibition network
 % compare output spikes to calculate discriminality measure
-
-clearvars
-
 %% solver params
-time_end = 1860; % ms, must be smaller than time-data
+% time_end = 1860; % ms, must be smaller than time-data
 
 solverType = 'euler';
 dt = 1; %ms % the IC input is currently at dt=1
 
-addpath('mechs')
-addpath('dependencies')
-addpath('eval_scripts')
-addpath(genpath('../dynasim'))
 
-%% set up directory
-study_dir = fullfile(pwd, 'run', mfilename);
-if exist(study_dir, 'dir')
-  rmdir(study_dir, 's');
-end
-mkdir(fullfile(study_dir, 'solve'));
+% visualize IC spikes (Figure 1 which is the IR level (as seen from the
+% inputguassian file)
 
-%% load IC spikes, convert cell array into binary array
-ICdir = '153444';
-ICdirPath = ['import' filesep ICdir filesep];
-ICmats = ls([ICdirPath '*.mat']);
-for i = 1:size(ICmats,1)
-    load([ICdirPath ICmats(i,:)],'t_spiketimes');
-    temp = cellfun(@max,t_spiketimes,'UniformOutput',false);
-    tmax = max([temp{:}]);
-    spks = zeros(20,4,tmax); %I'm storing spikes in a slightly different way...
-    for j = 1:size(t_spiketimes,1) %trials [1:10]
-        for k = 1:size(t_spiketimes,2) %neurons [(1:4),(1:4)]
-            if k < 5 %song 1
-                spks(j,k,round(t_spiketimes{j,k})) = 1;
-            else
-                spks(j+10,k-4,round(t_spiketimes{j,k})) = 1;
-            end
-        end
-    end
-end
-
-% visualize IC spikes
+%{
+figure
 for i = 1:4 %for each spatially directed neuron
-    subplot(1,4,i)
-    plotSpikeRasterFs(logical(squeeze(spks(:,i,:))), 'PlotType','vertline');
-    xlim([0 2000])
-    line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+   subplot(1,4,i)
+   plotSpikeRasterFs(logical(squeeze(spks(:,i,:))), 'PlotType','vertline');
+   xlim([0 2000])
+   line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
 end
+%}
 
 % save converted spike file - only saving spikes the last file for now
-save(fullfile(study_dir, 'solve','IC_spks.mat'),'spks');
+% % save(fullfile(study_dir, 'solve','IC_spks.mat'),'spks');
 %% neuron populations
 
 nCells = 4;
@@ -110,6 +82,7 @@ s.mechanisms(1).equations=synDoubleExp;
 % build I->R netcon matrix
 % netcons are [N_pre,N_post]
 irNetcon = zeros(nCells);
+% irNetcon(1,2:4) = 1;
 % irNetcon(3,:) = 0;
 % irNetcon(3,3) = 0;
 
@@ -165,25 +138,27 @@ end
 Cspks = [data.C_V_spikes];
 
 % plot
+%{
 figure
 for i = 1:4 %for each spatially directed neuron
-    subplot(4,4,i+12)
-    plotSpikeRasterFs(logical(squeeze(ICspks(:,i,:))), 'PlotType','vertline');
-    xlim([0 2000])
-    line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-    if i==1, ylabel('IC'); end
+  subplot(4,4,i+12)
+  plotSpikeRasterFs(logical(squeeze(ICspks(:,i,:))), 'PlotType','vertline');
+  xlim([0 2000])
+  line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+  if i==1, ylabel('IC'); 
+end
+  
+  subplot(4,4,i+8)
+  plotSpikeRasterFs(logical(squeeze(Ispks(:,i,:))), 'PlotType','vertline');
+  xlim([0 2000])
+  line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+  if i==1, ylabel('I'); end
     
-    subplot(4,4,i+8)
-    plotSpikeRasterFs(logical(squeeze(Ispks(:,i,:))), 'PlotType','vertline');
-    xlim([0 2000])
-    line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-    if i==1, ylabel('I'); end
-    
-    subplot(4,4,i+4)
-    plotSpikeRasterFs(logical(squeeze(Rspks(:,i,:))), 'PlotType','vertline');
-    xlim([0 2000])
-    line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-    if i==1, ylabel('R'); end
+  subplot(4,4,i+4)
+  plotSpikeRasterFs(logical(squeeze(Rspks(:,i,:))), 'PlotType','vertline');
+  xlim([0 2000])
+  line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+  if i==1, ylabel('R'); end
 end
 
 subplot(4,4,2)
@@ -191,18 +166,18 @@ plotSpikeRasterFs(logical(Cspks'), 'PlotType','vertline');
 xlim([0 2000])
 line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
 ylabel('C spikes')
-
+%}
 %% spks to spiketimes in a cell array of 10x8
 for i = 1:20
     if i <=10
-        spkTimes{i,1} = data(i).C_V_spikes;
+        spkTimes{i,1} = find(data(i).C_V_spikes);
     else
-        spkTimes{i-10,2} = data(i).C_V_spikes;
+        spkTimes{i-10,2} = find(data(i).C_V_spikes);
     end
 end
 
 %% performance for the current target-masker config
-addpath('C:\Users\Kenny\Dropbox\Sen Lab\MouseSpatialGrid\spatialgrids')
-tau=0.001*(linspace(4,500,5));
+%addpath('C:\Users\Kenny\Dropbox\Sen Lab\MouseSpatialGrid\spatialgrids')
+tau=0.001*(linspace(4,25000,100));
 distMat = calcvr(spkTimes, tau);
-performance = calcpc(distMat, 10, 2, 1,[], 'new');
+[performance, E] = calcpc(distMat, 10, 2, 1,[], 'new');
