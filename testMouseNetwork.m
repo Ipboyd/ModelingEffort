@@ -35,12 +35,15 @@ for z = 14%1:length(ICstruc)
             end
         end
     end
-    
+
     % save spk file
 %     study_dir = fullfile(pwd, 'run', mfilename, filesep, num2str(z));
     study_dir = fullfile(pwd, 'run', num2str(z));
-%     if ~exist(study_dir,'dir')
-%         mkdir(study_dir);
+    if ~exist(study_dir,'dir')
+        mkdir(fullfile(study_dir,'solve'));
+    end
+%     if exist(study_dir, 'dir')
+%       rmdir(study_dir, 's');
 %     end
     if exist(study_dir, 'dir')
       rmdir(study_dir, 's');
@@ -53,14 +56,14 @@ for z = 14%1:length(ICstruc)
         % Take the max of the performance
         pMaxs0(z)=max(performance);
         maxTaus0(z)=tau(max(performance)==performance);
-        
+
     elseif ICstruc(z).name(4)=='0' %target only
-%         figure;
-%         for ii = 1:4
-%             subplot(1,4,ii)
-%             plotSpikeRasterFs(logical(squeeze(spks(:,ii,:))), 'PlotType','vertline');
-%             xlim([0 2000])
-%         end
+        figure;
+        for ii = 1:4
+            subplot(1,4,ii)
+            plotSpikeRasterFs(logical(squeeze(spks(:,ii,:))), 'PlotType','vertline');
+            xlim([0 2000])
+        end
         [performance, tau]= mouse_network(study_dir,size(spks,3));
         % Take the max of the performance
         pMaxm0(y)=max(performance);
@@ -142,4 +145,3 @@ caxis([50 100])
 
 %positionVector = [x0+subplotloc*(dx+lx) y0 lx ly];
 %subplot('Position',positionVector)
-
