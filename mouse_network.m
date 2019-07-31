@@ -88,7 +88,7 @@ irNetcon = zeros(nCells);
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list='IC';
-s.connections(1).parameters={'g_postIC',0.03}; % 100 hz spiking
+s.connections(1).parameters={'g_postIC',0.03,'trial',5}; % 100 hz spiking
 
 s.connections(end+1).direction='IC->I';
 s.connections(end).mechanism_list='synDoubleExp';
@@ -108,7 +108,8 @@ s.connections(end).parameters={'gSYN',.5, 'tauR',0.4, 'tauD',2, 'netcon','ones(N
 
 %% vary params
 vary = {
-  '(IC->IC)', 'trial', 1:20;
+%   '(IC->IC)', 'trial', 1:20;
+    'I->R','gSYN',.1:.05:.75;
 };
 %% simulate
 tic;
@@ -178,6 +179,6 @@ end
 
 %% performance for the current target-masker config
 %addpath('C:\Users\Kenny\Dropbox\Sen Lab\MouseSpatialGrid\spatialgrids')
-tau=0.001*(linspace(4,25000,100));
+tau= linspace(4,1000,1000); %same units as spike-timing
 distMat = calcvr(spkTimes, tau);
 [performance, E] = calcpc(distMat, 10, 2, 1,[], 'new');

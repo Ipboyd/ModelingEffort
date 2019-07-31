@@ -21,7 +21,7 @@ maxTaus0=zeros(1,4);
 maxTaum0=zeros(1,4);
 maxTau=zeros(1,16);
 
-for z = 1:length(ICstruc)
+for z = 5%1:length(ICstruc)
     load([ICdirPath ICstruc(z).name],'t_spiketimes');
     temp = cellfun(@max,t_spiketimes,'UniformOutput',false);
     tmax = max([temp{:}]);
@@ -40,7 +40,7 @@ for z = 1:length(ICstruc)
 %     study_dir = fullfile(pwd, 'run', mfilename, filesep, num2str(z));
     study_dir = fullfile(pwd, 'run', num2str(z));
     if ~exist(study_dir,'dir')
-        mkdir(study_dir);
+        mkdir(fullfile(study_dir,'solve'));
     end
 %     if exist(study_dir, 'dir')
 %       rmdir(study_dir, 's');
@@ -55,12 +55,12 @@ for z = 1:length(ICstruc)
         maxTaus0(z)=tau(max(performance)==performance);
         
     elseif ICstruc(z).name(4)=='0' %target only
-%         figure;
-%         for ii = 1:4
-%             subplot(1,4,ii)
-%             plotSpikeRasterFs(logical(squeeze(spks(:,ii,:))), 'PlotType','vertline');
-%             xlim([0 2000])
-%         end
+        figure;
+        for ii = 1:4
+            subplot(1,4,ii)
+            plotSpikeRasterFs(logical(squeeze(spks(:,ii,:))), 'PlotType','vertline');
+            xlim([0 2000])
+        end
         [performance, tau]= mouse_network(study_dir,size(spks,3));
         % Take the max of the performance
         pMaxm0(y)=max(performance);
@@ -118,12 +118,7 @@ colorbar;
 caxis([50 100])
 %% output- 4 by 4 grid- calculate in a seperate script
 % plot the matrix similar to the that on the paper- imagesc()
-mat= zeros(4,4);
-for r=1:4
-    for c=1:4
-        mat(r,c)=performanceMax(r+c);
-    end
-end
+mat= reshape(performanceMax,4,4)';
 l=num2cell(mat);
 l= cellfun(@num2str, l,'UniformOutput', false);
 positionVector = [0.275 0.45 0.5 0.5];
