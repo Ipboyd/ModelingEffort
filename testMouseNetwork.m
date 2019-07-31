@@ -21,7 +21,7 @@ maxTaus0=zeros(1,4);
 maxTaum0=zeros(1,4);
 maxTau=zeros(1,16);
 
-for z = 1:length(ICstruc)
+for z = 14%1:length(ICstruc)
     load([ICdirPath ICstruc(z).name],'t_spiketimes');
     temp = cellfun(@max,t_spiketimes,'UniformOutput',false);
     tmax = max([temp{:}]);
@@ -39,13 +39,13 @@ for z = 1:length(ICstruc)
     % save spk file
 %     study_dir = fullfile(pwd, 'run', mfilename, filesep, num2str(z));
     study_dir = fullfile(pwd, 'run', num2str(z));
-    if ~exist(study_dir,'dir')
-        mkdir(study_dir);
-    end
-%     if exist(study_dir, 'dir')
-%       rmdir(study_dir, 's');
+%     if ~exist(study_dir,'dir')
+%         mkdir(study_dir);
 %     end
-%     mkdir(fullfile(study_dir, 'solve'));
+    if exist(study_dir, 'dir')
+      rmdir(study_dir, 's');
+    end
+    mkdir(fullfile(study_dir, 'solve'));
     save(fullfile(study_dir, 'solve','IC_spks.mat'),'spks');
 
     if ICstruc(z).name(2)=='0'
@@ -74,6 +74,7 @@ for z = 1:length(ICstruc)
         x=x+1;
     end
 end
+
 
 %% output 1 by 4 grid of only masker
 figure
@@ -118,12 +119,7 @@ colorbar;
 caxis([50 100])
 %% output- 4 by 4 grid- calculate in a seperate script
 % plot the matrix similar to the that on the paper- imagesc()
-mat= zeros(4,4);
-for r=1:4
-    for c=1:4
-        mat(r,c)=performanceMax(r+c);
-    end
-end
+mat= reshape(performanceMax,4,4);
 l=num2cell(mat);
 l= cellfun(@num2str, l,'UniformOutput', false);
 positionVector = [0.275 0.45 0.5 0.5];
@@ -146,3 +142,4 @@ caxis([50 100])
 
 %positionVector = [x0+subplotloc*(dx+lx) y0 lx ly];
 %subplot('Position',positionVector)
+
