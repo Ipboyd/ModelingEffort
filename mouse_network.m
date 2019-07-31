@@ -82,7 +82,8 @@ s.mechanisms(1).equations=synDoubleExp;
 % build I->R netcon matrix
 % netcons are [N_pre,N_post]
 irNetcon = zeros(nCells);
-% irNetcon(1,2:4) = 1;
+irNetcon(2,:) = 1;
+irNetcon(2,2) = 0;
 % irNetcon(3,:) = 0;
 % irNetcon(3,3) = 0;
 
@@ -92,19 +93,19 @@ s.connections(1).parameters={'g_postIC',0.03,'trial',5}; % 100 hz spiking
 
 s.connections(end+1).direction='IC->I';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.5, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
+s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
 
 s.connections(end+1).direction='IC->R';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.5, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
+s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
 
 s.connections(end+1).direction='I->R';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.05, 'tauR',0.4, 'tauD',10, 'netcon',irNetcon, 'ESYN',-80}; 
+s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',10, 'netcon',irNetcon, 'ESYN',-80}; 
 
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.5, 'tauR',0.4, 'tauD',2, 'netcon','ones(N_pre,N_post)'}; 
+s.connections(end).parameters={'gSYN',.13, 'tauR',0.4, 'tauD',2, 'netcon','ones(N_pre,N_post)'}; 
 
 %% vary params
 vary = {
@@ -139,7 +140,6 @@ end
 Cspks = [data.C_V_spikes];
 
 % plot
-%{
 figure
 for i = 1:4 %for each spatially directed neuron
   subplot(4,4,i+12)
@@ -167,7 +167,7 @@ plotSpikeRasterFs(logical(Cspks'), 'PlotType','vertline');
 xlim([0 2000])
 line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
 ylabel('C spikes')
-%}
+
 %% spks to spiketimes in a cell array of 10x8
 for i = 1:20
     if i <=10
