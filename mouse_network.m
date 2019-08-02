@@ -1,4 +1,4 @@
-function [performance, tau] = mouse_network(study_dir,time_end)
+function [performance, tau] = mouse_network(study_dir,time_end,plot_rasters)
 %% pseudocode:
 
 % load spikes from mouse model - generated from...?
@@ -81,9 +81,13 @@ s.mechanisms(1).equations=synDoubleExp;
 %% connections
 % build I->R netcon matrix
 % netcons are [N_pre,N_post]
+% irNetcon = diag(ones(1,nCells));
 irNetcon = zeros(nCells);
-irNetcon(2,:) = 1;
-irNetcon(2,2) = 0;
+irNetcon(2,1) = 1;
+irNetcon(3,1) = 1;
+irNetcon(4,1) = 1;
+irNetcon(2,4) = 1;
+
 % irNetcon(3,:) = 0;
 % irNetcon(3,3) = 0;
 
@@ -109,8 +113,8 @@ s.connections(end).parameters={'gSYN',.13, 'tauR',0.4, 'tauD',2, 'netcon','ones(
 
 %% vary params
 vary = {
-%   '(IC->IC)', 'trial', 1:20;
-    'I->R','gSYN',.1:.05:.75;
+  '(IC->IC)', 'trial', 1:20;
+%     'I->R','gSYN',.1:.05:.75;
 };
 %% simulate
 tic;
@@ -127,6 +131,7 @@ for iData = 1:length(data)
   end
 end
 %% visualize spikes
+if plot_rasters
 ICspks = zeros(20,4,time_end);
 Ispks = zeros(20,4,time_end);
 Rspks = zeros(20,4,time_end);
@@ -167,7 +172,7 @@ plotSpikeRasterFs(logical(Cspks'), 'PlotType','vertline');
 xlim([0 2000])
 line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
 ylabel('C spikes')
-
+end
 %% spks to spiketimes in a cell array of 10x8
 for i = 1:20
     if i <=10
