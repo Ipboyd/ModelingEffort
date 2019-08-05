@@ -81,7 +81,7 @@ s.mechanisms(1).equations=synDoubleExp;
 %% connections
 % build I->R netcon matrix
 % netcons are [N_pre,N_post]
-% irNetcon = diag(ones(1,nCells));
+% irNetcon = diag(ones(1,nCells))*0.1;
 irNetcon = zeros(nCells);
 irNetcon(2,1) = 1;
 irNetcon(3,1) = 1;
@@ -105,7 +105,7 @@ s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(o
 
 s.connections(end+1).direction='I->R';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',10, 'netcon',irNetcon, 'ESYN',-80}; 
+s.connections(end).parameters={'gSYN',.06, 'tauR',0.4, 'tauD',10, 'netcon',irNetcon, 'ESYN',-80}; 
 
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list='synDoubleExp';
@@ -114,7 +114,7 @@ s.connections(end).parameters={'gSYN',.13, 'tauR',0.4, 'tauD',2, 'netcon','ones(
 %% vary params
 vary = {
   '(IC->IC)', 'trial', 1:20;
-%     'I->R','gSYN',.1:.05:.75;
+%     'I->R','gSYN',linspace(0.01,0.25,20);
 };
 %% simulate
 tic;
@@ -132,46 +132,46 @@ for iData = 1:length(data)
 end
 %% visualize spikes
 if plot_rasters
-ICspks = zeros(20,4,time_end);
-Ispks = zeros(20,4,time_end);
-Rspks = zeros(20,4,time_end);
-for i = 1:20
-    for j = 1:4
-        ICspks(i,j,:) = data(i).IC_V_spikes(:,j);
-        Ispks(i,j,:) = data(i).I_V_spikes(:,j);
-        Rspks(i,j,:) = data(i).R_V_spikes(:,j);
+    ICspks = zeros(20,4,time_end);
+    Ispks = zeros(20,4,time_end);
+    Rspks = zeros(20,4,time_end);
+    for i = 1:20
+        for j = 1:4
+            ICspks(i,j,:) = data(i).IC_V_spikes(:,j);
+            Ispks(i,j,:) = data(i).I_V_spikes(:,j);
+            Rspks(i,j,:) = data(i).R_V_spikes(:,j);
+        end
     end
-end
-Cspks = [data.C_V_spikes];
+    Cspks = [data.C_V_spikes];
 
-% plot
-figure
-for i = 1:4 %for each spatially directed neuron
-  subplot(4,4,i+12)
-  plotSpikeRasterFs(logical(squeeze(ICspks(:,i,:))), 'PlotType','vertline');
-  xlim([0 2000])
-  line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-  if i==1, ylabel('IC'); 
-end
-  
-  subplot(4,4,i+8)
-  plotSpikeRasterFs(logical(squeeze(Ispks(:,i,:))), 'PlotType','vertline');
-  xlim([0 2000])
-  line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-  if i==1, ylabel('I'); end
-    
-  subplot(4,4,i+4)
-  plotSpikeRasterFs(logical(squeeze(Rspks(:,i,:))), 'PlotType','vertline');
-  xlim([0 2000])
-  line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-  if i==1, ylabel('R'); end
-end
+    % plot
+    figure
+    for i = 1:4 %for each spatially directed neuron
+      subplot(4,4,i+12)
+      plotSpikeRasterFs(logical(squeeze(ICspks(:,i,:))), 'PlotType','vertline');
+      xlim([0 2000])
+      line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+      if i==1, ylabel('IC'); 
+    end
 
-subplot(4,4,2)
-plotSpikeRasterFs(logical(Cspks'), 'PlotType','vertline');
-xlim([0 2000])
-line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-ylabel('C spikes')
+      subplot(4,4,i+8)
+      plotSpikeRasterFs(logical(squeeze(Ispks(:,i,:))), 'PlotType','vertline');
+      xlim([0 2000])
+      line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+      if i==1, ylabel('I'); end
+
+      subplot(4,4,i+4)
+      plotSpikeRasterFs(logical(squeeze(Rspks(:,i,:))), 'PlotType','vertline');
+      xlim([0 2000])
+      line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+      if i==1, ylabel('R'); end
+    end
+
+    subplot(4,4,2)
+    plotSpikeRasterFs(logical(Cspks'), 'PlotType','vertline');
+    xlim([0 2000])
+    line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+    ylabel('C spikes')
 end
 %% spks to spiketimes in a cell array of 10x8
 for i = 1:20
