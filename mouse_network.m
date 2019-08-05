@@ -19,8 +19,9 @@ function [performance, tau] = mouse_network(study_dir,time_end,plot_rasters)
 % time_end = 1860; % ms, must be smaller than time-data
 
 solverType = 'euler';
-dt = 1; %ms % the IC input is currently at dt=1
-
+dt = 1; %ms % the IC input is currently dt=1
+SRdelay = 3; %ms
+% time_end = time_end + SRdelay; %in ms
 
 % visualize IC spikes (Figure 1 which is the IR level (as seen from the
 % inputguassian file)
@@ -35,16 +36,13 @@ for i = 1:4 %for each spatially directed neuron
 end
 %}
 
-% save converted spike file - only saving spikes the last file for now
-% % save(fullfile(study_dir, 'solve','IC_spks.mat'),'spks');
 %% neuron populations
+%tonic = bias = cells spontaneous firing
 
 nCells = 4;
 noise = 0.01; % low noise
-
 s = struct();
 
-% neuron populations
 s.populations(1).name = 'IC';
 s.populations(1).equations = 'chouLIF';
 s.populations(1).size = nCells;
@@ -54,7 +52,11 @@ s.populations(end+1).name = 'I';
 s.populations(end).equations = 'chouLIF';
 s.populations(end).size = nCells;
 s.populations(end).parameters = {'Itonic',0, 'noise',noise}; % 10-20 Hz spiking at rest
-%tonic = bias - cells spontaneous firing
+
+s.populations(end+1).name = 'S'; % S for sharpening
+s.populations(end).equations = 'chouLIF';
+s.populations(end).size = nCells;
+s.populations(end).parameters = {'Itonic',0, 'noise',noise}; % 10-20 Hz spiking at rest
 
 s.populations(end+1).name='R';
 s.populations(end).equations = 'chouLIF';
@@ -88,14 +90,17 @@ irNetcon(3,1) = 1;
 irNetcon(4,1) = 1;
 irNetcon(2,4) = 1;
 
-% irNetcon(3,:) = 0;
-% irNetcon(3,3) = 0;
+srNetcon = diag(ones(1,nCells));
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list='IC';
 s.connections(1).parameters={'g_postIC',0.03,'trial',5}; % 100 hz spiking
 
 s.connections(end+1).direction='IC->I';
+s.connections(end).mechanism_list='synDoubleExp';
+s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
+
+s.connections(end+1).direction='IC->S';
 s.connections(end).mechanism_list='synDoubleExp';
 s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
 
@@ -106,6 +111,10 @@ s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(o
 s.connections(end+1).direction='I->R';
 s.connections(end).mechanism_list='synDoubleExp';
 s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',10, 'netcon',irNetcon, 'ESYN',-80}; 
+
+s.connections(end+1).direction='S->R';
+s.connections(end).mechanism_list='synDoubleExp';
+s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',10, 'netcon',srNetcon, 'ESYN',-80, 'delay',SRdelay}; 
 
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list='synDoubleExp';
