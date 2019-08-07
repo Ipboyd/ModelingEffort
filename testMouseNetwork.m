@@ -1,6 +1,7 @@
 %% Tester Script that calls mouse_network function
 clearvars
 
+cd('C:\Users\kfcho\Documents\GitHub\MouseSpatialGrid')
 addpath('mechs')
 addpath('dependencies')
 addpath('eval_scripts')
