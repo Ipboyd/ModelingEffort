@@ -1,6 +1,7 @@
 %% Tester Script that calls mouse_network function
 clearvars
 
+cd('C:\Users\kfcho\Documents\GitHub\MouseSpatialGrid')
 addpath('mechs')
 addpath('dependencies')
 addpath('eval_scripts')
@@ -10,7 +11,7 @@ addpath(genpath('../dynasim'))
 %% load IC spikes, convert cell array into binary array
 y=1;
 x=1;
-ICdir = '104424';
+ICdir = '151137';
 ICdirPath = ['import' filesep ICdir filesep];
 % ICdirPath = 'Z:\eng_research_hrc_binauralhearinglab\Model-Junzi_files_backup-remove_when_copied\V21\STRFs\163857\'
 ICstruc = dir([ICdirPath '*.mat']); % Having issues here where it is not actually recieving the imported data
