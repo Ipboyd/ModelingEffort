@@ -1,0 +1,70 @@
+%Script that runs all the functions and creates the desired output calls
+%the function 'InputGaussianSTRF'
+% Script might not run because of direction of backslashes.
+% Make sure your matlab version has the Fuzzy Logic Toolbox downloaded
+% already
+
+%To run the file, input all these files into the same folder as this script
+clear all;clc;close all
+addpath([path 'scripts'])
+addpath([path 'STRFs'])
+addpath([path 'spikeGen'])
+addpath([path 'Ross Code/software/genlib/'])
+addpath([path 'Reconstruction/JD StimRecon'])
+addpath([path 'STRFs/strflab_v1.45/auxFunc'])
+addpath([path 'STRFs/strflab_v1.45/layer_1'])
+addpath([path 'STRFs/strflab_v1.45/preprocessing'])
+addpath([path 'STRFs/strflab_v1.45/preprocessing/sound'])
+cmap=parulacolor;
+setfiguredefaults('pb')
+rng('shuffle')
+%% STRF parameters
+sigma = 20; %60 for bird but 38 for mouse
+% sigma = 20;
+
+paramH.t0=7/1000; % s
+paramH.BW=0.0045; % s temporal bandwith (sigma: exp width)
+paramH.BTM=56;  % Hz  temporal modulation (sine width)
+paramH.phase=.49*pi;
+
+paramG.BW=2000;  % Hz
+paramG.BSM=5.00E-05; % 1/Hz=s
+paramG.f0=4300;
+%%
+% dt=1.0000e-03;
+% f=[525,656.250000000000,787.500000000000,918.750000000000,1050,1181.25000000000,1312.50000000000,1443.75000000000,1575,1706.25000000000,1837.50000000000,1968.75000000000,2100,2231.25000000000,2362.50000000000,2493.75000000000,2625,2756.25000000000,2887.50000000000,3018.75000000000,3150,3281.25000000000,3412.50000000000,3543.75000000000,3675,3806.25000000000,3937.50000000000,4068.75000000000,4200,4331.25000000000,4462.50000000000,4593.75000000000,4725,4856.25000000000,4987.50000000000,5118.75000000000,5250,5381.25000000000,5512.50000000000,5643.75000000000,5775,5906.25000000000,6037.50000000000,6168.75000000000,6300,6431.25000000000,6562.50000000000,6693.75000000000,6825,6956.25000000000,7087.50000000000,7218.75000000000,7350,7481.25000000000,7612.50000000000,7743.75000000000,7875,8006.25000000000];
+% strf.t =0:dt:39*dt;
+% strf.exp=exp(-.5*((strf.t-paramH.t0)/paramH.BW).^2);
+% strf.cos=cos(2*pi*paramH.BTM*(strf.t-paramH.t0)+paramH.phase);
+% strf.H=strf.exp.*strf.cos;
+% strf.G=exp(-.5*((f-paramG.f0)/paramG.BW).^2).*cos(2*pi*paramG.BSM*(f-paramG.f0));
+% strf.w1=strf.G'*strf.H;
+% strf.f=f;
+% 
+% figure
+% subplot(2, 2, 3);
+% plot(f,strf.G)
+% view(-90,90)
+% subplot(2, 2, 2);
+% plot(strf.t,strf.H,'linewidth',2)
+% hold on
+% plot(strf.t,strf.exp,'linewidth',2,'color','r')
+% plot(strf.t,strf.cos,'linewidth',2,'color','cyan')
+% subplot(2,2,4)
+% imagesc(strf.t, strf.f, strf.w1); axis tight;%colorbar
+% set(gca,'XTickLabel','','YTickLabel','')
+%%
+% Calls the function InputGaussianSTRF to create files in the STRF folder with the generated figures 
+mean_rate=.1;
+%
+datetime=datestr(now,'HHMMSS');
+
+for songloc=1:1
+    close all
+    maskerloc=0;
+    t_spiketimes=InputGaussianSTRF(path,datetime,songloc,maskerloc,sigma,paramH,paramG,rand_seed,mean_rate);
+    t_spiketimes=InputGaussianSTRF(path,datetime,maskerloc,songloc,sigma,paramH,paramG,rand_seed,mean_rate);
+    for maskerloc=1:4
+        t_spiketimes=InputGaussianSTRF(path,datetime,songloc,maskerloc,sigma,paramH,paramG,rand_seed,mean_rate);
+    end
+end
