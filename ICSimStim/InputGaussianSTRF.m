@@ -1,22 +1,44 @@
-function t_spiketimes=InputGaussianSTRF(datetime,songloc,maskerloc,sigma,paramH,paramG,mean_rate)
-%% Setting the figure defaults
-%This section of the code creates the default windows of the figures and
-%there is a random seed being used
-
+function t_spiketimes=InputGaussianSTRF(songloc,maskerloc,tuning,saveParam,mean_rate,stimGain)
+% Inputs
+%   songloc, maskerloc - a vector between 0 and 4
+%   tuning - a structure, with fields
+%       .type - 'bird' for gaussian tuning curves, or 
+%               'mouse' for mouse parameters
+%       .sigma - tuning curve width
+%       .H, .G - STRF parameters
+%   saveParam  - a structure, with fields
+%       .flag - save or not
+%       .fileLoc - save file name
+%   mean_rate - ?
+%   stimGain - input stimulus gain
+%
+%
 % modified by KFC
 % 2019-08-07 added switch/case for two types of tuning curves
 %            removed 1/2 scaling factor for colocated stimulus spectrograms
+%            cleaned up input params
 
-
+% Plotting parameters
 colormap = parula;
-% setfiguredefaults('pb')
+color1=colormap([1 18 36 54],:);
 width=11.69;hwratio=.6;
 x0=.05;y0=.1;
 dx=.02;dy=.05;
 lx=.13;ly=.1;
+azimuth=[-90 0 45 90];
+h=figure;
+figuresize(width, width*hwratio, 'inches')
+positionVector = [x0+dx+lx y0+dy+ly 5*lx+4*dx ly];
+subplot('Position',positionVector)
+hold on
+annotation('textbox',[.375 .28 .1 .1],...
+    'string',['\sigma = ' num2str(tuning.sigma) ' deg'],...
+    'FitBoxToText','on',...
+    'LineStyle','none')
 
-tuning = 'bird';
-switch tuning
+% Define spatial tuning curves
+sigma = tuning.sigma;
+switch tuning.type
     case 'bird'
         x=-108:108;
         tuningcurve=zeros(4,length(x));
@@ -32,8 +54,7 @@ switch tuning
         tuningcurve(3,:)= 1- gaussmf(x,[sigma,0]); %U shaped gaussian
         tuningcurve(4,:)= sigmf(x,[0.016 -22.5])-0.05; %sigmodial
 end
-color1=colormap([1 18 36 54],:);
-azimuth=[-90 0 45 90];
+
 
 %% Load songs
 load('stimuli.mat','stimuli')
@@ -46,11 +67,11 @@ masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of len
 [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
 %% Make STRF
-strf=STRFgen(paramH,paramG,f,t(2)-t(1));
+strf=STRFgen(tuning.H,tuning.G,f,t(2)-t(1));
 
 %% Save the figure and figure variables in the STRF folder
-savedir=['..\import\' tuning '\' datetime];
-mkdir(savedir)
+if saveParam.flag, savedir=[tuning.type '\' saveParam.fileLoc]; mkdir(savedir); end
+
 t_spiketimes={};
 spkrate=zeros(1,4);disc=zeros(1,4);
 %% 
@@ -70,15 +91,12 @@ for songn=1:2
             stim_spec(songloc,:,:)=song_spec;
         end
     end
-    stim_spec = stim_spec/2;
+    stim_spec = stim_spec*stimGain;
     %% plot mixture process (of song1) for visualization
     if songn==1
-        h=figure;
-        figuresize(width, width*hwratio, h(songn), 'Inches')
+
         % plot Gaussian curves
-        positionVector = [x0+dx+lx y0+dy+ly 5*lx+4*dx ly];
-        subplot('Position',positionVector)
-        hold on
+       
         for i=1:4
             plot(x,tuningcurve(i,:),'linewidth',2.5,'color',color1(i,:))
         end
@@ -110,7 +128,7 @@ for songn=1:2
             
             positionVector = [x0+subplotloc*(dx+lx) y0 lx ly];
             subplot('Position',positionVector)
-            imagesc(t,f,squeeze(stim_spec(i,:,:))',[0 80]);colormap(cmap);
+            imagesc(t,f,squeeze(stim_spec(i,:,:))',[0 80]);colormap('parula');
             xlim([0 max(t)])
             set(gca,'YDir','normal','xtick',[0 1],'ytick',[])
         end
@@ -138,17 +156,15 @@ for songn=1:2
 %         normweight=any(max(max(stim_spec(1,:,:))))*weight(i,1)+any(max(max(stim_spec(2,:,:))))*weight(i,2)+any(max(max(stim_spec(3,:,:))))...
 %             *weight(i,3)+any(max(max(stim_spec(4,:,:))))*weight(i,4);
 %         mixedspec(i,:,:)=mixedspec(i,:,:)/normweight;
+
         currspec=squeeze(mixedspec(i,:,:)); % currentspectrograms
         %% plot mixed spectrograms (of song1)- 3rd row of graphs
         if songn==1
             positionVector = [x0+subplotloc*(dx+lx) y0+2*(dy+ly) lx ly];
             subplot('Position',positionVector)
-            imagesc(t,f,currspec',[0 80]);colormap(cmap);%colorbar
+            imagesc(t,f,currspec',[0 80]);colormap('parula');%colorbar
             xlim([0 max(t)])
             set(gca,'YDir','normal','xtick',[0 1],'ytick',[])
-            if i==2
-                title(['\sigma = ' num2str(sigma) ' deg'])
-            end
         end
         %% convolve STRF with spectrogram
         [spkcnt,rate,tempspk]=STRFconvolve(strf,currspec,mean_rate,10,songn);
@@ -175,10 +191,13 @@ for songn=1:2
         if songn==2
             distMat = calcvr([t_spiketimes(:,i) t_spiketimes(:,i+4)], 10); % using ms as units, same as ts
             [disc(i), E, correctArray] = calcpc(distMat, 10, 2, 1,[], 'new');
-            title(['disc = ', num2str(disc(i)),'; FR = ',num2str(spkrate(i))])
+            title({['disc = ', num2str(disc(i))],['FR = ',num2str(spkrate(i))]})
         end
     end   
+
+    if saveParam.flag
     saveas(gca,[savedir '/s' num2str(songloc) 'm' num2str(maskerloc) '.tiff'])
     save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes','songloc','maskerloc',...
         'sigma','paramG','paramH','mean_rate','disc','spkrate')
+    end
 end

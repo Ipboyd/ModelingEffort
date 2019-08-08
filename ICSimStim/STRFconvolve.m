@@ -10,7 +10,7 @@ if nargin==3
     songn=[];
 elseif nargin==4
     songn=[];
-elseif nargin34||nargin>5
+elseif nargin<3||nargin>5
     disp('wrong number of inputs')
     return
 end
