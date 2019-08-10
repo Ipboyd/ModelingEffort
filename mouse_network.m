@@ -1,4 +1,4 @@
-function [performance, tau] = mouse_network(study_dir,time_end,plot_rasters)
+function [performance, tauMax, v2array] = mouse_network(study_dir,time_end,plot_rasters,plot_title)
 %% pseudocode:
 
 % load spikes from mouse model - generated from...?
@@ -20,8 +20,7 @@ function [performance, tau] = mouse_network(study_dir,time_end,plot_rasters)
 
 solverType = 'euler';
 dt = 1; %ms % the IC input is currently dt=1
-SRdelay = 3; %ms
-% time_end = time_end + SRdelay; %in ms
+viz_network = 0;
 
 % visualize IC spikes (Figure 1 which is the IR level (as seen from the
 % inputguassian file)
@@ -31,8 +30,8 @@ figure
 for i = 1:4 %for each spatially directed neuron
    subplot(1,4,i)
    plotSpikeRasterFs(logical(squeeze(spks(:,i,:))), 'PlotType','vertline');
-   xlim([0 2000])
-   line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
+   xlim([0 time_end])
+   line([0,time_end],[10.5,10.5],'color',[0.3 0.3 0.3])
 end
 %}
 
@@ -91,38 +90,43 @@ irNetcon(4,1) = 1;
 irNetcon(2,4) = 1;
 
 srNetcon = diag(ones(1,nCells));
+% srNetcon = zeros(nCells);
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list='IC';
-s.connections(1).parameters={'g_postIC',0.03,'trial',5}; % 100 hz spiking
+s.connections(1).parameters={'g_postIC',0.027,'trial',5}; % 100 hz spiking
 
 s.connections(end+1).direction='IC->I';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
+s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
 
 s.connections(end+1).direction='IC->S';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
+s.connections(end).parameters={'gSYN',.18, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
 
 s.connections(end+1).direction='IC->R';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.12, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
+s.connections(end).parameters={'gSYN',.2, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells)),'delay',0}; 
 
 s.connections(end+1).direction='I->R';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.06, 'tauR',0.4, 'tauD',10, 'netcon',irNetcon, 'ESYN',-80}; 
+s.connections(end).parameters={'gSYN',.2, 'tauR',0.4, 'tauD',10, 'netcon',irNetcon, 'ESYN',-80}; 
 
 s.connections(end+1).direction='S->R';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',10, 'netcon',srNetcon, 'ESYN',-80, 'delay',SRdelay}; 
+s.connections(end).parameters={'gSYN',.17, 'tauR',0.4, 'tauD',5, 'netcon',srNetcon, 'ESYN',-80, 'delay',3}; 
 
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.13, 'tauR',0.4, 'tauD',2, 'netcon','ones(N_pre,N_post)'}; 
+s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',2, 'netcon','ones(N_pre,N_post)'}; 
+
+if viz_network, vizNetwork; end
 
 %% vary params
+v2array = 0.175;
 vary = {
   '(IC->IC)', 'trial', 1:20;
+  '(S->R)','gSYN',v2array;
 %     'I->R','gSYN',linspace(0.01,0.25,20);
 };
 %% simulate
@@ -139,60 +143,97 @@ for iData = 1:length(data)
     data(iData).([pop '_V'])(data(iData).([pop '_V_spikes']) == 1) = V_spike; % insert spike
   end
 end
-%% visualize spikes
-if plot_rasters
-    ICspks = zeros(20,4,time_end);
-    Ispks = zeros(20,4,time_end);
-    Rspks = zeros(20,4,time_end);
-    for i = 1:20
-        for j = 1:4
-            ICspks(i,j,:) = data(i).IC_V_spikes(:,j);
-            Ispks(i,j,:) = data(i).I_V_spikes(:,j);
-            Rspks(i,j,:) = data(i).R_V_spikes(:,j);
+
+%%
+nv2 = length(v2array);
+for vv = 1:nv2 %2nd varied variable
+    subData = data(vv:nv2:length(data));
+    % spks to spiketimes in a cell array of 10x2
+    for ii = 1:20
+        CspkTimes{ii} = find(subData(ii).C_V_spikes);
+    end
+    CspkTimes = reshape(CspkTimes,10,[]);
+    
+    %% performance for the current target-masker config
+    %addpath('C:\Users\Kenny\Dropbox\Sen Lab\MouseSpatialGrid\spatialgrids')
+    tau = linspace(1,30,1000); %same units as spike-timing
+    distMat = calcvr(CspkTimes, tau);
+    [performanceTemp, ~] = calcpc(distMat, 10, 2, 1,[], 'new');
+    performance(vv) = max(performanceTemp);
+    tauMax(vv) = tau(performanceTemp==performance(vv));
+    
+    %% visualize spikes
+    if plot_rasters
+        ICspks = zeros(20,4,time_end);
+        Ispks = zeros(20,4,time_end);
+        Rspks = zeros(20,4,time_end);
+        for i = 1:20
+            for j = 1:4
+                ICspks(i,j,:) = subData(i).IC_V_spikes(:,j);
+                Ispks(i,j,:) = subData(i).I_V_spikes(:,j);
+                Rspks(i,j,:) = subData(i).R_V_spikes(:,j);
+            end
         end
+        Cspks = [subData.C_V_spikes];
+
+        % plot
+        figure('Name',plot_title,'Position',[50,50,850,690]);
+        for i = 1:4 %for each spatially directed neuron
+            subplot(4,4,i+12)
+            thisRaster = logical(squeeze(ICspks(:,i,:)));
+            calcPCandPlot(thisRaster,time_end,1);        
+            if i==1, ylabel('IC'); end
+
+            subplot(4,4,i+8)
+            thisRaster = logical(squeeze(Ispks(:,i,:)));
+            calcPCandPlot(thisRaster,time_end,0);        
+            if i==1, ylabel('I'); end
+            xticklabels([])
+
+            subplot(4,4,i+4)
+            thisRaster = logical(squeeze(Rspks(:,i,:)));
+            calcPCandPlot(thisRaster,time_end,1);        
+            if i==1, ylabel('R'); end
+            xticklabels([])
+        end
+
+        subplot(4,4,2)
+        plotSpikeRasterFs(flipud(logical(Cspks')), 'PlotType','vertline');
+        xticklabels([])
+        xlim([0 time_end])
+        line([0,time_end],[10.5,10.5],'color',[0.3 0.3 0.3])
+        ylabel('C spikes')
+
+        FR_C = mean(sum(Cspks))/time_end*1000;
+        annotation('textbox',[.55 .8 .2 .1],...
+                   'string',{['FR_C = ' num2str(FR_C)],...
+                             ['Disc = ' num2str(mean(max(performance)))],...
+                             ['S->R g_{syn} = ' num2str(v2array(vv))]},...
+                   'FitBoxToText','on',...
+                   'LineStyle','none')
+
+        parts = strsplit(study_dir, filesep);
+        DirPart = fullfile(parts{1:end-1});
+        saveas(gca,[DirPart filesep parts{end} '_v2_' num2str(vv) '.tiff'])
     end
-    Cspks = [data.C_V_spikes];
-
-    % plot
-    figure
-    for i = 1:4 %for each spatially directed neuron
-      subplot(4,4,i+12)
-      plotSpikeRasterFs(logical(squeeze(ICspks(:,i,:))), 'PlotType','vertline');
-      xlim([0 2000])
-      line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-      if i==1, ylabel('IC'); 
-    end
-
-      subplot(4,4,i+8)
-      plotSpikeRasterFs(logical(squeeze(Ispks(:,i,:))), 'PlotType','vertline');
-      xlim([0 2000])
-      line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-      if i==1, ylabel('I'); end
-
-      subplot(4,4,i+4)
-      plotSpikeRasterFs(logical(squeeze(Rspks(:,i,:))), 'PlotType','vertline');
-      xlim([0 2000])
-      line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-      if i==1, ylabel('R'); end
-    end
-
-    subplot(4,4,2)
-    plotSpikeRasterFs(logical(Cspks'), 'PlotType','vertline');
-    xlim([0 2000])
-    line([0,2000],[10.5,10.5],'color',[0.3 0.3 0.3])
-    ylabel('C spikes')
 end
-%% spks to spiketimes in a cell array of 10x8
-for i = 1:20
-    if i <=10
-        spkTimes{i,1} = find(data(i).C_V_spikes);
-    else
-        spkTimes{i-10,2} = find(data(i).C_V_spikes);
-    end
 end
 
-%% performance for the current target-masker config
-%addpath('C:\Users\Kenny\Dropbox\Sen Lab\MouseSpatialGrid\spatialgrids')
-tau= linspace(4,1000,1000); %same units as spike-timing
-distMat = calcvr(spkTimes, tau);
-[performance, E] = calcpc(distMat, 10, 2, 1,[], 'new');
+function calcPCandPlot(raster,time_end,calcPC)
+    PCstr = '';
+    if calcPC
+        tau = linspace(1,30,100);
+        spkTime = cell(20,1);
+        for ii = 1:20, spkTime{ii} = find(raster(ii,:)); end
+        spkTime = reshape(spkTime,10,2);
+        distMat = calcvr(spkTime, tau);
+        [performance, ~] = calcpc(distMat, 10, 2, 1,[], 'new');
+        pc = mean(max(performance));
+        PCstr = ['PC = ' num2str(pc)];
+    end
+    plotSpikeRasterFs(flipud(raster), 'PlotType','vertline');
+    fr = mean(sum(raster,2))/time_end*1000;
+    title({['FR = ' num2str(fr)],PCstr});
+    xlim([0 time_end])
+    line([0,time_end],[10.5,10.5],'color',[0.3 0.3 0.3])
+end
