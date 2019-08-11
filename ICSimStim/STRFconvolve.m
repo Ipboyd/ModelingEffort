@@ -35,6 +35,10 @@ frate(find(frate<0))=zeros(size(find(frate<0))); % half-wave rec
 %% generate spikes
 spike_times=cell(trialn,1);
 spkcnt=0;
+
+% use rand seed
+load('rand_seed142307.mat')
+
 for i=1:trialn
     if exist('rand_seed','var')
         disp('using seed random numbers')
