@@ -14,19 +14,20 @@ addpath(genpath('../dynasim'))
 %% load IC spikes, convert cell array into binary array
 y=1;
 x=1;
-ICdir = 'ICSimStim\bird\FRgain1\163516_seed142307_s20';
+ICdir = 'ICSimStim\bird\FRcontrol\173217_seed142307_s7';
 ICdirPath = [ICdir filesep];
 % ICdirPath = 'Z:\eng_research_hrc_binauralhearinglab\Model-Junzi_files_backup-remove_when_copied\V21\STRFs\163857\'
 ICstruc = dir([ICdirPath '*.mat']);
 
 plot_rasters = 1;
 
-performanceMax=zeros(1,16);
-pMaxm0=zeros(1,4);
-pMaxs0=zeros(1,4);
-maxTaus0=zeros(1,4);
-maxTaum0=zeros(1,4);
-maxTau=zeros(1,16);
+nIC = length(ICstruc);
+% performanceMax=zeros(16,10);
+% pMaxm0=zeros(4,10);
+% pMaxs0=zeros(4,10);
+% maxTaus0=zeros(4,10);
+% maxTaum0=zeros(4,10);
+% maxTau=zeros(16,10);
 diagConfigs = [6,12,18,24];
 datetime=datestr(now,'yyyymmdd-HHMMSS');
 for z = 1:length(ICstruc)
@@ -56,7 +57,7 @@ for z = 1:length(ICstruc)
     % call network
     time_end = size(spks,3);
     if ICstruc(z).name(2)=='0' %masker only
-        [pmaxs0(z,:), maxTaus0(z,:),v2]= mouse_network(study_dir,time_end,plot_rasters,ICstruc(z).name);
+        [pMaxs0(z,:), maxTaus0(z,:),v2]= mouse_network(study_dir,time_end,plot_rasters,ICstruc(z).name);
     elseif ICstruc(z).name(4)=='0' %target only
         [pMaxm0(y,:), maxTaum0(y,:),v2]= mouse_network(study_dir,time_end,plot_rasters,ICstruc(z).name);
         y= y+1;
@@ -78,17 +79,17 @@ for vv = 1:length(v2)
     % output 1 by 4 grid of only masker
     figure
     textColorThresh = 70;
-    l=num2cell(round(pMaxm0));
+    l=num2cell(round(pMaxm0(:,vv)));
     l= cellfun(@num2str, l,'UniformOutput', false);
     positionVector = [0.35 0.8 0.35 0.1];
     subplot('Position',positionVector)
-    im=imagesc(pMaxm0);
+    im=imagesc(pMaxm0(:,vv)');
     x = [1,2,3,4];
     y=[1,1,1,1];
     t= text(x(:),y(:), l, 'HorizontalAlignment', 'Center');
     for i= 1:4
         t(i).FontSize=12;
-        if pMaxm0(i)>textColorThresh
+        if pMaxm0(i,vv)>textColorThresh
             t(i).Color = 'k';
         else
             t(i).Color= 'w';
@@ -97,17 +98,17 @@ for vv = 1:length(v2)
     colormap('parula'); % this makes the boxes blue
     caxis([50 100])
     % output 1 by 4 grid of only target
-    l=num2cell(round(pMaxs0));
+    l=num2cell(round(pMaxs0(:,vv)));
     l= cellfun(@num2str, l,'UniformOutput', false);
     positionVector = [0.35 0.65 0.35 0.1];
     subplot('Position',positionVector)
-    im=imagesc(pMaxs0);
+    im=imagesc(pMaxs0(:,vv)');
     x = [1,2,3,4];
     y=[1,1,1,1];
     t= text(x(:),y(:), l, 'HorizontalAlignment', 'Center');
     for i= 1:4
         t(i).FontSize=12;
-        if pMaxs0(i)>textColorThresh
+        if pMaxs0(i,vv)>textColorThresh
             t(i).Color = 'k';
         else
             t(i).Color= 'w';
@@ -117,7 +118,7 @@ for vv = 1:length(v2)
     caxis([50 100])
     % output- 4 by 4 grid- calculate in a seperate script
     % plot the matrix similar to the that on the paper- imagesc()
-    mat = reshape(performanceMax,4,4);
+    mat = reshape(performanceMax(:,vv),4,4);
     mat = flipud(mat);
     l = num2cell(round(mat));
     l = cellfun(@num2str, l,'UniformOutput', false);
@@ -154,5 +155,5 @@ for vv = 1:length(v2)
 
     Dirparts = strsplit(study_dir, filesep);
     DirPart = fullfile(Dirparts{1:end-1});
-    saveas(gca,[DirPart filesep 'performance_grid.tiff'])
+    saveas(gca,[DirPart filesep 'performance_grid_v ' num2str(vv) '.tiff'])
 end

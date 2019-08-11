@@ -84,10 +84,10 @@ s.mechanisms(1).equations=synDoubleExp;
 % netcons are [N_pre,N_post]
 % irNetcon = diag(ones(1,nCells))*0.1;
 irNetcon = zeros(nCells);
-irNetcon(2,1) = 1;
-irNetcon(3,1) = 1;
-irNetcon(4,1) = 1;
-irNetcon(2,4) = 1;
+% irNetcon(2,1) = 1;
+% irNetcon(3,1) = 1;
+% irNetcon(4,1) = 1;
+% irNetcon(2,4) = 1;
 
 srNetcon = diag(ones(1,nCells));
 % srNetcon = zeros(nCells);
@@ -123,7 +123,7 @@ s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',2, 'netcon','ones(
 if viz_network, vizNetwork; end
 
 %% vary params
-v2array = 0.175;
+v2array = 0.15:0.005:0.19;
 vary = {
   '(IC->IC)', 'trial', 1:20;
   '(S->R)','gSYN',v2array;
@@ -160,7 +160,7 @@ for vv = 1:nv2 %2nd varied variable
     distMat = calcvr(CspkTimes, tau);
     [performanceTemp, ~] = calcpc(distMat, 10, 2, 1,[], 'new');
     performance(vv) = max(performanceTemp);
-    tauMax(vv) = tau(performanceTemp==performance(vv));
+    tauMax(vv) = mean(tau(performanceTemp==performance(vv)));
     
     %% visualize spikes
     if plot_rasters
