@@ -31,8 +31,8 @@ figuresize(width, width*hwratio, 'inches')
 positionVector = [x0+dx+lx y0+dy+ly 5*lx+4*dx ly];
 subplot('Position',positionVector)
 hold on
-annotation('textbox',[.375 .28 .1 .1],...
-    'string',['\sigma = ' num2str(tuning.sigma) ' deg'],...
+annotation('textbox',[.375 .33 .1 .1],...
+    'string',{['\sigma = ' num2str(tuning.sigma) ' deg'],['gain = ' num2str(stimGain)]},...
     'FitBoxToText','on',...
     'LineStyle','none')
 
@@ -86,7 +86,7 @@ for songn=1:2
     if songloc
         % when masker and song are colocated
         if maskerloc==songloc
-            stim_spec(songloc,:,:)=(masker_spec+song_spec);
+            stim_spec(songloc,:,:)=(masker_spec + song_spec)/2;
         else
             stim_spec(songloc,:,:)=song_spec;
         end
@@ -196,8 +196,10 @@ for songn=1:2
     end   
 
     if saveParam.flag
-    saveas(gca,[savedir '/s' num2str(songloc) 'm' num2str(maskerloc) '.tiff'])
-    save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes','songloc','maskerloc',...
-        'sigma','paramG','paramH','mean_rate','disc','spkrate')
+        saveas(gca,[savedir '/s' num2str(songloc) 'm' num2str(maskerloc) '.tiff'])
+        paramG = tuning.G;
+        paramH = tuning.H;
+        save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes','songloc','maskerloc',...
+            'sigma','paramG','paramH','mean_rate','disc','spkrate')
     end
 end

@@ -22,14 +22,14 @@ paramG.f0=4300;
 
 %% Run simulation script
 mean_rate=.1;
-datetime=datestr(now,'HHMMSS');
-stimGain = 0.4;
+datetime=['FRgain1' filesep datestr(now,'HHMMSS') '_seed142307_s20'];
+stimGain = 1;
 saveFlag = 0;
 
-songLocs = 3;
-maskerLocs = 3;
+songLocs = 1:4;
+maskerLocs = 1:4;
 
-saveParam.flag = 0;
+saveParam.flag = 1;
 saveParam.fileLoc = datetime;
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
@@ -38,9 +38,9 @@ tuningParam.G = paramG;
 
 for songloc = songLocs
     close all
-%     maskerloc=0;
-%     t_spiketimes=InputGaussianSTRF(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain);
-%     t_spiketimes=InputGaussianSTRF(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain);
+    maskerloc=0;
+    t_spiketimes=InputGaussianSTRF(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain);
+    t_spiketimes=InputGaussianSTRF(maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain);
     for maskerloc = maskerLocs
         t_spiketimes=InputGaussianSTRF(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain);
     end
