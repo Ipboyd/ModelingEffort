@@ -1,30 +1,34 @@
-function [performance, tauMax, v2array] = mouse_network(study_dir,time_end,plot_rasters,plot_title)
-%% pseudocode:
+function [performance, tauMax, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
+% [performance, tauMax] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
+% study_dir: location of IC spike files + directory for log and data files
+% time_end: length of simulation in ms
+% varies: vary parameter, a structure. e.g.
+%   varies(1).conxn = '(IC->IC)';
+%   varies(1).param = 'trial';
+%   varies(1).range = 1:20;
+%   *first set of parameters should always be "trials"
+% plot_rasters: 1 or 0
+% plot_title: so we know which files the figures correspond to 
+%
+% to do:
+%   plot_rasters cannot handle more than 2 varied parameters...
+%
+% @Kenny F Chou, Boston Univ. 2019-06-20
+% 2019-08-04 - added sharpening neurons
+% 2019-08-14 - plotting now handles multiple varied parameters
 
-% load spikes from mouse model - generated from...?
-%   mouse model mat file contents:
-%       songloc
-%       maskerloc
-%       sigma (tuning curve width)
-%       paramH ?
-%       paramG ?
-%       rand_seed
-%       mean_rate
-%       t_spiketimes in ms, 10 trials per song, for 2 songs
-%       spkrate
-%       disc
-% spikes processed with lateral inhibition network
-% compare output spikes to calculate discriminality measure
-%% solver params
-% time_end = 1860; % ms, must be smaller than time-data
+%% Input check
+if ~strcmp(varies(1).param,'trial')
+    error('first set of varied params should be ''trial''')
+end
 
+    %% solver params
 solverType = 'euler';
 dt = 1; %ms % the IC input is currently dt=1
 viz_network = 0;
 
-% visualize IC spikes (Figure 1 which is the IR level (as seen from the
+%% visualize IC spikes (Figure 1 which is the IR level (as seen from the
 % inputguassian file)
-
 %{
 figure
 for i = 1:4 %for each spatially directed neuron
@@ -123,12 +127,13 @@ s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',2, 'netcon','ones(
 if viz_network, vizNetwork; end
 
 %% vary params
-v2array = 0.15:0.005:0.19;
-vary = {
-  '(IC->IC)', 'trial', 1:20;
-  '(S->R)','gSYN',v2array;
-%     'I->R','gSYN',linspace(0.01,0.25,20);
-};
+vary = cell(length(varies),3);
+for i = 1:length(varies)
+    vary{i,1} = varies(i).conxn;
+    vary{i,2} = varies(i).param;
+    vary{i,3} = varies(i).range;
+end
+
 %% simulate
 tic;
 data = dsSimulate(s,'time_limits',[dt time_end], 'solver',solverType, 'dt',dt,...
@@ -145,11 +150,11 @@ for iData = 1:length(data)
 end
 
 %%
-nv2 = length(v2array);
-for vv = 1:nv2 %2nd varied variable
-    subData = data(vv:nv2:length(data));
+jump = length(find([data.IC_IC_trial]==1));
+for vv = 1:jump %2nd varied variable
+    subData = data(vv:jump:length(data));
     % spks to spiketimes in a cell array of 10x2
-    for ii = 1:20
+    for ii = 1:length(varies(1).range)
         CspkTimes{ii} = find(subData(ii).C_V_spikes);
     end
     CspkTimes = reshape(CspkTimes,10,[]);
@@ -204,11 +209,16 @@ for vv = 1:nv2 %2nd varied variable
         line([0,time_end],[10.5,10.5],'color',[0.3 0.3 0.3])
         ylabel('C spikes')
 
+        % figure annotations
         FR_C = mean(sum(Cspks))/time_end*1000;
-        annotation('textbox',[.55 .8 .2 .1],...
-                   'string',{['FR_C = ' num2str(FR_C)],...
-                             ['Disc = ' num2str(mean(max(performance)))],...
-                             ['S->R g_{syn} = ' num2str(v2array(vv))]},...
+        paramstr = {data(1).varied{2:end}};
+        annotstr{vv,1} = ['FR_C = ' num2str(FR_C)];
+        annotstr{vv,2} = ['Disc = ' num2str(mean(max(performance)))];
+        for aa = 1:length(varies)-1
+            annotstr{vv,aa+2} = sprintf('%s = %.3f',paramstr{aa},eval(['data(' num2str(vv) ').' paramstr{aa}]));
+        end
+        annotation('textbox',[.55 .85 .2 .1],...
+                   'string',annotstr,...
                    'FitBoxToText','on',...
                    'LineStyle','none')
 
@@ -233,7 +243,7 @@ function calcPCandPlot(raster,time_end,calcPC)
     end
     plotSpikeRasterFs(flipud(raster), 'PlotType','vertline');
     fr = mean(sum(raster,2))/time_end*1000;
-    title({['FR = ' num2str(fr)],PCstr});
+    title({PCstr,['FR = ' num2str(fr)]});
     xlim([0 time_end])
     line([0,time_end],[10.5,10.5],'color',[0.3 0.3 0.3])
 end

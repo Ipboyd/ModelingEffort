@@ -1,4 +1,5 @@
-%% Tester Script that calls mouse_network function
+%% Main script for calling mouse data simulation network
+% 2019-08-14 plotting now handles multiple varied parameters
 clearvars;
 close all;
 
@@ -8,29 +9,42 @@ addpath('eval_scripts')
 addpath('genlib')
 addpath(genpath('../dynasim'))
 
-% to do: re-organize loop to handle outputs form multiple V2s
-
-
-%% load IC spikes, convert cell array into binary array
-y=1;
-x=1;
 ICdir = 'ICSimStim\bird\FRcontrol\173217_seed142307_s7';
-ICdirPath = [ICdir filesep];
 % ICdirPath = 'Z:\eng_research_hrc_binauralhearinglab\Model-Junzi_files_backup-remove_when_copied\V21\STRFs\163857\'
+ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
 
+%% varied parameters
+varies(1).conxn = '(IC->IC)';
+varies(1).param = 'trial';
+varies(1).range = 1:20;
+
+varies(end+1).conxn = '(S->R)';
+varies(end).param = 'gSYN';
+varies(end).range = 0.15:0.01:0.16; %0.15:0.005:0.19;
+
+varies(end+1).conxn = '(IC->R)';
+varies(end).param = 'gSYN';
+varies(end).range = [0.18,.2]; %0.15:0.005:0.19;
+%% Initialize parameters
 plot_rasters = 1;
 
+y=1;
+x=1;
 nIC = length(ICstruc);
-% performanceMax=zeros(16,10);
-% pMaxm0=zeros(4,10);
-% pMaxs0=zeros(4,10);
-% maxTaus0=zeros(4,10);
-% maxTaum0=zeros(4,10);
-% maxTau=zeros(16,10);
+nvaried = {varies(2:end).range};
+nvaried = prod(cellfun(@length,nvaried));
+performanceMax=zeros(16,nvaried);
+pMaxm0=zeros(4,nvaried);
+pMaxs0=zeros(4,nvaried);
+maxTaus0=zeros(4,nvaried);
+maxTaum0=zeros(4,nvaried);
+maxTau=zeros(16,nvaried);
 diagConfigs = [6,12,18,24];
 datetime=datestr(now,'yyyymmdd-HHMMSS');
-for z = 1:length(ICstruc)
+
+for z = 1%:length(ICstruc)
+    % restructure IC spikes
     load([ICdirPath ICstruc(z).name],'t_spiketimes');
     temp = cellfun(@max,t_spiketimes,'UniformOutput',false);
     tmax = max([temp{:}]);
@@ -57,12 +71,12 @@ for z = 1:length(ICstruc)
     % call network
     time_end = size(spks,3);
     if ICstruc(z).name(2)=='0' %masker only
-        [pMaxs0(z,:), maxTaus0(z,:),v2]= mouse_network(study_dir,time_end,plot_rasters,ICstruc(z).name);
+        [pMaxs0(z,:), maxTaus0(z,:),annotstr]= mouse_network(study_dir,time_end,varies,plot_rasters,ICstruc(z).name);
     elseif ICstruc(z).name(4)=='0' %target only
-        [pMaxm0(y,:), maxTaum0(y,:),v2]= mouse_network(study_dir,time_end,plot_rasters,ICstruc(z).name);
+        [pMaxm0(y,:), maxTaum0(y,:),annotstr]= mouse_network(study_dir,time_end,varies,plot_rasters,ICstruc(z).name);
         y= y+1;
     else
-        [performanceMax(x,:),maxTau(x,:),v2]= mouse_network(study_dir,time_end,plot_rasters,ICstruc(z).name);
+        [performanceMax(x,:),maxTau(x,:),annotstr]= mouse_network(study_dir,time_end,varies,plot_rasters,ICstruc(z).name);
         x=x+1;
     end
 end
@@ -75,7 +89,7 @@ end
 %         end
 
 %% performance grids
-for vv = 1:length(v2)
+for vv = 1:nvaried
     % output 1 by 4 grid of only masker
     figure
     textColorThresh = 70;
@@ -151,7 +165,11 @@ for vv = 1:length(v2)
     
     % save grid
     ICparts = strsplit(ICdir, filesep);
-    suptitle({['data: ' ICparts{end}],['v2 = ' num2str(v2(vv))]})
+    suptitle({['data: ' ICparts{end}]})
+    annotation('textbox',[.75 .6 .2 .1],...
+               'string',annotstr(vv,:),...
+               'FitBoxToText','on',...
+               'LineStyle','none')
 
     Dirparts = strsplit(study_dir, filesep);
     DirPart = fullfile(Dirparts{1:end-1});
