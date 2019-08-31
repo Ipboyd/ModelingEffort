@@ -78,22 +78,24 @@ spkrate=zeros(1,4);disc=zeros(1,4);
 %% 
 for songn=1:2
     %convert sound pressure waveform to spectrogram representation
+    songs(:,songn)=stimuli{songn}(1:n_length);
+    [song_spec,~,~]=STRFspectrogram(songs(:,songn),fs);
+    
+    %% plot mixture process (of song1) for visualization
     stim_spec=zeros(4,length(t),length(f));
     if maskerloc
         stim_spec(maskerloc,:,:)=masker_spec;
     end
-    songs(:,songn)=stimuli{songn}(1:n_length);
-    [song_spec,~,~]=STRFspectrogram(songs(:,songn),fs);
+   
     if songloc
         % when masker and song are colocated
         if maskerloc==songloc
-            stim_spec(songloc,:,:)=(masker_spec + song_spec);
+            stim_spec(songloc,:,:)=(masker_spec + song_spec)/2;
         else
             stim_spec(songloc,:,:)=song_spec;
         end
     end
     stim_spec = stim_spec*stimGain;
-    %% plot mixture process (of song1) for visualization
     if songn==1
 
         % plot Gaussian curves
@@ -119,7 +121,7 @@ for songn=1:2
         title('STRF')
         
         % plot spectrograms for song1- bottom row of graphs
-        for i=1:4
+        for i=1:4 
             %the below if statement creates the space in between the first graph and the other 3
             if i>1
                 subplotloc=i+1;
@@ -138,29 +140,24 @@ for songn=1:2
     % sum spectrograms
     mixedspec=zeros(size(stim_spec));
     weight=zeros(4,4);
-    for i=1:4  % summing of each channel
+    for i=1:4  % summing of each channel, i.e. neuron type 1-4
         %% weight at each stimulus location
-        for j=1:4 
-            weightindex=find(x==azimuth(j));
-            weight(i,j)=tuningcurve(i,weightindex);
-            mixedspec(i,:,:)=weight(i,j)*stim_spec(j,:,:)+mixedspec(i,:,:);
+        if songloc
+            weight(i,songloc) = tuningcurve(i,x==azimuth(songloc));
+            mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,songloc)*song_spec;
         end
-        % normalize according to tuning curve weight
-        stimlocs = unique([songloc,maskerloc]);
-        mixedspec = mixedspec/sum(weight(i,stimlocs(stimlocs>0)));
+        if maskerloc
+            weight(i,maskerloc) = tuningcurve(i,x==azimuth(maskerloc));
+            mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,maskerloc)*masker_spec;
+        end
+        mixedspec(i,:,:) = mixedspec(i,:,:)./2;
+        
         if i>1
             subplotloc=i+1;
         else
             subplotloc=i;
         end
-       
         
-%         sat_old=max([max(max(stim_spec(1,:,:))) max(max(stim_spec(2,:,:))) max(max(stim_spec(3,:,:))) max(max(stim_spec(4,:,:)))]);
-% 
-%         normweight=any(max(max(stim_spec(1,:,:))))*weight(i,1)+any(max(max(stim_spec(2,:,:))))*weight(i,2)+any(max(max(stim_spec(3,:,:))))...
-%             *weight(i,3)+any(max(max(stim_spec(4,:,:))))*weight(i,4);
-%         mixedspec(i,:,:)=mixedspec(i,:,:)/normweight;
-
         currspec=squeeze(mixedspec(i,:,:)); % currentspectrograms
         %% plot mixed spectrograms (of song1)- 3rd row of graphs
         if songn==1
