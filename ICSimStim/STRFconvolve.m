@@ -1,10 +1,14 @@
 function [spkcnt,frate,spike_times]=STRFconvolve(strf,stim_spec,mean_rate,trialn,songn)
+% 
+%
 %% Inputs
 % strf
 % stim_spec
 %% Output
 % frate:    firing rate as a function of time
 % spike_times
+% 20190905 removed rand_seed from the input
+
 if nargin==3
     trialn=1;
     songn=[];

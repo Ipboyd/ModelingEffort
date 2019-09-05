@@ -1,4 +1,4 @@
-function t_spiketimes=InputGaussianSTRF(songloc,maskerloc,tuning,saveParam,mean_rate,stimGain)
+function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,mean_rate,stimGain)
 % Inputs
 %   songloc, maskerloc - a vector between 0 and 4
 %   tuning - a structure, with fields
@@ -71,7 +71,7 @@ masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of len
 strf=STRFgen(tuning.H,tuning.G,f,t(2)-t(1));
 
 %% Save the figure and figure variables in the STRF folder
-if saveParam.flag, savedir=[tuning.type '\' saveParam.fileLoc]; mkdir(savedir); end
+if saveParam.flag, savedir=[tuning.type filesep saveParam.fileLoc]; mkdir(savedir); end
 
 t_spiketimes={};
 spkrate=zeros(1,4);disc=zeros(1,4);
