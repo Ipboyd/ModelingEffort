@@ -87,7 +87,7 @@ for songn=1:2
     if songloc
         % when masker and song are colocated
         if maskerloc==songloc
-            stim_spec(songloc,:,:)=(masker_spec + song_spec);
+            stim_spec(songloc,:,:)=(masker_spec + song_spec)/2;
         else
             stim_spec(songloc,:,:)=song_spec;
         end
@@ -145,9 +145,7 @@ for songn=1:2
             weight(i,j)=tuningcurve(i,weightindex);
             mixedspec(i,:,:)=weight(i,j)*stim_spec(j,:,:)+mixedspec(i,:,:);
         end
-        % normalize according to tuning curve weight
-        stimlocs = unique([songloc,maskerloc]);
-        mixedspec = mixedspec/sum(weight(i,stimlocs(stimlocs>0)));
+
         if i>1
             subplotloc=i+1;
         else

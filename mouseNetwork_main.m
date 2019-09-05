@@ -26,7 +26,7 @@ varies(end).range = 0.15:0.01:0.16; %0.15:0.005:0.19;
 varies(end+1).conxn = '(IC->R)';
 varies(end).param = 'gSYN';
 varies(end).range = [0.18,.2]; %0.15:0.005:0.19;
-%% Initialize parameters
+%% Initialize variables
 plot_rasters = 1;
 
 y=1;

@@ -10,9 +10,6 @@ function [performance, tauMax, annotstr] = mouse_network(study_dir,time_end,vari
 % plot_rasters: 1 or 0
 % plot_title: so we know which files the figures correspond to 
 %
-% to do:
-%   plot_rasters cannot handle more than 2 varied parameters...
-%
 % @Kenny F Chou, Boston Univ. 2019-06-20
 % 2019-08-04 - added sharpening neurons
 % 2019-08-14 - plotting now handles multiple varied parameters
@@ -22,7 +19,7 @@ if ~strcmp(varies(1).param,'trial')
     error('first set of varied params should be ''trial''')
 end
 
-    %% solver params
+%% solver params
 solverType = 'euler';
 dt = 1; %ms % the IC input is currently dt=1
 viz_network = 0;

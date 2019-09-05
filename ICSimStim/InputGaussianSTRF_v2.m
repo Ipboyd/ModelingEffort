@@ -95,7 +95,6 @@ for songn=1:2
             stim_spec(songloc,:,:)=song_spec;
         end
     end
-    stim_spec = stim_spec*stimGain;
     if songn==1
 
         % plot Gaussian curves
@@ -150,7 +149,7 @@ for songn=1:2
             weight(i,maskerloc) = tuningcurve(i,x==azimuth(maskerloc));
             mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,maskerloc)*masker_spec;
         end
-        mixedspec(i,:,:) = mixedspec(i,:,:)./2;
+        mixedspec(i,:,:) = mixedspec(i,:,:).*stimGain;
         
         if i>1
             subplotloc=i+1;
