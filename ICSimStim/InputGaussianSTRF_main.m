@@ -23,7 +23,7 @@ paramG.f0=4300;
 
 %% Run simulation script
 mean_rate=.1;
-datetime=['v2' filesep datestr(now,'HHMMSS') '_seed142307_s' num2str(sigma)];
+datetime=['v2' filesep datestr(now,'HHMMSS') '_s' num2str(sigma)];
 saveFlag = 0;
 
 songLocs = 1:4;
@@ -47,12 +47,12 @@ for songloc = songLocs
 end
 
 %% Grids for each neuron
-fileloc = 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30';
-% fileloc = [tuning filesep saveParam.fileLoc];
-allfiles = cellstr(ls([fileloc filesep '*.mat']))
-tgtalone = cellstr(ls([fileloc filesep '*m0.mat']))
-mskalone = cellstr(ls([fileloc filesep 's0*.mat']))
-mixedfiles = setdiff(allfiles,[tgtalone;mskalone])
+% fileloc = 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30';
+fileloc = [tuning filesep saveParam.fileLoc];
+allfiles = dir([fileloc filesep '*.mat'])
+tgtalone = dir([fileloc filesep '*m0.mat'])
+mskalone = dir([fileloc filesep 's0*.mat'])
+mixedfiles = setdiff({allfiles.name},[{tgtalone.name};{mskalone.name}])
 for i = 1:16
     data = load([fileloc filesep mixedfiles{i}]);
     perf(i,:) = data.disc;
@@ -76,5 +76,5 @@ for i = 1:length(neurons)
     xlabel('Song Location')
     ylabel('Masker Location')
     set(gca,'fontsize',12)
-    saveas(gca,[fileloc filesep neurons{i} '.tiff'])
 end
+saveas(gca,[fileloc filesep 'performance_grid.tiff'])
