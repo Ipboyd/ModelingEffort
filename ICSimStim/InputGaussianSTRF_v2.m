@@ -17,7 +17,10 @@ function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,me
 % 2019-08-07 added switch/case for two types of tuning curves
 %            removed 1/2 scaling factor for colocated stimulus spectrograms
 %            cleaned up input params
+% V2:
 % 2019-08-30 moved normalization to after spectrogram/tuning curve weighing
+% 2019-08-31 replaced normalization with the gain parameter
+% 2019-09-05 replaced song-shaped noise with white guassian noise
 
 % Plotting parameters
 colormap = parula;
@@ -62,8 +65,9 @@ load('stimuli.mat','stimuli')
 fs=44100;  % takes song 2
 n_length=length(stimuli{2});%t_end=length(song2/fs);
 songs=zeros(n_length,2);
-masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of length song2
-
+% masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of length song2
+masker = wgn(1,n_length,1);
+masker = masker/rms(masker)*0.01;
 %% masker spectrogram (is fixed)
 [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
