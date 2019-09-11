@@ -13,7 +13,7 @@ ICdir = 'ICSimStim\mouse\v2\145638_s30';
 % ICdirPath = 'Z:\eng_research_hrc_binauralhearinglab\Model-Junzi_files_backup-remove_when_copied\V21\STRFs\163857\'
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
-
+if length(ICstruc)==0, error('empty data directory'); end
 %% varied parameters
 varies(1).conxn = '(IC->IC)';
 varies(1).param = 'trial';
@@ -162,7 +162,7 @@ for vv = 1:nvaried
     set(gca,'fontsize',12)
     %positionVector = [x0+subplotloc*(dx+lx) y0 lx ly];
     %subplot('Position',positionVector)
-    
+
     % save grid
     ICparts = strsplit(ICdir, filesep);
     suptitle({['data: ' ICparts{end}]})
