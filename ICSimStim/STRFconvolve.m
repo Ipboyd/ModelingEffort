@@ -41,7 +41,8 @@ spike_times=cell(trialn,1);
 spkcnt=0;
 
 % use rand seed
-load('rand_seed142307.mat')
+% load('rand_seed142307.mat')
+rng('shuffle')
 
 for i=1:trialn
     if exist('rand_seed','var')
