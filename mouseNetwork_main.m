@@ -9,7 +9,7 @@ addpath('eval_scripts')
 addpath('genlib')
 addpath(genpath('../dynasim'))
 
-ICdir = 'ICSimStim\bird\FRcontrol\173217_seed142307_s7';
+ICdir = 'ICSimStim\mouse\v2\145638_s30';
 % ICdirPath = 'Z:\eng_research_hrc_binauralhearinglab\Model-Junzi_files_backup-remove_when_copied\V21\STRFs\163857\'
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
@@ -21,11 +21,11 @@ varies(1).range = 1:20;
 
 varies(end+1).conxn = '(S->R)';
 varies(end).param = 'gSYN';
-varies(end).range = 0.15:0.01:0.16; %0.15:0.005:0.19;
+varies(end).range = 0.16:0.01:0.2; %0.15:0.005:0.19;
 
 varies(end+1).conxn = '(IC->R)';
 varies(end).param = 'gSYN';
-varies(end).range = [0.18,.2]; %0.15:0.005:0.19;
+varies(end).range = .2; %0.15:0.005:0.19;
 %% Initialize variables
 plot_rasters = 1;
 
@@ -43,7 +43,7 @@ maxTau=zeros(16,nvaried);
 diagConfigs = [6,12,18,24];
 datetime=datestr(now,'yyyymmdd-HHMMSS');
 
-for z = 1%:length(ICstruc)
+for z = 1:length(ICstruc)
     % restructure IC spikes
     load([ICdirPath ICstruc(z).name],'t_spiketimes');
     temp = cellfun(@max,t_spiketimes,'UniformOutput',false);
