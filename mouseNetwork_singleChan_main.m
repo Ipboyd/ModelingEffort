@@ -9,7 +9,7 @@ addpath('eval_scripts')
 addpath('genlib')
 addpath(genpath('../dynasim'))
 
-ICdir = 'ICSimStim\mouse\v2\155210_seed142307_s30';
+ICdir = 'ICSimStim\mouse\v2\145638_s30';
 % ICdirPath = 'Z:\eng_research_hrc_binauralhearinglab\Model-Junzi_files_backup-remove_when_copied\V21\STRFs\163857\'
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
@@ -41,6 +41,8 @@ pMaxs0=zeros(numSpatialChan,4,nvaried);
 diagConfigs = [6,12,18,24];
 datetime=datestr(now,'yyyymmdd-HHMMSS');
 
+data = struct();
+
 for z = 1:length(ICstruc)
     % restructure IC spikes
     load([ICdirPath ICstruc(z).name],'t_spiketimes');
@@ -68,15 +70,8 @@ for z = 1:length(ICstruc)
 
     % call network
     time_end = size(spks,3);
-    if ICstruc(z).name(2)=='0' %masker only
-        [pMaxs0(:,z,:),annotstr]= mouse_network_singleChan(study_dir,time_end,varies,plot_rasters,ICstruc(z).name);
-    elseif ICstruc(z).name(4)=='0' %target only
-        [pMaxm0(:,y,:),annotstr]= mouse_network_singleChan(study_dir,time_end,varies,plot_rasters,ICstruc(z).name);
-        y= y+1;
-    else
-        [performanceMax(:,x,:),annotstr]= mouse_network_singleChan(study_dir,time_end,varies,plot_rasters,ICstruc(z).name);
-        x=x+1;
-    end
+    [data(z).perf, data(z).annot] = mouse_network_singleChan(study_dir,time_end,varies,plot_rasters,ICstruc(z).name);
+    data(z).name = ICstruc(z).name;
 end
 
 %         figure;
@@ -87,8 +82,48 @@ end
 %         end
 
 %% performance grids
+% performance vector has dimensions [numSpatialChan,nvaried]
 neurons = {'left sigmoid','gaussian','u','right sigmoid'};
 
+temp = {data.name};
+targetIdx = find(contains(temp,'m0'));
+maskerIdx = find(contains(temp,'s0'));
+mixedIdx = setdiff(1:length(data),[targetIdx,maskerIdx]);
+[X,Y] = meshgrid(1:4,4:-1:1);
+textColorThresh = 70;
+
+for vv = 1:nvaried
+    for i = 1:length(mixedIdx)
+        perf(i,:) = data(mixedIdx(i)).perf(:,vv);
+    end
+    figure;
+    for nn = 1:numSpatialChan
+        subplot(2,2,nn)
+        neuronPerf = perf(:,nn);
+        str = cellstr(num2str(round(neuronPerf)));
+        neuronPerf = reshape(neuronPerf,4,4);
+        imagesc(flipud(neuronPerf));
+        colormap('parula');
+        xticks([1:4]); xticklabels({'-90','0','45','90'})
+        yticks([1:4]); yticklabels(fliplr({'-90','0','45','90'}))
+        title(neurons(nn))
+        t = text(X(:),Y(:),str,'Fontsize',12,'HorizontalAlignment', 'Center');
+        for i= 1:numel(neuronPerf)
+            if neuronPerf(i)>textColorThresh
+                t(i).Color = 'k';
+            else
+                t(i).Color= 'w';
+            end
+        end
+        caxis([50,100])
+        xlabel('Song Location')
+        ylabel('Masker Location')
+        set(gca,'fontsize',12)
+    end
+end
+            
+        
+%{
 for vv = 1:nvaried
     for nn = 1:numSpatialChan
     % output 1 by 4 grid of only masker
@@ -177,3 +212,4 @@ for vv = 1:nvaried
     saveas(gca,[DirPart filesep 'performance_grid_v ' num2str(vv) '.tiff'])
     end
 end
+%}
