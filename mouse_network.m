@@ -1,4 +1,4 @@
-function [performance, tauMax, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
+function [perf, tauMax, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
 % [performance, tauMax] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
 % study_dir: location of IC spike files + directory for log and data files
 % time_end: length of simulation in ms
@@ -148,63 +148,48 @@ end
 
 %%
 jump = length(find([data.IC_IC_trial]==1));
-for vv = 1:jump %2nd varied variable
+for vv = 1:jump % for each varied parameter
     subData = data(vv:jump:length(data));
-    % spks to spiketimes in a cell array of 10x2
-    for ii = 1:length(varies(1).range)
-        CspkTimes{ii} = find(subData(ii).C_V_spikes);
-    end
-    CspkTimes = reshape(CspkTimes,10,[]);
-    
-    %% performance for the current target-masker config
-    %addpath('C:\Users\Kenny\Dropbox\Sen Lab\MouseSpatialGrid\spatialgrids')
-    tau = linspace(1,30,1000); %same units as spike-timing
-    distMat = calcvr(CspkTimes, tau);
-    [performanceTemp, ~] = calcpc(distMat, 10, 2, 1,[], 'new');
-    performance(vv) = max(performanceTemp);
-    tauMax(vv) = mean(tau(performanceTemp==performance(vv)));
-    
+
     %% visualize spikes
     if plot_rasters
         ICspks = zeros(20,4,time_end);
         Ispks = zeros(20,4,time_end);
         Rspks = zeros(20,4,time_end);
+        Cspks = zeros(20,time_end);
         for i = 1:20
             for j = 1:4
                 ICspks(i,j,:) = subData(i).IC_V_spikes(:,j);
                 Ispks(i,j,:) = subData(i).I_V_spikes(:,j);
                 Rspks(i,j,:) = subData(i).R_V_spikes(:,j);
             end
+            Cspks(i,:) = subData(i).C_V_spikes;
         end
-        Cspks = [subData.C_V_spikes];
-
+        
         % plot
         figure('Name',plot_title,'Position',[50,50,850,690]);
         for i = 1:4 %for each spatially directed neuron
             subplot(4,4,i+12)
-            thisRaster = logical(squeeze(ICspks(:,i,:)));
+            thisRaster = squeeze(ICspks(:,i,:));
             calcPCandPlot(thisRaster,time_end,1);        
             if i==1, ylabel('IC'); end
 
             subplot(4,4,i+8)
-            thisRaster = logical(squeeze(Ispks(:,i,:)));
+            thisRaster = squeeze(Ispks(:,i,:));
             calcPCandPlot(thisRaster,time_end,0);        
             if i==1, ylabel('I'); end
             xticklabels([])
 
             subplot(4,4,i+4)
-            thisRaster = logical(squeeze(Rspks(:,i,:)));
-            calcPCandPlot(thisRaster,time_end,1);        
+            thisRaster = squeeze(Rspks(:,i,:));
+            perf.R(i,vv) = calcPCandPlot(thisRaster,time_end,1);        
             if i==1, ylabel('R'); end
             xticklabels([])
         end
-
         subplot(4,4,2)
-        plotSpikeRasterFs(flipud(logical(Cspks')), 'PlotType','vertline');
-        xticklabels([])
-        xlim([0 time_end])
-        line([0,time_end],[10.5,10.5],'color',[0.3 0.3 0.3])
+        perf.C(vv) = calcPCandPlot(Cspks,time_end,1);  
         ylabel('C spikes')
+        xticklabels([])
 
         % figure annotations
         FR_C = mean(sum(Cspks))/time_end*1000;
@@ -226,19 +211,23 @@ for vv = 1:jump %2nd varied variable
 end
 end
 
-function calcPCandPlot(raster,time_end,calcPC)
+function pc = calcPCandPlot(raster,time_end,calcPC)
     PCstr = '';
     if calcPC
+        % spks to spiketimes in a cell array of 10x2
         tau = linspace(1,30,100);
         spkTime = cell(20,1);
         for ii = 1:20, spkTime{ii} = find(raster(ii,:)); end
         spkTime = reshape(spkTime,10,2);
+        % calculate distance matrix & performance
         distMat = calcvr(spkTime, tau);
         [performance, ~] = calcpc(distMat, 10, 2, 1,[], 'new');
         pc = mean(max(performance));
         PCstr = ['PC = ' num2str(pc)];
+        tauMax = mean(tau(max(performance)==performance));
     end
-    plotSpikeRasterFs(flipud(raster), 'PlotType','vertline');
+    % plot
+    plotSpikeRasterFs(flipud(logical(raster)), 'PlotType','vertline');
     fr = mean(sum(raster,2))/time_end*1000;
     title({PCstr,['FR = ' num2str(fr)]});
     xlim([0 time_end])
