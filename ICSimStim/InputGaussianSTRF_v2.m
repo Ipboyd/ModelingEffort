@@ -21,6 +21,8 @@ function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,me
 % 2019-08-30 moved normalization to after spectrogram/tuning curve weighing
 % 2019-08-31 replaced normalization with the gain parameter
 % 2019-09-05 replaced song-shaped noise with white guassian noise
+% 2019-09-10 recreate wgn for every trial & cleaned up code
+
 
 % Plotting parameters
 colormap = parula;
@@ -40,7 +42,10 @@ annotation('textbox',[.375 .33 .1 .1],...
     'FitBoxToText','on',...
     'LineStyle','none')
 
-% Define spatial tuning curves
+% other parameters
+if saveParam.flag, savedir=[tuning.type filesep saveParam.fileLoc]; mkdir(savedir); end
+
+% Define spatial tuning curves & plot
 sigma = tuning.sigma;
 switch tuning.type
     case 'bird'
@@ -59,8 +64,14 @@ switch tuning.type
         tuningcurve(4,:)= sigmf(x,[0.016 -22.5])-0.05; %sigmodial
 end
 
+for i=1:4
+    plot(x,tuningcurve(i,:),'linewidth',2.5,'color',color1(i,:))
+end
+xlim([min(x) max(x)]);ylim([0 1.05])
+set(gca,'xtick',[-90 0 45 90],'XTickLabel',{'-90 deg', '0 deg', '45 deg', '90 deg'},'YColor','w')
+set(gca,'ytick',[0 0.50 1.0],'YTickLabel',{'0', '0.50', '1.0'},'YColor','b')
 
-%% Load songs
+% Load stimuli
 load('stimuli.mat','stimuli')
 fs=44100;  % takes song 2
 n_length=length(stimuli{2});%t_end=length(song2/fs);
@@ -68,18 +79,26 @@ songs=zeros(n_length,2);
 % masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of length song2
 masker = wgn(1,n_length,1);
 masker = masker/rms(masker)*0.01;
-%% masker spectrogram (is fixed)
 [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
-%% Make STRF
+% Make STRF & plot
 strf=STRFgen(tuning.H,tuning.G,f,t(2)-t(1));
 
-%% Save the figure and figure variables in the STRF folder
-if saveParam.flag, savedir=[tuning.type filesep saveParam.fileLoc]; mkdir(savedir); end
+positionVector = [x0 y0+2*(dy+ly) lx/2 ly];
+subplot('Position',positionVector)
+set(gca,'ytick',[4000 8000],'yTickLabel',{'4','8'})
+imagesc(strf.t, strf.f, strf.w1); axis tight;%colorbar
+axis xy;
+v_axis = axis;
+v_axis(1) = min(strf.t); v_axis(2) = max(strf.t);
+v_axis(3) = min(strf.f); v_axis(4) = max(strf.f);
+axis(v_axis);
+xlabel('t (sec)')
+title('STRF')
 
+%% 
 t_spiketimes={};
 spkrate=zeros(1,4);disc=zeros(1,4);
-%% 
 for songn=1:2
     %convert sound pressure waveform to spectrogram representation
     songs(:,songn)=stimuli{songn}(1:n_length);
@@ -100,29 +119,6 @@ for songn=1:2
         end
     end
     if songn==1
-
-        % plot Gaussian curves
-       
-        for i=1:4
-            plot(x,tuningcurve(i,:),'linewidth',2.5,'color',color1(i,:))
-        end
-        xlim([min(x) max(x)]);ylim([0 1.05])
-        set(gca,'xtick',[-90 0 45 90],'XTickLabel',{'-90 deg', '0 deg', '45 deg', '90 deg'},'YColor','w')
-        set(gca,'ytick',[0 0.50 1.0],'YTickLabel',{'0', '0.50', '1.0'},'YColor','b')
-       
-        % plot STRF
-        positionVector = [x0 y0+2*(dy+ly) lx/2 ly];
-        subplot('Position',positionVector)
-        set(gca,'ytick',[4000 8000],'yTickLabel',{'4','8'})
-        imagesc(strf.t, strf.f, strf.w1); axis tight;%colorbar
-        axis xy;
-        v_axis = axis;
-        v_axis(1) = min(strf.t); v_axis(2) = max(strf.t);
-        v_axis(3) = min(strf.f); v_axis(4) = max(strf.f);
-        axis(v_axis);
-        xlabel('t (sec)')
-        title('STRF')
-        
         % plot spectrograms for song1- bottom row of graphs
         for i=1:4 
             %the below if statement creates the space in between the first graph and the other 3
@@ -139,41 +135,51 @@ for songn=1:2
             set(gca,'YDir','normal','xtick',[0 1],'ytick',[])
         end
     end
+    
+        
     %% mix spectrograms using Gaussian weights
-    % sum spectrograms
     mixedspec=zeros(size(stim_spec));
     weight=zeros(4,4);
-    for i=1:4  % summing of each channel, i.e. neuron type 1-4
-        %% weight at each stimulus location
-        if songloc
-            weight(i,songloc) = tuningcurve(i,x==azimuth(songloc));
-            mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,songloc)*song_spec;
+    for i=1:4  % summing of each channel, i.e. neuron type 1-4   
+        for trial = 1:10         % for each trial, define a new random WGN masker
+            masker = wgn(1,n_length,1);
+            masker = masker/rms(masker)*0.01;
+            [masker_spec,t,f]=STRFspectrogram(masker,fs);
+
+            %% weight at each stimulus location
+            if songloc
+                weight(i,songloc) = tuningcurve(i,x==azimuth(songloc));
+                mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,songloc)*song_spec;
+            end
+            if maskerloc
+                weight(i,maskerloc) = tuningcurve(i,x==azimuth(maskerloc));
+                mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,maskerloc)*masker_spec;
+            end
+            mixedspec(i,:,:) = mixedspec(i,:,:).*stimGain;
+
+            if i>1
+                subplotloc=i+1;
+            else
+                subplotloc=i;
+            end
+
+            currspec=squeeze(mixedspec(i,:,:)); % currentspectrograms
+
+            %% plot mixed spectrograms (of song1)- 3rd row of graphs
+            if songn==1 && trial==1
+                positionVector = [x0+subplotloc*(dx+lx) y0+2*(dy+ly) lx ly];
+                subplot('Position',positionVector)
+                imagesc(t,f,currspec',[0 80]);colormap('parula');%colorbar
+                xlim([0 max(t)])
+                set(gca,'YDir','normal','xtick',[0 1],'ytick',[])
+            end
+
+            %% convolve STRF with spectrogram
+            [spkcnt,rate,tempspk]=STRFconvolve(strf,currspec,mean_rate,1,songn);
+            spkrate(i)=spkcnt/max(t);
+            t_spiketimes{trial,i+4*(songn-1)} = tempspk; %sec 
         end
-        if maskerloc
-            weight(i,maskerloc) = tuningcurve(i,x==azimuth(maskerloc));
-            mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,maskerloc)*masker_spec;
-        end
-        mixedspec(i,:,:) = mixedspec(i,:,:).*stimGain;
-        
-        if i>1
-            subplotloc=i+1;
-        else
-            subplotloc=i;
-        end
-        
-        currspec=squeeze(mixedspec(i,:,:)); % currentspectrograms
-        %% plot mixed spectrograms (of song1)- 3rd row of graphs
-        if songn==1
-            positionVector = [x0+subplotloc*(dx+lx) y0+2*(dy+ly) lx ly];
-            subplot('Position',positionVector)
-            imagesc(t,f,currspec',[0 80]);colormap('parula');%colorbar
-            xlim([0 max(t)])
-            set(gca,'YDir','normal','xtick',[0 1],'ytick',[])
-        end
-        %% convolve STRF with spectrogram
-        [spkcnt,rate,tempspk]=STRFconvolve(strf,currspec,mean_rate,10,songn);
-        spkrate(i)=spkcnt/max(t);
-        t_spiketimes=[t_spiketimes tempspk]; %sec
+
         %% plot FR (of song1)
         %2nd row of plots- spectograph
         if songn==1
@@ -181,12 +187,12 @@ for songn=1:2
             subplot('Position',positionVector)
             plot(t,rate);xlim([0 max(t)])
         end
-        %% raster plot- first row of graphs
+        % raster plot- first row of graphs
         positionVector = [x0+subplotloc*(dx+lx) y0+4*(dy+ly) lx ly];
         subplot('Position',positionVector);hold on
         %The below for loop codes for the first row of plots with the rasters.
-        for ir=1:10 
-            raster(tempspk{ir,1},ir+10*(songn-1)) %need to change tempspk to change the raster
+        for trial=1:10 
+            raster(t_spiketimes{trial,i+4*(songn-1)},trial+10*(songn-1)) %need to change tempspk to change the raster
         end
         plot([0 2000],[10 10],'k')
         ylim([0 20])
@@ -197,7 +203,9 @@ for songn=1:2
             [disc(i), E, correctArray] = calcpc(distMat, 10, 2, 1,[], 'new');
             title({['disc = ', num2str(disc(i))],['FR = ',num2str(spkrate(i))]})
         end
-    end   
+        
+        fclose all;
+    end
 
     if saveParam.flag
         saveas(gca,[savedir '/s' num2str(songloc) 'm' num2str(maskerloc) '.tiff'])
@@ -207,3 +215,4 @@ for songn=1:2
             'sigma','paramG','paramH','mean_rate','disc','spkrate')
     end
 end
+
