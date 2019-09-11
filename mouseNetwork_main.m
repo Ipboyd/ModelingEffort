@@ -9,11 +9,11 @@ addpath('eval_scripts')
 addpath('genlib')
 addpath(genpath('../dynasim'))
 
-ICdir = 'ICSimStim\bird\FRcontrol\173217_seed142307_s7';
+ICdir = 'ICSimStim\bird\151137';
 % ICdirPath = 'Z:\eng_research_hrc_binauralhearinglab\Model-Junzi_files_backup-remove_when_copied\V21\STRFs\163857\'
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
-
+if length(ICstruc)==0, error('empty data directory'); end
 %% varied parameters
 varies(1).conxn = '(IC->IC)';
 varies(1).param = 'trial';
