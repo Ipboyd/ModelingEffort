@@ -112,7 +112,7 @@ for vv = 1:nvaried
     
     % C neuron
     subplot('Position',[0.7 0.15 0.2 0.4])
-    plotPerfGrid(perf.C,[],textColorThresh);
+    plotPerfGrid(perf.C',[],textColorThresh);
     
     % C neuron; target or masker only cases
     for i = 1:length(targetIdx)
