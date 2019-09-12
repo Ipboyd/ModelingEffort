@@ -1,4 +1,4 @@
-function [perf, tauMax, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
+function [perf, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
 % [performance, tauMax] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
 % study_dir: location of IC spike files + directory for log and data files
 % time_end: length of simulation in ms
@@ -152,66 +152,65 @@ for vv = 1:jump % for each varied parameter
     subData = data(vv:jump:length(data));
 
     %% visualize spikes
-    if plot_rasters
-        ICspks = zeros(20,4,time_end);
-        Ispks = zeros(20,4,time_end);
-        Rspks = zeros(20,4,time_end);
-        Cspks = zeros(20,time_end);
-        for i = 1:20
-            for j = 1:4
-                ICspks(i,j,:) = subData(i).IC_V_spikes(:,j);
-                Ispks(i,j,:) = subData(i).I_V_spikes(:,j);
-                Rspks(i,j,:) = subData(i).R_V_spikes(:,j);
-            end
-            Cspks(i,:) = subData(i).C_V_spikes;
+    ICspks = zeros(20,4,time_end);
+    Ispks = zeros(20,4,time_end);
+    Rspks = zeros(20,4,time_end);
+    Cspks = zeros(20,time_end);
+    for i = 1:20
+        for j = 1:4
+            ICspks(i,j,:) = subData(i).IC_V_spikes(:,j);
+            Ispks(i,j,:) = subData(i).I_V_spikes(:,j);
+            Rspks(i,j,:) = subData(i).R_V_spikes(:,j);
         end
-        
-        % plot
-        figure('Name',plot_title,'Position',[50,50,850,690]);
-        for i = 1:4 %for each spatially directed neuron
-            subplot(4,4,i+12)
-            thisRaster = squeeze(ICspks(:,i,:));
-            calcPCandPlot(thisRaster,time_end,1);        
-            if i==1, ylabel('IC'); end
+        Cspks(i,:) = subData(i).C_V_spikes;
+    end
 
-            subplot(4,4,i+8)
-            thisRaster = squeeze(Ispks(:,i,:));
-            calcPCandPlot(thisRaster,time_end,0);        
-            if i==1, ylabel('I'); end
-            xticklabels([])
+    % plot
+    figure('Name',plot_title,'Position',[50,50,850,690]);
+    for i = 1:4 %for each spatially directed neuron
+        subplot(4,4,i+12)
+        thisRaster = squeeze(ICspks(:,i,:));
+        calcPCandPlot(thisRaster,time_end,1,plot_rasters);        
+        if i==1, ylabel('IC'); end
 
-            subplot(4,4,i+4)
-            thisRaster = squeeze(Rspks(:,i,:));
-            perf.R(i,vv) = calcPCandPlot(thisRaster,time_end,1);        
-            if i==1, ylabel('R'); end
-            xticklabels([])
-        end
-        subplot(4,4,2)
-        perf.C(vv) = calcPCandPlot(Cspks,time_end,1);  
-        ylabel('C spikes')
+        subplot(4,4,i+8)
+        thisRaster = squeeze(Ispks(:,i,:));
+        calcPCandPlot(thisRaster,time_end,0,plot_rasters);        
+        if i==1, ylabel('I'); end
         xticklabels([])
 
-        % figure annotations
-        FR_C = mean(sum(Cspks))/time_end*1000;
-        paramstr = {data(1).varied{2:end}};
-        annotstr{vv,1} = ['FR_C = ' num2str(FR_C)];
-        annotstr{vv,2} = ['Disc = ' num2str(mean(max(performance)))];
-        for aa = 1:length(varies)-1
-            annotstr{vv,aa+2} = sprintf('%s = %.3f',paramstr{aa},eval(['data(' num2str(vv) ').' paramstr{aa}]));
-        end
-        annotation('textbox',[.55 .85 .2 .1],...
-                   'string',annotstr(vv,:),...
-                   'FitBoxToText','on',...
-                   'LineStyle','none')
-
-        parts = strsplit(study_dir, filesep);
-        DirPart = fullfile(parts{1:end-1});
-        saveas(gca,[DirPart filesep parts{end} '_v2_' num2str(vv) '.tiff'])
+        subplot(4,4,i+4)
+        thisRaster = squeeze(Rspks(:,i,:));
+        perf.R(i,vv) = calcPCandPlot(thisRaster,time_end,1,plot_rasters);
+        if i==1, ylabel('R'); end
+        xticklabels([])
     end
+    subplot(4,4,2)
+    perf.C(vv) = calcPCandPlot(Cspks,time_end,1,plot_rasters);  
+    ylabel('C spikes')
+    xticklabels([])
+
+    % figure annotations
+    FR_C = mean(sum(Cspks))/time_end*1000;
+    paramstr = {data(1).varied{2:end}};
+    annotstr{vv,1} = ['FR_C = ' num2str(FR_C)];
+    annotstr{vv,2} = ['Disc = ' num2str(mean(max(perf.C(vv))))];
+    for aa = 1:length(varies)-1
+        annotstr{vv,aa+2} = sprintf('%s = %.3f',paramstr{aa},eval(['data(' num2str(vv) ').' paramstr{aa}]));
+    end
+    annotation('textbox',[.55 .85 .2 .1],...
+               'string',annotstr(vv,:),...
+               'FitBoxToText','on',...
+               'LineStyle','none')
+
+    parts = strsplit(study_dir, filesep);
+    DirPart = fullfile(parts{1:end-1});
+    saveas(gca,[DirPart filesep parts{end} '_v2_' num2str(vv) '.tiff'])
 end
+close all
 end
 
-function pc = calcPCandPlot(raster,time_end,calcPC)
+function pc = calcPCandPlot(raster,time_end,calcPC,plot_rasters)
     PCstr = '';
     if calcPC
         % spks to spiketimes in a cell array of 10x2
@@ -226,10 +225,13 @@ function pc = calcPCandPlot(raster,time_end,calcPC)
         PCstr = ['PC = ' num2str(pc)];
         tauMax = mean(tau(max(performance)==performance));
     end
-    % plot
+    
+    %plot
+    if plot_rasters
     plotSpikeRasterFs(flipud(logical(raster)), 'PlotType','vertline');
     fr = mean(sum(raster,2))/time_end*1000;
     title({PCstr,['FR = ' num2str(fr)]});
     xlim([0 time_end])
     line([0,time_end],[10.5,10.5],'color',[0.3 0.3 0.3])
+    end
 end
