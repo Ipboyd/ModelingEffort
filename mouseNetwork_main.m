@@ -32,17 +32,8 @@ varies(end).range = .2; %0.15:0.005:0.19;
 %% Initialize variables
 plot_rasters = 1;
 
-y=1;
-x=1;
-nIC = length(ICstruc);
 nvaried = {varies(2:end).range};
 nvaried = prod(cellfun(@length,nvaried));
-performanceMax=zeros(16,nvaried);
-pMaxm0=zeros(4,nvaried);
-pMaxs0=zeros(4,nvaried);
-maxTaus0=zeros(4,nvaried);
-maxTaum0=zeros(4,nvaried);
-maxTau=zeros(16,nvaried);
 diagConfigs = [6,12,18,24];
 datetime=datestr(now,'yyyymmdd-HHMMSS');
 

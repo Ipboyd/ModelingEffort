@@ -13,6 +13,9 @@ function [perf, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters
 % @Kenny F Chou, Boston Univ. 2019-06-20
 % 2019-08-04 - added sharpening neurons
 % 2019-08-14 - plotting now handles multiple varied parameters
+% 2019-09-11 - removed redundant code. Return R performance in addition to
+%              C performance
+% to do - fix plot_rasters option
 
 %% Input check
 if ~strcmp(varies(1).param,'trial')

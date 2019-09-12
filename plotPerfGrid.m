@@ -1,4 +1,6 @@
 function plotPerfGrid(neuronPerf,tit,textColorThresh)
+% plots performance grids; can handle a data array of 16 or 8 elements
+% works with mouseNetwork_main
 
 if numel(neuronPerf) == 16
     % 4x4 grid
