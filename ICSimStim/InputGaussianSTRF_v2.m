@@ -1,4 +1,4 @@
-function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,mean_rate,stimGain)
+function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maskerlvl)
 % Inputs
 %   songloc, maskerloc - a vector between 0 and 4
 %   tuning - a structure, with fields
@@ -11,6 +11,7 @@ function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,me
 %       .fileLoc - save file name
 %   mean_rate - ?
 %   stimGain - input stimulus gain
+%   maskerlvl - 
 %
 %
 % modified by KFC
@@ -43,7 +44,7 @@ annotation('textbox',[.375 .33 .1 .1],...
     'LineStyle','none')
 
 % other parameters
-if saveParam.flag, savedir=[tuning.type filesep saveParam.fileLoc]; mkdir(savedir); end
+if saveParam.flag, savedir=[saveParam.fileLoc]; mkdir(savedir); end
 
 % Define spatial tuning curves & plot
 sigma = tuning.sigma;
@@ -78,7 +79,7 @@ n_length=length(stimuli{2});%t_end=length(song2/fs);
 songs=zeros(n_length,2);
 % masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of length song2
 masker = wgn(1,n_length,1);
-masker = masker/rms(masker)*0.01;
+masker = masker/rms(masker)*maskerlvl;
 [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
 % Make STRF & plot
@@ -143,7 +144,7 @@ for songn=1:2
     for i=1:4  % summing of each channel, i.e. neuron type 1-4   
         for trial = 1:10         % for each trial, define a new random WGN masker
             masker = wgn(1,n_length,1);
-            masker = masker/rms(masker)*0.01;
+            masker = masker/rms(masker)*maskerlvl;
             [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
             %% weight at each stimulus location

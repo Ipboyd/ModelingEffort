@@ -5,11 +5,12 @@
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
 addpath('../genlib')
-
+dataloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
 % Spatial tuning curve parameters
 sigma = 30; %60 for bird but 38 for mouse
 tuning = 'mouse';
 stimGain = 0.5;
+maskerlvl = 0.01; %default is 0.01
 
 % STRF parameters
 paramH.t0=7/1000; % s
@@ -22,15 +23,16 @@ paramG.BSM=5.00E-05; % 1/Hz=s
 paramG.f0=4300;
 
 %% Run simulation script
+for maskerlvl = 0.001%:0.002:0.03
 mean_rate=.1;
-datetime=['v2' filesep datestr(now,'HHMMSS') '_s' num2str(sigma)];
+saveName=['s' num2str(sigma) '_sg' num2str(stimGain) '_ml' num2str(maskerlvl) '_' datestr(now,'YYYYmmdd-HHMMSS')];
 saveFlag = 0;
 
 songLocs = 1:4;
 maskerLocs = 1:4;
 
 saveParam.flag = 1;
-saveParam.fileLoc = datetime;
+saveParam.fileLoc = [dataloc filesep tuning filesep saveName];
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
 tuningParam.H = paramH;
@@ -39,10 +41,10 @@ tuningParam.G = paramG;
 for songloc = songLocs
     close all
     maskerloc=0;
-    t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain);
-    t_spiketimes=InputGaussianSTRF_v2(maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain);
+    t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
+    t_spiketimes=InputGaussianSTRF_v2(maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
     for maskerloc = maskerLocs
-        t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain);
+        t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
     end
 end
 
@@ -78,3 +80,4 @@ for i = 1:length(neurons)
     set(gca,'fontsize',12)
 end
 saveas(gca,[fileloc filesep 'performance_grid.tiff'])
+end
