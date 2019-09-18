@@ -54,17 +54,17 @@ s.populations(1).parameters = {'Itonic',0,'noise',0}; % 10-20 Hz spiking at rest
 s.populations(end+1).name = 'I';
 s.populations(end).equations = 'chouLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'Itonic',0, 'noise',noise}; % 10-20 Hz spiking at rest
+s.populations(end).parameters = {'Itonic',0, 'noise',0}; % 10-20 Hz spiking at rest
 
 s.populations(end+1).name = 'S'; % S for sharpening
 s.populations(end).equations = 'chouLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'Itonic',0, 'noise',noise}; % 10-20 Hz spiking at rest
+s.populations(end).parameters = {'Itonic',0, 'noise',0}; % 10-20 Hz spiking at rest
 
 s.populations(end+1).name='R';
 s.populations(end).equations = 'chouLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'Itonic',0,'noise',noise};
+s.populations(end).parameters = {'Itonic',0,'noise',0};
 
 s.populations(end+1).name='C';
 s.populations(end).equations = 'chouLIF';
