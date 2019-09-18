@@ -50,7 +50,7 @@ end
 
 %% Grids for each neuron
 % fileloc = 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30';
-fileloc = [tuning filesep saveParam.fileLoc];
+fileloc = [saveParam.fileLoc];
 allfiles = dir([fileloc filesep '*.mat'])
 tgtalone = dir([fileloc filesep '*m0.mat'])
 mskalone = dir([fileloc filesep 's0*.mat'])
