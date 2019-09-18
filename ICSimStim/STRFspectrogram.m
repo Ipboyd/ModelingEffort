@@ -21,7 +21,7 @@ preprocStimParams.tfParams = tfParams;
 % make a temporary directory to store preprocessed sound files (should be
 %  specific to parameters for preprocSound)
 % tempPreprocDir = tempname();
-tempPreprocDir='/temp';
+tempPreprocDir= [pwd filesep 'temp'];
 mkdir(tempPreprocDir);
 preprocStimParams.outputDir = tempPreprocDir;
 %% use preprocSound to generate spectrogram
