@@ -126,20 +126,20 @@ MarkerFormat.LineStyle = 'none';
 
 p = inputParser;
 p.addRequired('spikes',@(x) islogical(x) || iscell(x));
-p.addParamValue('FigHandle',gcf,@isinteger);
-p.addParamValue('AxHandle',gca,@isscalar);
-p.addParamValue('PlotType','horzLine',@ischar);
-p.addParamValue('LineFormat',LineFormat,@isstruct)
-p.addParamValue('MarkerFormat',MarkerFormat,@isstruct);
-p.addParamValue('AutoLabel',0, @islogical);
-p.addParamValue('XLimForCell',[NaN NaN],@(x) isnumeric(x) && isvector(x));
-% p.addParamValue('TimePerBin',0.001,@(x) isnumeric(x) && isscalar(x));
-p.addParamValue('SpikeDuration',1,@(x) isnumeric(x) && isscalar(x));
-p.addParamValue('RelSpikeStartTime',0,@(x) isnumeric(x) && isscalar(x));
-p.addParamValue('RasterWindowOffset',NaN,@(x) isnumeric(x) && isscalar(x));
-p.addParamValue('VertSpikePosition',0,@(x) isnumeric(x) && isscalar(x));
-p.addParamValue('VertSpikeHeight',1,@(x) isnumeric(x) && isscalar(x));
-p.addParamValue('Fs',1000, @(x) isnumeric(x) && isscalar(x));
+p.addParameter('FigHandle',gcf,@isinteger);
+p.addParameter('AxHandle',gca,@isscalar);
+p.addParameter('PlotType','horzLine',@ischar);
+p.addParameter('LineFormat',LineFormat,@isstruct)
+p.addParameter('MarkerFormat',MarkerFormat,@isstruct);
+p.addParameter('AutoLabel',0, @islogical);
+p.addParameter('XLimForCell',[NaN NaN],@(x) isnumeric(x) && isvector(x));
+% p.addParameter('TimePerBin',0.001,@(x) isnumeric(x) && isscalar(x));
+p.addParameter('SpikeDuration',1,@(x) isnumeric(x) && isscalar(x));
+p.addParameter('RelSpikeStartTime',0,@(x) isnumeric(x) && isscalar(x));
+p.addParameter('RasterWindowOffset',NaN,@(x) isnumeric(x) && isscalar(x));
+p.addParameter('VertSpikePosition',0,@(x) isnumeric(x) && isscalar(x));
+p.addParameter('VertSpikeHeight',1,@(x) isnumeric(x) && isscalar(x));
+p.addParameter('Fs',1000, @(x) isnumeric(x) && isscalar(x));
 p.parse(spikes,varargin{:});
 
 spikes = p.Results.spikes;
@@ -167,8 +167,8 @@ elseif ~isnan(rasterWindowOffset) && relSpikeStartTime~=0
 end
 
 %% Initialize figure and begin plotting logic
-figure(figH);
-axes(axH);
+set(0,'CurrentFigure',figH);
+% axes(axH);
 hold on;
 
 if islogical(spikes)

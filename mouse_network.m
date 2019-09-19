@@ -1,4 +1,4 @@
-function [perf, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
+function [perf, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters)
 % [performance, tauMax] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
 % study_dir: location of IC spike files + directory for log and data files
 % time_end: length of simulation in ms
@@ -169,7 +169,7 @@ for vv = 1:jump % for each varied parameter
     end
 
     % plot
-    figure('Name',plot_title,'Position',[50,50,850,690]);
+    clf;
     for i = 1:4 %for each spatially directed neuron
         subplot(4,4,i+12)
         thisRaster = squeeze(ICspks(:,i,:));
@@ -210,10 +210,9 @@ for vv = 1:jump % for each varied parameter
     DirPart = fullfile(parts{1:end-1});
     saveas(gca,[DirPart filesep parts{end} '_v2_' num2str(vv) '.tiff'])
 end
-close all
 end
 
-function pc = calcPCandPlot(raster,time_end,calcPC,plot_rasters)
+function pc = calcPCandPlot(raster,time_end,calcPC,plot_rasters,h)
     PCstr = '';
     if calcPC
         % spks to spiketimes in a cell array of 10x2

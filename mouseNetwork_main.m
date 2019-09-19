@@ -12,8 +12,8 @@ addpath('eval_scripts')
 addpath('genlib')
 addpath(genpath('../dynasim'))
 
-ICdir = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_sg0.5_ml0.001_20190918-151406';
-% ICdirPath = 'Z:\eng_research_hrc_binauralhearinglab\Model-Junzi_files_backup-remove_when_copied\V21\STRFs\163857\'
+% ICdir = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_sg0.5_ml0.001_20190918-151406';
+ICdir = 'ICSimStim\mouse\v2\145638_s30';
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
 if isempty(ICstruc), error('empty data directory'); end
@@ -22,13 +22,13 @@ varies(1).conxn = '(IC->IC)';
 varies(1).param = 'trial';
 varies(1).range = 1:20;
 
-% varies(end+1).conxn = 'C';
-% varies(end).param = 'noise';
-% varies(end).range = 0.01:0.01:0.02;
+varies(end+1).conxn = 'C';
+varies(end).param = 'noise';
+varies(end).range = 0.03;%:0.01:0.05;
 
-varies(end+1).conxn = '(S->R)';
-varies(end).param = 'gSYN';
-varies(end).range = 0.16:0.01:0.17; %0.15:0.005:0.19;
+% varies(end+1).conxn = '(S->R)';
+% varies(end).param = 'gSYN';
+% varies(end).range = 0.16:0.01:0.17; %0.15:0.005:0.19;
 
 % varies(end+1).conxn = '(IC->R)';
 % varies(end).param = 'gSYN';
@@ -41,6 +41,8 @@ nvaried = prod(cellfun(@length,nvaried));
 diagConfigs = [6,12,18,24];
 datetime=datestr(now,'yyyymmdd-HHMMSS');
 
+h = figure('Position',[50,50,850,690]);
+set(h, 'DefaultFigureVisible', 'off')
 for z = 1:length(ICstruc)
     % restructure IC spikes
     load([ICdirPath ICstruc(z).name],'t_spiketimes');
@@ -67,8 +69,9 @@ for z = 1:length(ICstruc)
     save(fullfile(study_dir, 'solve','IC_spks.mat'),'spks');
 
     % call network
+    h.Name = ICstruc(z).name;
     time_end = size(spks,3);
-    [data(z).perf, data(z).annot] = mouse_network(study_dir,time_end,varies,plot_rasters,ICstruc(z).name);
+    [data(z).perf, data(z).annot] = mouse_network(study_dir,time_end,varies,plot_rasters);
     data(z).name = ICstruc(z).name;
 end
 
