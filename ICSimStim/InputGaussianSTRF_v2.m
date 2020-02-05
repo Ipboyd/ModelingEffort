@@ -81,13 +81,14 @@ set(gca,'ytick',[0 0.50 1.0],'YTickLabel',{'0', '0.50', '1.0'},'YColor','b')
 % songs = {stimuli{1}(1:n_length),stimuli{2}(1:n_length)};
 % masker = wgn(1,n_length,1);
 
-% new stimuli
+% new stimuli, normalize amplitude to 0.01 rms
+rmsNormGain = 7.75;
 [song1,fs1] = audioread('200k_target1.wav');
 [song2,fs2] = audioread('200k_target2.wav');
 [masker,fs_m] = audioread('200k_masker1.wav');
 fs=fs1;  % takes song 2
 n_length=length(song2);%t_end=length(song2/fs);
-songs = {song1, song2};
+songs = {song1/rmsNormGain, song2/rmsNormGain}; 
 
 
 masker = masker/rms(masker)*maskerlvl;
