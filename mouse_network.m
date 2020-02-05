@@ -1,4 +1,4 @@
-function [perf, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters)
+function [perf, annotstr] = mouse_network(study_dir,time_end,varies,netCons,plot_rasters)
 % [performance, tauMax] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
 % study_dir: location of IC spike files + directory for log and data files
 % time_end: length of simulation in ms
@@ -15,6 +15,7 @@ function [perf, annotstr] = mouse_network(study_dir,time_end,varies,plot_rasters
 % 2019-08-14 - plotting now handles multiple varied parameters
 % 2019-09-11 - removed redundant code. Return R performance in addition to
 %              C performance
+% 2020-02-05 - added netCons as parameter
 % to do - fix plot_rasters option
 
 %% Input check
@@ -86,15 +87,10 @@ s.mechanisms(1).equations=synDoubleExp;
 %% connections
 % build I->R netcon matrix
 % netcons are [N_pre,N_post]
-% irNetcon = diag(ones(1,nCells))*0.1;
-irNetcon = zeros(nCells);
-% irNetcon(2,1) = 1;
-% irNetcon(3,1) = 1;
-% irNetcon(4,1) = 1;
-% irNetcon(2,4) = 1;
 
-srNetcon = diag(ones(1,nCells));
-% srNetcon = zeros(nCells);
+if isfield(netCons,'irNetcon'), irNetcon = netCons.irNetcon; else, irNetcon = zeros(nCells); end %no xchan inhibition by default
+if isfield(netCons,'srNetcon'), srNetcon = netCons.srNetcon; else, srNetcon = diag(ones(1,nCells)); end %sharpening by default
+if isfield(netCons,'rcNetcon'), rcNetcon = netCons.srNetcon; else, rcNetcon = 'ones(N_pre,N_post)'; end
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list='IC';
@@ -122,7 +118,7 @@ s.connections(end).parameters={'gSYN',.17, 'tauR',0.4, 'tauD',5, 'netcon',srNetc
 
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',2, 'netcon','ones(N_pre,N_post)'}; 
+s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',2, 'netcon',rcNetcon}; 
 
 if viz_network, vizNetwork; end
 
