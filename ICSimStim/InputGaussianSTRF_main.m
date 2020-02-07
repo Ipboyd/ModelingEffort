@@ -12,7 +12,7 @@ tuning = 'mouse';
 stimGain = 0.5;
 maskerlvl = 0.01; %default is 0.01
 
-% STRF parameters
+% STRF parameters - don't need to change
 paramH.t0=7/1000; % s
 paramH.BW=0.0045; % s temporal bandwith (sigma: exp width)
 paramH.BTM=56;  % Hz  temporal modulation (sine width)
