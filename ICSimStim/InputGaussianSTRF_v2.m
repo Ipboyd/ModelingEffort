@@ -2,7 +2,7 @@ function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,me
 % Inputs
 %   songloc, maskerloc - a vector between 0 and 4
 %   tuning - a structure, with fields
-%       .type - 'bird' for gaussian tuning curves, or 
+%       .type - 'bird' for gaussian tuning curves, or
 %               'mouse' for mouse parameters
 %       .sigma - tuning curve width
 %       .H, .G - STRF parameters
@@ -11,7 +11,7 @@ function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,me
 %       .fileLoc - save file name
 %   mean_rate - ?
 %   stimGain - input stimulus gain
-%   maskerlvl - 
+%   maskerlvl -
 %
 %
 % modified by KFC
@@ -72,13 +72,25 @@ xlim([min(x) max(x)]);ylim([0 1.05])
 set(gca,'xtick',[-90 0 45 90],'XTickLabel',{'-90 deg', '0 deg', '45 deg', '90 deg'},'YColor','w')
 set(gca,'ytick',[0 0.50 1.0],'YTickLabel',{'0', '0.50', '1.0'},'YColor','b')
 
-% Load stimuli
-load('stimuli.mat','stimuli')
-fs=44100;  % takes song 2
-n_length=length(stimuli{2});%t_end=length(song2/fs);
-songs=zeros(n_length,2);
-% masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of length song2
-masker = wgn(1,n_length,1);
+% ---- Load stimuli ----
+% % old stimuli
+% load('stimuli.mat','stimuli')
+% fs = 44100;
+% n_length = length(stimuli{2});
+% % masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of length song2
+% songs = {stimuli{1}(1:n_length),stimuli{2}(1:n_length)};
+% masker = wgn(1,n_length,1);
+
+% new stimuli, normalize amplitude to 0.01 rms
+rmsNormGain = 7.75;
+[song1,fs1] = audioread('200k_target1.wav');
+[song2,fs2] = audioread('200k_target2.wav');
+[masker,fs_m] = audioread('200k_masker1.wav');
+fs=fs1;  % takes song 2
+n_length=length(song2);%t_end=length(song2/fs);
+songs = {song1/rmsNormGain, song2/rmsNormGain}; 
+
+
 masker = masker/rms(masker)*maskerlvl;
 [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
@@ -97,20 +109,20 @@ axis(v_axis);
 xlabel('t (sec)')
 title('STRF')
 
-%% 
+%%
 t_spiketimes={};
 spkrate=zeros(1,4);disc=zeros(1,4);
 for songn=1:2
     %convert sound pressure waveform to spectrogram representation
-    songs(:,songn)=stimuli{songn}(1:n_length);
-    [song_spec,~,~]=STRFspectrogram(songs(:,songn),fs);
-    
+%     songs(:,songn)=songs{songn}(1:n_length);
+    [song_spec,~,~]=STRFspectrogram(songs{songn},fs);
+
     %% plot mixture process (of song1) for visualization
     stim_spec=zeros(4,length(t),length(f));
     if maskerloc
         stim_spec(maskerloc,:,:)=masker_spec;
     end
-   
+
     if songloc
         % when masker and song are colocated
         if maskerloc==songloc
@@ -121,14 +133,14 @@ for songn=1:2
     end
     if songn==1
         % plot spectrograms for song1- bottom row of graphs
-        for i=1:4 
+        for i=1:4
             %the below if statement creates the space in between the first graph and the other 3
             if i>1
                 subplotloc=i+1;
             else
                 subplotloc=i;
             end
-            
+
             positionVector = [x0+subplotloc*(dx+lx) y0 lx ly];
             subplot('Position',positionVector)
             imagesc(t,f,squeeze(stim_spec(i,:,:))',[0 80]);colormap('parula');
@@ -136,27 +148,38 @@ for songn=1:2
             set(gca,'YDir','normal','xtick',[0 1],'ytick',[])
         end
     end
-    
-        
+
+
     %% mix spectrograms using Gaussian weights
     mixedspec=zeros(size(stim_spec));
     weight=zeros(4,4);
-    for i=1:4  % summing of each channel, i.e. neuron type 1-4   
+    for i=1:4  % summing of each channel, i.e. neuron type 1-4
         for trial = 1:10         % for each trial, define a new random WGN masker
-            masker = wgn(1,n_length,1);
+%             masker = wgn(1,n_length,1);
+            [masker,fs_m] = audioread(['200k_masker' num2str(trial) '.wav']);
             masker = masker/rms(masker)*maskerlvl;
             [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
             %% weight at each stimulus location
+            totalWeight = 0;
             if songloc
                 weight(i,songloc) = tuningcurve(i,x==azimuth(songloc));
+                totalWeight = totalWeight + weight(i,songloc);
                 mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,songloc)*song_spec;
             end
             if maskerloc
                 weight(i,maskerloc) = tuningcurve(i,x==azimuth(maskerloc));
+                totalWeight = totalWeight + weight(i,maskerloc);
                 mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,maskerloc)*masker_spec;
             end
-            mixedspec(i,:,:) = mixedspec(i,:,:).*stimGain;
+
+            % scale mixed spectrogram; cap total weight to 1
+            if totalWeight <= .75
+              mixedspec(i,:,:) = mixedspec(i,:,:)*stimGain;
+            else
+              mixedspec(i,:,:) = mixedspec(i,:,:)/totalWeight*stimGain;
+            end
+            %mixedspec(i,:,:) = mixedspec(i,:,:).*stimGain;
 
             if i>1
                 subplotloc=i+1;
@@ -178,7 +201,7 @@ for songn=1:2
             %% convolve STRF with spectrogram
             [spkcnt,rate,tempspk]=STRFconvolve(strf,currspec,mean_rate,1,songn);
             spkrate(i)=spkcnt/max(t);
-            t_spiketimes{trial,i+4*(songn-1)} = tempspk; %sec 
+            t_spiketimes{trial,i+4*(songn-1)} = tempspk; %sec
         end
 
         %% plot FR (of song1)
@@ -192,7 +215,7 @@ for songn=1:2
         positionVector = [x0+subplotloc*(dx+lx) y0+4*(dy+ly) lx ly];
         subplot('Position',positionVector);hold on
         %The below for loop codes for the first row of plots with the rasters.
-        for trial=1:10 
+        for trial=1:10
             raster(t_spiketimes{trial,i+4*(songn-1)},trial+10*(songn-1)) %need to change tempspk to change the raster
         end
         plot([0 2000],[10 10],'k')
@@ -202,9 +225,10 @@ for songn=1:2
         if songn==2
             distMat = calcvr([t_spiketimes(:,i) t_spiketimes(:,i+4)], 10); % using ms as units, same as ts
             [disc(i), E, correctArray] = calcpc(distMat, 10, 2, 1,[], 'new');
-            title({['disc = ', num2str(disc(i))],['FR = ',num2str(spkrate(i))]})
+            firingRate = round(sum(cellfun(@length,t_spiketimes(:,i+4)))/10);
+            title({['disc = ', num2str(disc(i))],['FR = ',num2str(firingRate)]})
         end
-        
+
         fclose all;
     end
 
@@ -216,4 +240,3 @@ for songn=1:2
             'sigma','paramG','paramH','mean_rate','disc','spkrate')
     end
 end
-

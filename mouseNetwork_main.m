@@ -3,6 +3,9 @@
 % 2019-09-11 moved plotting to a separate script plotPerfGrid.m
 %            mouseNetwork returns both R and C performance
 %            now plot both R and C performance grids
+%
+% to do:
+%   add ability to adjust RC netcon in main code
 clearvars;
 close all;
 
@@ -12,8 +15,9 @@ addpath('eval_scripts')
 addpath('genlib')
 addpath(genpath('../dynasim'))
 
-% ICdir = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_sg0.5_ml0.001_20190918-151406';
-ICdir = 'ICSimStim\mouse\v2\145638_s30';
+researchDrive = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\';
+ICdir = [researchDrive 'ICStim\Mouse\s30_sg0.5_ml0.01_20200205-162645'];
+% ICdir = 'ICSimStim\mouse\v2\145638_s30';
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
 if isempty(ICstruc), error('empty data directory'); end
@@ -33,6 +37,25 @@ varies(end).range = 0.03;%:0.01:0.05;
 % varies(end+1).conxn = '(IC->R)';
 % varies(end).param = 'gSYN';
 % varies(end).range = .2; %0.15:0.005:0.19;
+
+%% netcons
+nCells = 4; %synchronise this variable with mouse_network
+
+% irNetcon = diag(ones(1,nCells))*0.1;
+irNetcon = zeros(nCells);
+% irNetcon(2,1) = 1;
+% irNetcon(3,1) = 1;
+% irNetcon(4,1) = 1;
+% irNetcon(2,4) = 1;
+
+srNetcon = diag(ones(1,nCells));
+% srNetcon = zeros(nCells);
+
+rcNetcon = zeros(4,1); %add this as input to mouse_network
+
+netCon.irNetcon = irNetcon;
+netCon.srNetcon = srNetcon;
+netcon.rcNetcon = rcNetcon;
 %% Initialize variables
 plot_rasters = 1;
 
@@ -71,7 +94,7 @@ for z = 1:length(ICstruc)
     % call network
     h.Name = ICstruc(z).name;
     time_end = size(spks,3);
-    [data(z).perf, data(z).annot] = mouse_network(study_dir,time_end,varies,plot_rasters);
+    [data(z).perf, data(z).annot] = mouse_network(study_dir,time_end,varies,netCons,plot_rasters);
     data(z).name = ICstruc(z).name;
 end
 

@@ -4,7 +4,8 @@
 
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
-addpath('../genlib')
+addpath('..\genlib')
+addpath('..\stimuli')
 dataloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
 % Spatial tuning curve parameters
 sigma = 30; %60 for bird but 38 for mouse
@@ -23,7 +24,7 @@ paramG.BSM=5.00E-05; % 1/Hz=s
 paramG.f0=4300;
 
 %% Run simulation script
-for maskerlvl = 0.001%:0.002:0.03
+for maskerlvl = 0.01%:0.002:0.03
 mean_rate=.1;
 saveName=['s' num2str(sigma) '_sg' num2str(stimGain) '_ml' num2str(maskerlvl) '_' datestr(now,'YYYYmmdd-HHMMSS')];
 saveFlag = 0;
@@ -33,6 +34,7 @@ maskerLocs = 1:4;
 
 saveParam.flag = 1;
 saveParam.fileLoc = [dataloc filesep tuning filesep saveName];
+if ~exist(saveParam.fileLoc,'dir'), mkdir(saveParam.fileLoc); end
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
 tuningParam.H = paramH;
@@ -49,8 +51,10 @@ for songloc = songLocs
 end
 
 %% Grids for each neuron
-% fileloc = 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30';
-fileloc = [saveParam.fileLoc];
+% fileloc =
+% 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
+fileloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_sg0.5_ml0.001_20200131-151629';
+% fileloc = [saveParam.fileLoc];
 allfiles = dir([fileloc filesep '*.mat'])
 tgtalone = dir([fileloc filesep '*m0.mat'])
 mskalone = dir([fileloc filesep 's0*.mat'])
@@ -79,5 +83,5 @@ for i = 1:length(neurons)
     ylabel('Masker Location')
     set(gca,'fontsize',12)
 end
-saveas(gca,[fileloc filesep 'performance_grid.tiff'])
+% saveas(gca,[fileloc filesep 'performance_grid.tiff'])
 end
