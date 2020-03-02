@@ -53,9 +53,9 @@ srNetcon = diag(ones(1,nCells));
 
 rcNetcon = zeros(4,1); %add this as input to mouse_network
 
-netCon.irNetcon = irNetcon;
-netCon.srNetcon = srNetcon;
-netcon.rcNetcon = rcNetcon;
+netCons.irNetcon = irNetcon;
+netCons.srNetcon = srNetcon;
+netcons.rcNetcon = rcNetcon;
 %% Initialize variables
 plot_rasters = 1;
 
@@ -66,7 +66,9 @@ datetime=datestr(now,'yyyymmdd-HHMMSS');
 
 h = figure('Position',[50,50,850,690]);
 set(h, 'DefaultFigureVisible', 'off')
-for z = 1:length(ICstruc)
+
+subz = find(contains({ICstruc.name},'m0.mat')); % sXm0 (target only) cases
+for z = subz %1:length(ICstruc)
     % restructure IC spikes
     load([ICdirPath ICstruc(z).name],'t_spiketimes');
     temp = cellfun(@max,t_spiketimes,'UniformOutput',false);
@@ -110,42 +112,54 @@ end
 neurons = {'left sigmoid','gaussian','u','right sigmoid'};
 
 temp = {data.name};
+temp(cellfun('isempty',temp)) = {'empty'}; %label empty content
 targetIdx = find(contains(temp,'m0'));
 maskerIdx = find(contains(temp,'s0'));
-mixedIdx = setdiff(1:length(data),[targetIdx,maskerIdx]);
+% mixedIdx = setdiff(1:length(temp),[targetIdx,maskerIdx]);
+mixedIdx = find(~contains(temp,'m0') & ~contains(temp,'s0') & ~contains(temp,'empty'));
 textColorThresh = 70;
 numSpatialChan = 4;
 
 for vv = 1:nvaried
-    % mixed config cases
-    for i = 1:length(mixedIdx)
-        perf.R(i,:) = data(mixedIdx(i)).perf.R(:,vv);
-        perf.C(i) = data(mixedIdx(i)).perf.C(vv);
+    if ~isempty(mixedIdx)
+        % mixed config cases
+        for i = 1:length(mixedIdx)
+            perf.R(i,:) = data(mixedIdx(i)).perf.R(:,vv);
+            perf.C(i) = data(mixedIdx(i)).perf.C(vv);
+        end
+        figure('position',[200 200 1200 600]);
+
+        % relay neurons
+        order = [1,2,4,5];
+        for nn = 1:numSpatialChan
+            subplot(2,3,order(nn))
+            plotPerfGrid(perf.R(:,nn),neurons(nn),textColorThresh);
+        end
+
+        % C neuron
+        subplot('Position',[0.7 0.15 0.2 0.4])
+        plotPerfGrid(perf.C',[],textColorThresh);
     end
-    figure('position',[200 200 1200 600]);
-    
-    % relay neurons
-    order = [1,2,4,5];
-    for nn = 1:numSpatialChan
-        subplot(2,3,order(nn))
-        plotPerfGrid(perf.R(:,nn),neurons(nn),textColorThresh);
-    end
-    
-    % C neuron
-    subplot('Position',[0.7 0.15 0.2 0.4])
-    plotPerfGrid(perf.C',[],textColorThresh);
     
     % C neuron; target or masker only cases
-    for i = 1:length(targetIdx)
-        perf.CT(i) = data(targetIdx(i)).perf.C(vv);
-        perf.CM(i) = data(maskerIdx(i)).perf.C(vv);
-    end
+    perf.CT = zeros(1,4);
+    perf.CM = zeros(1,4);
+    if ~isempty(targetIdx)
+        for i = 1:length(targetIdx)
+            perf.CT(i) = data(targetIdx(i)).perf.C(vv);
+        end
+    end    
+    if ~isempty(maskerIdx)
+        for i = 1:length(targetIdx)
+            perf.CM(i) = data(maskerIdx(i)).perf.C(vv);
+        end
+    end    
     subplot('Position',[0.7 0.6 0.2 0.2])
     plotPerfGrid([perf.CT;perf.CM],'Cortical',textColorThresh);
     
     % simulation info
     annotation('textbox',[.75 .85 .2 .1],...
-           'string',data(1).annot(vv,3:end),...
+           'string',data(z).annot(vv,3:end),...
            'FitBoxToText','on',...
            'LineStyle','none')
 
