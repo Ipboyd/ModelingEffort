@@ -2,6 +2,10 @@
 % spatial tuning curve. I.e. this neuron has both spatial and
 % spectral-temporal tuning.
 
+% to do:
+% 1. move all STRF spectrogram creation to this file
+% 2. add case for birdsong stimuli
+
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
 addpath('..\genlib')
@@ -16,7 +20,7 @@ maskerlvl = 0.01; %default is 0.01
 tic;
 
 % ============ log message (manual entry) ============
-msg = 'line 180 in inputGaussianSTRF_v2: capped tuning weight to 1';
+msg{1} = 'line 180 in inputGaussianSTRF_v2: capped tuning weight to 0.5';
 % =============== end log file ===================
 
 % STRF parameters - don't need to change
@@ -77,7 +81,6 @@ for songloc = songLocs
     end
 end
 
-toc
 %% Grids for each neuron
 % fileloc =
 % 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
@@ -113,12 +116,13 @@ for i = 1:length(neurons)
 end
 saveas(gca,[fileloc filesep 'performance_grid.tiff'])
 
-% save log file
+% write log file
+msg{end+1} = ['elapsed time is ' num2str(toc) ' seconds'];
 fid = fopen(fullfile(saveParam.fileLoc, 'notes.txt'), 'a');
 if fid == -1
   error('Cannot open log file.');
 end
-fprintf(fid, '%s: %s\n', datestr(now, 0), msg);
+for k=1:length(msg), fprintf(fid, '%s: %s\n', datestr(now, 0), msg{k}); end
 fclose(fid);
 
 end
