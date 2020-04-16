@@ -9,7 +9,7 @@ addpath('..\stimuli')
 dataloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
 % Spatial tuning curve parameters
 sigma = 30; %60 for bird but 38 for mouse
-tuning = 'mouse';
+tuning = 'mouse'; %'bird' or 'mouse'
 stimGain = 0.5;
 maskerlvl = 0.01; %default is 0.01
 
@@ -23,10 +23,27 @@ paramG.BW=2000;  % Hz
 paramG.BSM=5.00E-05; % 1/Hz=s
 paramG.f0=4300;
 
+% make STRF
+[song2,fs_m] = audioread('200k_target2.wav');
+[~,t,f]=STRFspectrogram(song2,fs_m);
+strf=STRFgen(paramH,paramG,f,t(2)-t(1));
+
+% stimuli
+[song1,fs1] = audioread('200k_target1.wav');
+[song2,fs2] = audioread('200k_target2.wav');
+for trial = 1:10
+    [masker,~] = audioread(['200k_masker' num2str(trial) '.wav']);
+    maskers{i} = masker;
+end
+songs.s1 = song1;
+songs.s2 = song2;
+songs.m = maskers;
+songs.fs = fs2;
+
 %% Run simulation script
 for maskerlvl = 0.01%:0.002:0.03
 mean_rate=.1;
-saveName=['s' num2str(sigma) '_sg' num2str(stimGain) '_ml' num2str(maskerlvl) '_' datestr(now,'YYYYmmdd-HHMMSS')];
+saveName=['s' num2str(sigma) '_gain' num2str(stimGain) '_maskerLvl' num2str(maskerlvl) '_' datestr(now,'YYYYmmdd-HHMMSS')];
 saveFlag = 0;
 
 songLocs = 1:4;
@@ -35,18 +52,18 @@ maskerLocs = 1:4;
 saveParam.flag = 1;
 saveParam.fileLoc = [dataloc filesep tuning filesep saveName];
 if ~exist(saveParam.fileLoc,'dir'), mkdir(saveParam.fileLoc); end
+tuningParam.strf = strf;
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
-tuningParam.H = paramH;
-tuningParam.G = paramG;
 
 for songloc = songLocs
     close all
     maskerloc=0;
-    t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
-    t_spiketimes=InputGaussianSTRF_v2(maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
+    
+    t_spiketimes=InputGaussianSTRF_v2(songs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
+    t_spiketimes=InputGaussianSTRF_v2(songs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
     for maskerloc = maskerLocs
-        t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
+        t_spiketimes=InputGaussianSTRF_v2(songs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
     end
 end
 

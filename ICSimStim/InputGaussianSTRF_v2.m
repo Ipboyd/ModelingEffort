@@ -1,4 +1,4 @@
-function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maskerlvl)
+function t_spiketimes=InputGaussianSTRF_v2(stimuli,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maskerlvl)
 % Inputs
 %   songloc, maskerloc - a vector between 0 and 4
 %   tuning - a structure, with fields
@@ -56,6 +56,7 @@ switch tuning.type
         tuningcurve(2,:)=gaussmf(x,[sigma,0]);
         tuningcurve(3,:)=gaussmf(x,[sigma,45]);
         tuningcurve(4,:)=gaussmf(x,[sigma,90]);
+        neuronNames = {'gaussian','gaussian','gaussian','gaussian'};
     case 'mouse'
         x=-108:108;
         tuningcurve=zeros(4,length(x));
@@ -63,6 +64,7 @@ switch tuning.type
         tuningcurve(2,:)=gaussmf(x,[sigma,0]); %guassian
         tuningcurve(3,:)= 1- gaussmf(x,[sigma,0]); %U shaped gaussian
         tuningcurve(4,:)= sigmf(x,[0.016 -22.5])-0.05; %sigmodial
+        neuronNames = {'left sigmoid','gaussian','U','right sigmoid'};
 end
 
 for i=1:4
@@ -81,21 +83,21 @@ set(gca,'ytick',[0 0.50 1.0],'YTickLabel',{'0', '0.50', '1.0'},'YColor','b')
 % songs = {stimuli{1}(1:n_length),stimuli{2}(1:n_length)};
 % masker = wgn(1,n_length,1);
 
-% new stimuli, normalize amplitude to 0.01 rms
-rmsNormGain = 7.75;
-[song1,fs1] = audioread('200k_target1.wav');
-[song2,fs2] = audioread('200k_target2.wav');
-[masker,fs_m] = audioread('200k_masker1.wav');
-fs=fs1;  % takes song 2
-n_length=length(song2);%t_end=length(song2/fs);
-songs = {song1/rmsNormGain, song2/rmsNormGain}; 
+% define stimuli, normalize amplitude to 0.01 rms
+song1 = stimuli.s1;
+song2 = stimuli.s2;
+maskers = stimuli.m;
+fs = stimuli.fs;
 
+masker = maskers{1};
+n_length=length(song2);%t_end=length(song2/fs);
+songs = {song1/rms(song1)*0.01, song2/rms(song2)*0.01}; 
 
 masker = masker/rms(masker)*maskerlvl;
 [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
-% Make STRF & plot
-strf=STRFgen(tuning.H,tuning.G,f,t(2)-t(1));
+% plot STRF
+strf = tuningParam.strf;
 
 positionVector = [x0 y0+2*(dy+ly) lx/2 ly];
 subplot('Position',positionVector)
@@ -156,7 +158,7 @@ for songn=1:2
     for i=1:4  % summing of each channel, i.e. neuron type 1-4
         for trial = 1:10         % for each trial, define a new random WGN masker
 %             masker = wgn(1,n_length,1);
-            [masker,fs_m] = audioread(['200k_masker' num2str(trial) '.wav']);
+            masker = maskers{trial};
             masker = masker/rms(masker)*maskerlvl;
             [masker_spec,t,f]=STRFspectrogram(masker,fs);
 
@@ -226,7 +228,7 @@ for songn=1:2
             distMat = calcvr([t_spiketimes(:,i) t_spiketimes(:,i+4)], 10); % using ms as units, same as ts
             [disc(i), E, correctArray] = calcpc(distMat, 10, 2, 1,[], 'new');
             firingRate = round(sum(cellfun(@length,t_spiketimes(:,i+4)))/10);
-            title({['disc = ', num2str(disc(i))],['FR = ',num2str(firingRate)]})
+            title({neuronNames{i},['disc = ', num2str(disc(i))],['FR = ',num2str(firingRate)]})
         end
 
         fclose all;
