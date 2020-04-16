@@ -30,10 +30,11 @@ varies(end+1).conxn = 'C';
 varies(end).param = 'noise';
 varies(end).range = 0.03;%:0.01:0.05;
 
-% varies(end+1).conxn = '(S->R)';
-% varies(end).param = 'gSYN';
-% varies(end).range = 0.16:0.01:0.17; %0.15:0.005:0.19;
+varies(end+1).conxn = '(S->R)';
+varies(end).param = 'gSYN';
+varies(end).range = 0.19:0.01:0.22; %0.15:0.005:0.19;
 
+variedParam = 'S-R_gsyn';
 % varies(end+1).conxn = '(IC->R)';
 % varies(end).param = 'gSYN';
 % varies(end).range = .2; %0.15:0.005:0.19;
@@ -52,6 +53,7 @@ srNetcon = diag(ones(1,nCells));
 % srNetcon = zeros(nCells);
 
 rcNetcon = zeros(4,1); %add this as input to mouse_network
+% make rnNetcon have variable weights (instead of zeros)
 
 netCons.irNetcon = irNetcon;
 netCons.srNetcon = srNetcon;
@@ -64,8 +66,8 @@ nvaried = prod(cellfun(@length,nvaried));
 diagConfigs = [6,12,18,24];
 datetime=datestr(now,'yyyymmdd-HHMMSS');
 
+set(0, 'DefaultFigureVisible', 'off')
 h = figure('Position',[50,50,850,690]);
-set(h, 'DefaultFigureVisible', 'off')
 
 subz = find(contains({ICstruc.name},'m0.mat')); % sXm0 (target only) cases
 for z = subz %1:length(ICstruc)
@@ -120,6 +122,7 @@ mixedIdx = find(~contains(temp,'m0') & ~contains(temp,'s0') & ~contains(temp,'em
 textColorThresh = 70;
 numSpatialChan = 4;
 
+h = figure;
 for vv = 1:nvaried
     if ~isempty(mixedIdx)
         % mixed config cases
@@ -166,5 +169,7 @@ for vv = 1:nvaried
     % save grid
     Dirparts = strsplit(study_dir, filesep);
     DirPart = fullfile(Dirparts{1:end-1});
-    saveas(gca,[DirPart filesep 'performance_grid_v ' num2str(vv) '.tiff'])
+    saveas(gca,[DirPart filesep 'SpatialGrid vary ' variedParam num2str(varies(end).range(vv),'%0.2f') '.tiff'])
+    clf
 end
+set(0, 'DefaultFigureVisible', 'on')
