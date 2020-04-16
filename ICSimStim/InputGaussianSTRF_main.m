@@ -7,11 +7,17 @@ addpath(genpath('strflab_v1.45'))
 addpath('..\genlib')
 addpath('..\stimuli')
 dataloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
+
 % Spatial tuning curve parameters
 sigma = 30; %60 for bird but 38 for mouse
 tuning = 'mouse'; %'bird' or 'mouse'
 stimGain = 0.5;
 maskerlvl = 0.01; %default is 0.01
+tic;
+
+% ============ log message (manual entry) ============
+msg = 'line 180 in inputGaussianSTRF_v2: capped tuning weight to 1';
+% =============== end log file ===================
 
 % STRF parameters - don't need to change
 paramH.t0=7/1000; % s
@@ -28,17 +34,21 @@ paramG.f0=4300;
 [~,t,f]=STRFspectrogram(song2,fs_m);
 strf=STRFgen(paramH,paramG,f,t(2)-t(1));
 
-% stimuli
+% load stimuli
+if strcmp(tuning,'mouse')
 [song1,fs1] = audioread('200k_target1.wav');
 [song2,fs2] = audioread('200k_target2.wav');
 for trial = 1:10
     [masker,~] = audioread(['200k_masker' num2str(trial) '.wav']);
-    maskers{i} = masker;
+    maskers{trial} = masker;
 end
 songs.s1 = song1;
 songs.s2 = song2;
 songs.m = maskers;
 songs.fs = fs2;
+else
+    error('need to define stimuli for birds from stimuli/birdsongs.mat')
+end
 
 %% Run simulation script
 for maskerlvl = 0.01%:0.002:0.03
@@ -67,11 +77,12 @@ for songloc = songLocs
     end
 end
 
+toc
 %% Grids for each neuron
 % fileloc =
 % 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
-fileloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_sg0.5_ml0.001_20200131-151629';
-% fileloc = [saveParam.fileLoc];
+% fileloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_gain0.5_maskerLvl0.01_20200415-213511';
+fileloc = [saveParam.fileLoc];
 allfiles = dir([fileloc filesep '*.mat'])
 tgtalone = dir([fileloc filesep '*m0.mat'])
 mskalone = dir([fileloc filesep 's0*.mat'])
@@ -100,5 +111,14 @@ for i = 1:length(neurons)
     ylabel('Masker Location')
     set(gca,'fontsize',12)
 end
-% saveas(gca,[fileloc filesep 'performance_grid.tiff'])
+saveas(gca,[fileloc filesep 'performance_grid.tiff'])
+
+% save log file
+fid = fopen(fullfile(saveParam.fileLoc, 'notes.txt'), 'a');
+if fid == -1
+  error('Cannot open log file.');
+end
+fprintf(fid, '%s: %s\n', datestr(now, 0), msg);
+fclose(fid);
+
 end

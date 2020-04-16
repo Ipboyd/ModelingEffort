@@ -26,6 +26,7 @@ function t_spiketimes=InputGaussianSTRF_v2(stimuli,songloc,maskerloc,tuning,save
 
 
 % Plotting parameters
+set(0, 'DefaultFigureVisible', 'off')
 colormap = parula;
 color1=colormap([1 18 36 54],:);
 width=11.69;hwratio=.6;
@@ -89,15 +90,18 @@ song2 = stimuli.s2;
 maskers = stimuli.m;
 fs = stimuli.fs;
 
-masker = maskers{1};
 n_length=length(song2);%t_end=length(song2/fs);
 songs = {song1/rms(song1)*0.01, song2/rms(song2)*0.01}; 
-
-masker = masker/rms(masker)*maskerlvl;
-[masker_spec,t,f]=STRFspectrogram(masker,fs);
+for trial = 1:10
+    masker = maskers{trial};
+    masker = masker/rms(masker)*maskerlvl;
+    [spec,t,f]=STRFspectrogram(masker,fs);
+    masker_specs{trial} = spec;
+end
+masker_spec = masker_specs{1};
 
 % plot STRF
-strf = tuningParam.strf;
+strf = tuning.strf;
 
 positionVector = [x0 y0+2*(dy+ly) lx/2 ly];
 subplot('Position',positionVector)
@@ -158,9 +162,7 @@ for songn=1:2
     for i=1:4  % summing of each channel, i.e. neuron type 1-4
         for trial = 1:10         % for each trial, define a new random WGN masker
 %             masker = wgn(1,n_length,1);
-            masker = maskers{trial};
-            masker = masker/rms(masker)*maskerlvl;
-            [masker_spec,t,f]=STRFspectrogram(masker,fs);
+            masker_spec = masker_specs{trial};
 
             %% weight at each stimulus location
             totalWeight = 0;
@@ -176,7 +178,7 @@ for songn=1:2
             end
 
             % scale mixed spectrogram; cap total weight to 1
-            if totalWeight <= .75
+            if totalWeight <= 1
               mixedspec(i,:,:) = mixedspec(i,:,:)*stimGain;
             else
               mixedspec(i,:,:) = mixedspec(i,:,:)/totalWeight*stimGain;
@@ -236,9 +238,8 @@ for songn=1:2
 
     if saveParam.flag
         saveas(gca,[savedir '/s' num2str(songloc) 'm' num2str(maskerloc) '.tiff'])
-        paramG = tuning.G;
-        paramH = tuning.H;
         save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes','songloc','maskerloc',...
-            'sigma','paramG','paramH','mean_rate','disc','spkrate')
+            'sigma','mean_rate','disc','spkrate')
     end
 end
+set(0, 'DefaultFigureVisible', 'on')
