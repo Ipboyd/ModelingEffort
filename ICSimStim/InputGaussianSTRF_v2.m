@@ -1,5 +1,9 @@
-function t_spiketimes=InputGaussianSTRF_v2(stimuli,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maskerlvl)
+function t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maxWeight)
 % Inputs
+%   specs - spectrogram representation of stimuli, with fields
+%       .songs{2} for the two songs
+%       .maskers{10} for the 10 masker trials
+%       .t and .f for the time-frequency axes
 %   songloc, maskerloc - a vector between 0 and 4
 %   tuning - a structure, with fields
 %       .type - 'bird' for gaussian tuning curves, or
@@ -9,7 +13,7 @@ function t_spiketimes=InputGaussianSTRF_v2(stimuli,songloc,maskerloc,tuning,save
 %   saveParam  - a structure, with fields
 %       .flag - save or not
 %       .fileLoc - save file name
-%   mean_rate - ?
+%   mean_rate - (?) mean firing rate?
 %   stimGain - input stimulus gain
 %   maskerlvl -
 %
@@ -23,7 +27,12 @@ function t_spiketimes=InputGaussianSTRF_v2(stimuli,songloc,maskerloc,tuning,save
 % 2019-08-31 replaced normalization with the gain parameter
 % 2019-09-05 replaced song-shaped noise with white guassian noise
 % 2019-09-10 recreate wgn for every trial & cleaned up code
-
+% 2020-04-16 moved all .wav reads and spectrogram calculations to the main
+%            code, to minimize redundancy; 
+%            added SPECS input parameter;
+%            made all default figures invisible to prevent focus stealing
+%
+% To do: spatial tuning curves can be moved to the main code too
 
 % Plotting parameters
 set(0, 'DefaultFigureVisible', 'off')
@@ -75,30 +84,10 @@ xlim([min(x) max(x)]);ylim([0 1.05])
 set(gca,'xtick',[-90 0 45 90],'XTickLabel',{'-90 deg', '0 deg', '45 deg', '90 deg'},'YColor','w')
 set(gca,'ytick',[0 0.50 1.0],'YTickLabel',{'0', '0.50', '1.0'},'YColor','b')
 
-% ---- Load stimuli ----
-% % old stimuli
-% load('stimuli.mat','stimuli')
-% fs = 44100;
-% n_length = length(stimuli{2});
-% % masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of length song2
-% songs = {stimuli{1}(1:n_length),stimuli{2}(1:n_length)};
-% masker = wgn(1,n_length,1);
-
-% define stimuli, normalize amplitude to 0.01 rms
-song1 = stimuli.s1;
-song2 = stimuli.s2;
-maskers = stimuli.m;
-fs = stimuli.fs;
-
-n_length=length(song2);%t_end=length(song2/fs);
-songs = {song1/rms(song1)*0.01, song2/rms(song2)*0.01}; 
-for trial = 1:10
-    masker = maskers{trial};
-    masker = masker/rms(masker)*maskerlvl;
-    [spec,t,f]=STRFspectrogram(masker,fs);
-    masker_specs{trial} = spec;
-end
-masker_spec = masker_specs{1};
+% ---- initialize stimuli spectrogram ----
+masker_spec = specs.maskers{1};
+t = specs.t;
+f = specs.f;
 
 % plot STRF
 strf = tuning.strf;
@@ -121,10 +110,11 @@ spkrate=zeros(1,4);disc=zeros(1,4);
 for songn=1:2
     %convert sound pressure waveform to spectrogram representation
 %     songs(:,songn)=songs{songn}(1:n_length);
-    [song_spec,~,~]=STRFspectrogram(songs{songn},fs);
+%     [song_spec,~,~]=STRFspectrogram(songs{songn},fs);
+    song_spec = specs.songs{songn};
 
     %% plot mixture process (of song1) for visualization
-    stim_spec=zeros(4,length(t),length(f));
+    stim_spec=zeros(4,specs.dims(1),specs.dims(2));
     if maskerloc
         stim_spec(maskerloc,:,:)=masker_spec;
     end
@@ -162,7 +152,7 @@ for songn=1:2
     for i=1:4  % summing of each channel, i.e. neuron type 1-4
         for trial = 1:10         % for each trial, define a new random WGN masker
 %             masker = wgn(1,n_length,1);
-            masker_spec = masker_specs{trial};
+            masker_spec = specs.maskers{trial};
 
             %% weight at each stimulus location
             totalWeight = 0;
@@ -177,11 +167,11 @@ for songn=1:2
                 mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,maskerloc)*masker_spec;
             end
 
-            % scale mixed spectrogram; cap total weight to 1
-            if totalWeight <= 1
+            % scale mixed spectrogram; cap total weight to maxWeight
+            if totalWeight <= maxWeight
               mixedspec(i,:,:) = mixedspec(i,:,:)*stimGain;
             else
-              mixedspec(i,:,:) = mixedspec(i,:,:)/totalWeight*stimGain;
+              mixedspec(i,:,:) = mixedspec(i,:,:)/totalWeight*maxWeight*stimGain;
             end
             %mixedspec(i,:,:) = mixedspec(i,:,:).*stimGain;
 

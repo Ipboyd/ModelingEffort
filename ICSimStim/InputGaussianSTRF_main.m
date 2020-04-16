@@ -3,24 +3,28 @@
 % spectral-temporal tuning.
 
 % to do:
-% 1. move all STRF spectrogram creation to this file
-% 2. add case for birdsong stimuli
+% 1. add case for birdsong stimuli
+%
+% note:
+% large bottleneck lies in r/w to network drive
 
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
 addpath('..\genlib')
 addpath('..\stimuli')
-dataloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
+% dataSaveLoc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
+dataSaveLoc = ''; %local save location
 
 % Spatial tuning curve parameters
 sigma = 30; %60 for bird but 38 for mouse
 tuning = 'mouse'; %'bird' or 'mouse'
 stimGain = 0.5;
 maskerlvl = 0.01; %default is 0.01
+maxWeight = 1; %maximum mixed tuning weight; capped at this level.
 tic;
 
 % ============ log message (manual entry) ============
-msg{1} = 'line 180 in inputGaussianSTRF_v2: capped tuning weight to 0.5';
+msg{1} = ['line 180 in inputGaussianSTRF_v2: capped tuning weight to' num2str(maxWeight)];
 % =============== end log file ===================
 
 % STRF parameters - don't need to change
@@ -33,29 +37,31 @@ paramG.BW=2000;  % Hz
 paramG.BSM=5.00E-05; % 1/Hz=s
 paramG.f0=4300;
 
-% make STRF
-[song2,fs_m] = audioread('200k_target2.wav');
-[~,t,f]=STRFspectrogram(song2,fs_m);
-strf=STRFgen(paramH,paramG,f,t(2)-t(1));
-
-% load stimuli
+% load stimuli & calc spectrograms
 if strcmp(tuning,'mouse')
-[song1,fs1] = audioread('200k_target1.wav');
-[song2,fs2] = audioread('200k_target2.wav');
-for trial = 1:10
-    [masker,~] = audioread(['200k_masker' num2str(trial) '.wav']);
-    maskers{trial} = masker;
-end
-songs.s1 = song1;
-songs.s2 = song2;
-songs.m = maskers;
-songs.fs = fs2;
+    [song1,fs1] = audioread('200k_target1.wav');
+    [song2,fs2] = audioread('200k_target2.wav');
+    [song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*0.01,fs1);
+    [song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*0.01,fs2);
+    for trial = 1:10
+        [masker,fs] = audioread(['200k_masker' num2str(trial) '.wav']);
+        [spec,~,~]=STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
+        masker_specs{trial} = spec;
+    end
+    specs.songs{1} = song1_spec;
+    specs.songs{2} = song2_spec;
+    specs.maskers = masker_specs;
+    specs.dims = size(song1_spec);
+    specs.t = t;
+    specs.f = f;
 else
     error('need to define stimuli for birds from stimuli/birdsongs.mat')
 end
 
+% make STRF
+strf=STRFgen(paramH,paramG,f,t(2)-t(1));
+
 %% Run simulation script
-for maskerlvl = 0.01%:0.002:0.03
 mean_rate=.1;
 saveName=['s' num2str(sigma) '_gain' num2str(stimGain) '_maskerLvl' num2str(maskerlvl) '_' datestr(now,'YYYYmmdd-HHMMSS')];
 saveFlag = 0;
@@ -64,7 +70,7 @@ songLocs = 1:4;
 maskerLocs = 1:4;
 
 saveParam.flag = 1;
-saveParam.fileLoc = [dataloc filesep tuning filesep saveName];
+saveParam.fileLoc = [dataSaveLoc filesep tuning filesep saveName];
 if ~exist(saveParam.fileLoc,'dir'), mkdir(saveParam.fileLoc); end
 tuningParam.strf = strf;
 tuningParam.type = tuning;
@@ -74,10 +80,10 @@ for songloc = songLocs
     close all
     maskerloc=0;
     
-    t_spiketimes=InputGaussianSTRF_v2(songs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
-    t_spiketimes=InputGaussianSTRF_v2(songs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
+    t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
+    t_spiketimes=InputGaussianSTRF_v2(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
     for maskerloc = maskerLocs
-        t_spiketimes=InputGaussianSTRF_v2(songs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maskerlvl);
+        t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
     end
 end
 
@@ -124,5 +130,3 @@ if fid == -1
 end
 for k=1:length(msg), fprintf(fid, '%s: %s\n', datestr(now, 0), msg{k}); end
 fclose(fid);
-
-end
