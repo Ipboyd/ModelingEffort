@@ -4,9 +4,16 @@
 
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
-addpath('..\genlib')
-addpath('..\stimuli')
-dataloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
+addpath('../genlib')
+addpath('../stimuli')
+
+dataloc = 'MiceSpatialGrids/ICStim';
+
+if ~isdir(dataloc)
+    mkdir(dataloc)
+    mkdir([dataloc,'/Mouse/']);
+end
+
 % Spatial tuning curve parameters
 sigma = 30; %60 for bird but 38 for mouse
 tuning = 'mouse';
@@ -52,8 +59,8 @@ end
 
 %% Grids for each neuron
 % fileloc =
-% 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
-fileloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_sg0.5_ml0.001_20200131-151629';
+% 'C:/Users/Kenny/Desktop/GitHub/MouseSpatialGrid/ICSimStim/mouse/v2/155210_seed142307_s30'; dataloc?
+fileloc = ['MiceSpatialGrids/ICStim/Mouse/',saveName];
 % fileloc = [saveParam.fileLoc];
 allfiles = dir([fileloc filesep '*.mat'])
 tgtalone = dir([fileloc filesep '*m0.mat'])
