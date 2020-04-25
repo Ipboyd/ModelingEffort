@@ -10,15 +10,9 @@
 
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
-addpath('../genlib')
-addpath('../stimuli')
-
-dataloc = 'MiceSpatialGrids/ICStim';
-
-if ~isdir(dataloc)
-    mkdir(dataloc)
-    mkdir([dataloc,'/Mouse/']);
-end
+addpath('..\genlib')
+addpath('..\stimuli')
+% dataSaveLoc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
 dataSaveLoc = ''; %local save location
 
 % Spatial tuning curve parameters
@@ -95,15 +89,9 @@ end
 
 %% Grids for each neuron
 % fileloc =
-<<<<<<< HEAD
-% 'C:/Users/Kenny/Desktop/GitHub/MouseSpatialGrid/ICSimStim/mouse/v2/155210_seed142307_s30'; dataloc?
-fileloc = ['MiceSpatialGrids/ICStim/Mouse/',saveName];
-% fileloc = [saveParam.fileLoc];
-=======
 % 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
 % fileloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_gain0.5_maskerLvl0.01_20200415-213511';
 fileloc = [saveParam.fileLoc];
->>>>>>> a1a1e71422ed90a4c9341866dcce83ed02d3b7c1
 allfiles = dir([fileloc filesep '*.mat'])
 tgtalone = dir([fileloc filesep '*m0.mat'])
 mskalone = dir([fileloc filesep 's0*.mat'])

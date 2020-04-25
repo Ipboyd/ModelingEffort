@@ -6,19 +6,18 @@
 %
 % to do:
 %   add ability to adjust RC netcon in main code
-clearvars -except saveName;
+clearvars;
 close all;
 
 addpath('mechs')
 addpath('dependencies')
 addpath('eval_scripts')
 addpath('genlib')
-addpath(genpath('dynasim'))
+addpath(genpath('../dynasim'))
 
-researchDrive = 'MiceSpatialGrids/';
-
-ICdir = [researchDrive,'ICStim/Mouse/',saveName];
-% ICdir = 'ICSimStim/mouse/v2/145638_s30';
+researchDrive = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\';
+ICdir = [researchDrive 'ICStim\Mouse\s30_sg0.5_ml0.01_20200205-162645'];
+% ICdir = 'ICSimStim\mouse\v2\145638_s30';
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
 if isempty(ICstruc), error('empty data directory'); end
@@ -95,13 +94,11 @@ for z = subz %1:length(ICstruc)
     end
     mkdir(fullfile(study_dir, 'solve'));
     save(fullfile(study_dir, 'solve','IC_spks.mat'),'spks');
-    addpath(fullfile(pwd, 'run', datetime))
-    addpath(fullfile(study_dir,'solve'));
 
     % call network
     h.Name = ICstruc(z).name;
     time_end = size(spks,3);
-    [data(z).perf, data(z).annot] = mouse_network(study_dir,time_end-1,varies,netCons,plot_rasters);
+    [data(z).perf, data(z).annot] = mouse_network(study_dir,time_end,varies,netCons,plot_rasters);
     data(z).name = ICstruc(z).name;
 end
 

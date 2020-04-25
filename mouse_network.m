@@ -204,7 +204,7 @@ for vv = 1:jump % for each varied parameter
 
     parts = strsplit(study_dir, filesep);
     DirPart = fullfile(parts{1:end-1});
-    saveas(gca,[filesep,DirPart,filesep,parts{end},'_v2_',num2str(vv)],'tiff')
+    saveas(gca,[DirPart filesep parts{end} '_v2_' num2str(vv) '.tiff'])
 end
 end
 
