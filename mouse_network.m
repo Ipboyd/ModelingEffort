@@ -190,7 +190,7 @@ for vv = 1:jump % for each varied parameter
     xticklabels([])
 
     % figure annotations
-    FR_C = mean(sum(Cspks))/time_end*1000;
+    FR_C = mean(sum(Cspks,2))/time_end*1000;
     paramstr = {data(1).varied{2:end}};
     annotstr{vv,1} = ['FR_C = ' num2str(FR_C)];
     annotstr{vv,2} = ['Disc = ' num2str(mean(max(perf.C(vv))))];

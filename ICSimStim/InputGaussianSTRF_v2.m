@@ -1,5 +1,9 @@
-function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maskerlvl)
+function t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maxWeight)
 % Inputs
+%   specs - spectrogram representation of stimuli, with fields
+%       .songs{2} for the two songs
+%       .maskers{10} for the 10 masker trials
+%       .t and .f for the time-frequency axes
 %   songloc, maskerloc - a vector between 0 and 4
 %   tuning - a structure, with fields
 %       .type - 'bird' for gaussian tuning curves, or
@@ -9,7 +13,7 @@ function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,me
 %   saveParam  - a structure, with fields
 %       .flag - save or not
 %       .fileLoc - save file name
-%   mean_rate - ?
+%   mean_rate - (?) mean firing rate?
 %   stimGain - input stimulus gain
 %   maskerlvl -
 %
@@ -23,9 +27,15 @@ function t_spiketimes=InputGaussianSTRF_v2(songloc,maskerloc,tuning,saveParam,me
 % 2019-08-31 replaced normalization with the gain parameter
 % 2019-09-05 replaced song-shaped noise with white guassian noise
 % 2019-09-10 recreate wgn for every trial & cleaned up code
-
+% 2020-04-16 moved all .wav reads and spectrogram calculations to the main
+%            code, to minimize redundancy; 
+%            added SPECS input parameter;
+%            made all default figures invisible to prevent focus stealing
+%
+% To do: spatial tuning curves can be moved to the main code too
 
 % Plotting parameters
+set(0, 'DefaultFigureVisible', 'off')
 colormap = parula;
 color1=colormap([1 18 36 54],:);
 width=11.69;hwratio=.6;
@@ -56,6 +66,7 @@ switch tuning.type
         tuningcurve(2,:)=gaussmf(x,[sigma,0]);
         tuningcurve(3,:)=gaussmf(x,[sigma,45]);
         tuningcurve(4,:)=gaussmf(x,[sigma,90]);
+        neuronNames = {'gaussian','gaussian','gaussian','gaussian'};
     case 'mouse'
         x=-108:108;
         tuningcurve=zeros(4,length(x));
@@ -63,6 +74,7 @@ switch tuning.type
         tuningcurve(2,:)=gaussmf(x,[sigma,0]); %guassian
         tuningcurve(3,:)= 1- gaussmf(x,[sigma,0]); %U shaped gaussian
         tuningcurve(4,:)= sigmf(x,[0.016 -22.5])-0.05; %sigmodial
+        neuronNames = {'left sigmoid','gaussian','U','right sigmoid'};
 end
 
 for i=1:4
@@ -72,30 +84,13 @@ xlim([min(x) max(x)]);ylim([0 1.05])
 set(gca,'xtick',[-90 0 45 90],'XTickLabel',{'-90 deg', '0 deg', '45 deg', '90 deg'},'YColor','w')
 set(gca,'ytick',[0 0.50 1.0],'YTickLabel',{'0', '0.50', '1.0'},'YColor','b')
 
-% ---- Load stimuli ----
-% % old stimuli
-% load('stimuli.mat','stimuli')
-% fs = 44100;
-% n_length = length(stimuli{2});
-% % masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of length song2
-% songs = {stimuli{1}(1:n_length),stimuli{2}(1:n_length)};
-% masker = wgn(1,n_length,1);
+% ---- initialize stimuli spectrogram ----
+masker_spec = specs.maskers{1};
+t = specs.t;
+f = specs.f;
 
-% new stimuli, normalize amplitude to 0.01 rms
-rmsNormGain = 7.75;
-[song1,fs1] = audioread('200k_target1.wav');
-[song2,fs2] = audioread('200k_target2.wav');
-[masker,fs_m] = audioread('200k_masker1.wav');
-fs=fs1;  % takes song 2
-n_length=length(song2);%t_end=length(song2/fs);
-songs = {song1/rmsNormGain, song2/rmsNormGain}; 
-
-
-masker = masker/rms(masker)*maskerlvl;
-[masker_spec,t,f]=STRFspectrogram(masker,fs);
-
-% Make STRF & plot
-strf=STRFgen(tuning.H,tuning.G,f,t(2)-t(1));
+% plot STRF
+strf = tuning.strf;
 
 positionVector = [x0 y0+2*(dy+ly) lx/2 ly];
 subplot('Position',positionVector)
@@ -115,10 +110,11 @@ spkrate=zeros(1,4);disc=zeros(1,4);
 for songn=1:2
     %convert sound pressure waveform to spectrogram representation
 %     songs(:,songn)=songs{songn}(1:n_length);
-    [song_spec,~,~]=STRFspectrogram(songs{songn},fs);
+%     [song_spec,~,~]=STRFspectrogram(songs{songn},fs);
+    song_spec = specs.songs{songn};
 
     %% plot mixture process (of song1) for visualization
-    stim_spec=zeros(4,length(t),length(f));
+    stim_spec=zeros(4,specs.dims(1),specs.dims(2));
     if maskerloc
         stim_spec(maskerloc,:,:)=masker_spec;
     end
@@ -156,9 +152,7 @@ for songn=1:2
     for i=1:4  % summing of each channel, i.e. neuron type 1-4
         for trial = 1:10         % for each trial, define a new random WGN masker
 %             masker = wgn(1,n_length,1);
-            [masker,fs_m] = audioread(['200k_masker' num2str(trial) '.wav']);
-            masker = masker/rms(masker)*maskerlvl;
-            [masker_spec,t,f]=STRFspectrogram(masker,fs);
+            masker_spec = specs.maskers{trial};
 
             %% weight at each stimulus location
             totalWeight = 0;
@@ -173,11 +167,11 @@ for songn=1:2
                 mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,maskerloc)*masker_spec;
             end
 
-            % scale mixed spectrogram; cap total weight to 1
-            if totalWeight <= .75
+            % scale mixed spectrogram; cap total weight to maxWeight
+            if totalWeight <= maxWeight
               mixedspec(i,:,:) = mixedspec(i,:,:)*stimGain;
             else
-              mixedspec(i,:,:) = mixedspec(i,:,:)/totalWeight*stimGain;
+              mixedspec(i,:,:) = mixedspec(i,:,:)/totalWeight*maxWeight*stimGain;
             end
             %mixedspec(i,:,:) = mixedspec(i,:,:).*stimGain;
 
@@ -226,7 +220,7 @@ for songn=1:2
             distMat = calcvr([t_spiketimes(:,i) t_spiketimes(:,i+4)], 10); % using ms as units, same as ts
             [disc(i), E, correctArray] = calcpc(distMat, 10, 2, 1,[], 'new');
             firingRate = round(sum(cellfun(@length,t_spiketimes(:,i+4)))/10);
-            title({['disc = ', num2str(disc(i))],['FR = ',num2str(firingRate)]})
+            title({neuronNames{i},['disc = ', num2str(disc(i))],['FR = ',num2str(firingRate)]})
         end
 
         fclose all;
@@ -234,9 +228,8 @@ for songn=1:2
 
     if saveParam.flag
         saveas(gca,[savedir '/s' num2str(songloc) 'm' num2str(maskerloc) '.tiff'])
-        paramG = tuning.G;
-        paramH = tuning.H;
         save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes','songloc','maskerloc',...
-            'sigma','paramG','paramH','mean_rate','disc','spkrate')
+            'sigma','mean_rate','disc','spkrate')
     end
 end
+set(0, 'DefaultFigureVisible', 'on')
