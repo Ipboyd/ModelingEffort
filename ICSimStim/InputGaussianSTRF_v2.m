@@ -44,7 +44,7 @@ dx=.02;dy=.05;
 lx=.13;ly=.1;
 azimuth=[-90 0 45 90];
 h=figure;
-figuresize(width, width*hwratio, 'inches')
+figuresize(width, width*hwratio,h, 'inches')
 positionVector = [x0+dx+lx y0+dy+ly 5*lx+4*dx ly];
 subplot('Position',positionVector)
 hold on
