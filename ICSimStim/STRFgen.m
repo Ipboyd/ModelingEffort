@@ -57,10 +57,11 @@ if nargin<7
     freqDom=0;
 end
 
+maxdelay = 250;
 strf.type = 'lin';
 strf.nIn = nIn;
-strf.t =0:dt:39*dt;
-strf.delays =0:39;
+strf.t =0:dt:maxdelay*dt;
+strf.delays =0:maxdelay;
 strf.nWts = (nIn*length(strf.delays) + 1);
 
 % strf.w1=zeros(nIn,length(delays));
