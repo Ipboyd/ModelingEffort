@@ -13,7 +13,7 @@ addpath(genpath('strflab_v1.45'))
 addpath('..\genlib')
 addpath('..\stimuli')
 % dataSaveLoc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
-dataSaveLoc = ''; %local save location
+dataSaveLoc = pwd; %local save location
 
 % Spatial tuning curve parameters
 sigma = 30; %60 for bird but 38 for mouse
@@ -23,49 +23,76 @@ maskerlvl = 0.01; %default is 0.01
 maxWeight = 1; %maximum mixed tuning weight; capped at this level.
 tic;
 
-% ============ log message (manual entry) ============
-msg{1} = ['line 180 in inputGaussianSTRF_v2: capped tuning weight to' num2str(maxWeight)];
-% =============== end log file ===================
-
-% STRF parameters - don't need to change
-paramH.t0=7/1000; % s
-paramH.BW=0.0045; % s temporal bandwith (sigma: exp width)
-paramH.BTM=56;  % Hz  temporal modulation (sine width)
-paramH.phase=.49*pi;
-
-paramG.BW=2000;  % Hz
-paramG.BSM=5.00E-05; % 1/Hz=s
-paramG.f0=4300;
+% save data name
+saveName=['TemporalBW 0.06s' filesep 's' num2str(sigma) '_gain' num2str(stimGain) '_' datestr(now,'YYYYmmdd-HHMMSS')];
+saveFlag = 0;
 
 % load stimuli & calc spectrograms
 if strcmp(tuning,'mouse')
-    [song1,fs1] = audioread('200k_target1.wav');
-    [song2,fs2] = audioread('200k_target2.wav');
-    [song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*0.01,fs1);
-    [song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*0.01,fs2);
+    [song1,~] = audioread('200k_target1.wav');
+    [song2,~] = audioread('200k_target2.wav');
     for trial = 1:10
         [masker,fs] = audioread(['200k_masker' num2str(trial) '.wav']);
         [spec,~,~]=STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
         masker_specs{trial} = spec;
     end
-    specs.songs{1} = song1_spec;
-    specs.songs{2} = song2_spec;
-    specs.maskers = masker_specs;
-    specs.dims = size(song1_spec);
-    specs.t = t;
-    specs.f = f;
-else
-    error('need to define stimuli for birds from stimuli/birdsongs.mat')
+    
+    %strf parameters
+    paramH.BW= 0.06; %bandwidth
+    paramH.BTM= 3.8 ; %BTM, modulation
+    paramH.t0= 0.125; % t0, peak latency (s)
+    paramH.phase= 0.45*pi; % phase
+    paramG.BW=2000;  % Hz
+    paramG.BSM=5.00E-05; % 1/Hz=s best spectral modulation
+    paramG.f0=4300;
+    strfGain = 0.025;
+elseif strcmp(tuning,'bird')
+    % stimuli
+    load('stimuli_birdsongs.mat','stimuli','fs')
+    minlen = min(cellfun(@length,stimuli));
+    song1 = stimuli{1}(1:minlen);
+    song2 = stimuli{2}(1:minlen);
+    masker = stimuli{3}(1:minlen);
+    [spec,~,~]=STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
+    for trial = 1:10
+        masker_specs{trial} = spec;
+    end
+        
+    % STRF parameters - do not change
+    paramH.t0=7/1000; % s
+    paramH.BW=0.0045; % s temporal bandwith (sigma: exp width)
+    paramH.BTM=56;  % Hz  temporal modulation (sine width)
+    paramH.phase=.49*pi;
+    paramG.BW=2000;  % Hz
+    paramG.BSM=5.00E-05; % 1/Hz=s
+    paramG.f0=4300;
+    strfGain = 1;
 end
+[song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*0.01,fs);
+[song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*0.01,fs);
+specs.songs{1} = song1_spec;
+specs.songs{2} = song2_spec;
+specs.maskers = masker_specs;
+specs.dims = size(song1_spec);
+specs.t = t;
+specs.f = f;
 
 % make STRF
 strf=STRFgen(paramH,paramG,f,t(2)-t(1));
+strf.w1 = strf.w1*strfGain;
+% ============ log message (manual entry?) ============
+msg{1} = ['capped tuning weight to' num2str(maxWeight)];
+msg{end+1} = ['maskerlvl = ' num2str(maskerlvl)];
+msg{end+1} = ['strfGain = ' num2str(strfGain)];
+msg{end+1} = ['strf paramH.BW = ' num2str(paramH.BW)];
+msg{end+1} = ['strf paramH.BTM = ' num2str(paramH.BTM)];
+msg{end+1} = ['strf paramH.t0 = ' num2str(paramH.t0)];
+msg{end+1} = ['strf paramH.phase = ' num2str(paramH.phase)];
+msg{end+1} = ['strf paramG.BW= ' num2str(paramG.BW)];
+% =============== end log file ===================
 
 %% Run simulation script
 mean_rate=.1;
-saveName=['s' num2str(sigma) '_gain' num2str(stimGain) '_maskerLvl' num2str(maskerlvl) '_' datestr(now,'YYYYmmdd-HHMMSS')];
-saveFlag = 0;
-
 songLocs = 1:4;
 maskerLocs = 1:4;
 
