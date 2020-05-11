@@ -187,7 +187,7 @@ for songn=1:2
             if songn==1 && trial==1
                 positionVector = [x0+subplotloc*(dx+lx) y0+2*(dy+ly) lx ly];
                 subplot('Position',positionVector)
-                imagesc(t,f,currspec',[0 80]);colormap('parula');%colorbar
+                imagesc(t,f,currspec',[0 80]);colormap('parula');
                 xlim([0 max(t)])
                 set(gca,'YDir','normal','xtick',[0 1],'ytick',[])
             end
