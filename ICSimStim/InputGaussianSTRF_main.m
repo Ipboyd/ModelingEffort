@@ -2,9 +2,6 @@
 % spatial tuning curve. I.e. this neuron has both spatial and
 % spectral-temporal tuning.
 
-% to do:
-% 1. add case for birdsong stimuli
-%
 % note:
 % large bottleneck lies in r/w to network drive
 
@@ -23,10 +20,6 @@ maskerlvl = 0.01; %default is 0.01
 maxWeight = 1; %maximum mixed tuning weight; capped at this level.
 tic;
 
-% save data name
-saveName=['TemporalBW 0.06s' filesep 's' num2str(sigma) '_gain' num2str(stimGain) '_' datestr(now,'YYYYmmdd-HHMMSS')];
-saveFlag = 0;
-
 % load stimuli & calc spectrograms
 if strcmp(tuning,'mouse')
     [song1,~] = audioread('200k_target1.wav');
@@ -38,14 +31,14 @@ if strcmp(tuning,'mouse')
     end
     
     %strf parameters
-    paramH.BW= 0.06; %bandwidth
-    paramH.BTM= 3.8 ; %BTM, modulation
-    paramH.t0= 0.125; % t0, peak latency (s)
-    paramH.phase= 0.45*pi; % phase
+    paramH.BW= 0.05; %bandwidth
+    paramH.BTM= 3.8 ; %best temporal modulation
+    paramH.t0= 0.1; % t0, peak latency (s)
+    paramH.phase= 0.48*pi; % phase
     paramG.BW=2000;  % Hz
     paramG.BSM=5.00E-05; % 1/Hz=s best spectral modulation
     paramG.f0=4300;
-    strfGain = 0.025;
+    strfGain = 0.35;
 elseif strcmp(tuning,'bird')
     % stimuli
     load('stimuli_birdsongs.mat','stimuli','fs')
@@ -58,15 +51,15 @@ elseif strcmp(tuning,'bird')
         masker_specs{trial} = spec;
     end
         
-    % STRF parameters - do not change
-    paramH.t0=7/1000; % s
-    paramH.BW=0.0045; % s temporal bandwith (sigma: exp width)
-    paramH.BTM=56;  % Hz  temporal modulation (sine width)
-    paramH.phase=.49*pi;
-    paramG.BW=2000;  % Hz
-    paramG.BSM=5.00E-05; % 1/Hz=s
-    paramG.f0=4300;
-    strfGain = 1;
+%     % STRF parameters - do not change
+%     paramH.t0=7/1000; % s
+%     paramH.BW=0.0045; % s temporal bandwith (sigma: exp width)
+%     paramH.BTM=56;  % Hz  temporal modulation
+%     paramH.phase=.49*pi;
+%     paramG.BW=2000;  % Hz
+%     paramG.BSM=5.00E-05; % 1/Hz=s
+%     paramG.f0=4300;
+%     strfGain = 1;
 end
 [song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*0.01,fs);
 [song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*0.01,fs);
@@ -81,6 +74,10 @@ specs.f = f;
 strf=STRFgen(paramH,paramG,f,t(2)-t(1));
 strf.w1 = strf.w1*strfGain;
 % ============ log message (manual entry?) ============
+saveName = sprintf('full_grids\\BW_%0.3f BTM_3.8 t0_0.1 phase%0.4f\\s%d_STRFgain%0.2f_%s',...
+                paramH.BW,paramH.phase/pi,sigma,strfGain,datestr(now,'YYYYmmdd-HHMMSS'));
+saveFlag = 0;
+
 msg{1} = ['capped tuning weight to' num2str(maxWeight)];
 msg{end+1} = ['maskerlvl = ' num2str(maskerlvl)];
 msg{end+1} = ['strfGain = ' num2str(strfGain)];
@@ -103,6 +100,8 @@ tuningParam.strf = strf;
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
 
+set(0, 'DefaultFigureVisible', 'off')
+figure;
 for songloc = songLocs
     close all
     maskerloc=0;
@@ -113,7 +112,16 @@ for songloc = songLocs
         t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
     end
 end
+set(0, 'DefaultFigureVisible', 'on')
 
+% write log file
+msg{end+1} = ['elapsed time is ' num2str(toc) ' seconds'];
+fid = fopen(fullfile(saveParam.fileLoc, 'notes.txt'), 'a');
+if fid == -1
+  error('Cannot open log file.');
+end
+for k=1:length(msg), fprintf(fid, '%s: %s\n', datestr(now, 0), msg{k}); end
+fclose(fid);
 %% Grids for each neuron
 % fileloc =
 % 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
@@ -149,11 +157,4 @@ for i = 1:length(neurons)
 end
 saveas(gca,[fileloc filesep 'performance_grid.tiff'])
 
-% write log file
-msg{end+1} = ['elapsed time is ' num2str(toc) ' seconds'];
-fid = fopen(fullfile(saveParam.fileLoc, 'notes.txt'), 'a');
-if fid == -1
-  error('Cannot open log file.');
-end
-for k=1:length(msg), fprintf(fid, '%s: %s\n', datestr(now, 0), msg{k}); end
-fclose(fid);
+

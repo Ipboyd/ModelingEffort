@@ -31,19 +31,18 @@ function t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuning,savePa
 %            code, to minimize redundancy; 
 %            added SPECS input parameter;
 %            made all default figures invisible to prevent focus stealing
+% 2020-05-14 moved figure call to main code
 %
 % To do: spatial tuning curves can be moved to the main code too
 
 % Plotting parameters
-set(0, 'DefaultFigureVisible', 'off')
 colormap = parula;
 color1=colormap([1 18 36 54],:);
 width=11.69;hwratio=.6;
 x0=.05;y0=.1;
 dx=.02;dy=.05;
 lx=.13;ly=.1;
-azimuth=[-90 0 45 90];
-h=figure;
+azimuth=[-90 0 45 90]; %stimuli locations
 figuresize(width, width*hwratio, 'inches')
 positionVector = [x0+dx+lx y0+dy+ly 5*lx+4*dx ly];
 subplot('Position',positionVector)
@@ -106,7 +105,7 @@ title('STRF')
 
 %%
 t_spiketimes={};
-spkrate=zeros(1,4);disc=zeros(1,4);
+avgSpkRate=zeros(1,4);disc=zeros(1,4);
 for songn=1:2
     %convert sound pressure waveform to spectrogram representation
 %     songs(:,songn)=songs{songn}(1:n_length);
@@ -194,7 +193,8 @@ for songn=1:2
 
             %% convolve STRF with spectrogram
             [spkcnt,rate,tempspk]=STRFconvolve(strf,currspec,mean_rate,1,songn);
-            spkrate(i)=spkcnt/max(t);
+            avgSpkRate(i)=spkcnt/max(t);
+            fr{trial,i+4*(songn-1)} = rate;
             t_spiketimes{trial,i+4*(songn-1)} = tempspk; %sec
         end
 
@@ -229,7 +229,7 @@ for songn=1:2
     if saveParam.flag
         saveas(gca,[savedir '/s' num2str(songloc) 'm' num2str(maskerloc) '.tiff'])
         save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes','songloc','maskerloc',...
-            'sigma','mean_rate','disc','spkrate')
+            'sigma','mean_rate','disc','avgSpkRate','fr')
     end
 end
-set(0, 'DefaultFigureVisible', 'on')
+clf
