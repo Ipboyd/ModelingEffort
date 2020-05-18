@@ -50,16 +50,8 @@ elseif strcmp(tuning,'bird')
     for trial = 1:10
         masker_specs{trial} = spec;
     end
-        
 %     % STRF parameters - do not change
-%     paramH.t0=7/1000; % s
-%     paramH.BW=0.0045; % s temporal bandwith (sigma: exp width)
-%     paramH.BTM=56;  % Hz  temporal modulation
-%     paramH.phase=.49*pi;
-%     paramG.BW=2000;  % Hz
-%     paramG.BSM=5.00E-05; % 1/Hz=s
-%     paramG.f0=4300;
-%     strfGain = 1;
+    load('bird_STRF_params.mat');
 end
 [song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*0.01,fs);
 [song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*0.01,fs);
