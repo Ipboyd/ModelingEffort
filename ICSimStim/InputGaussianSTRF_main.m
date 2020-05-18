@@ -50,7 +50,7 @@ elseif strcmp(tuning,'bird')
     for trial = 1:10
         masker_specs{trial} = spec;
     end
-%     % STRF parameters - do not change
+    % STRF parameters from Junzi's simulations
     load('bird_STRF_params.mat');
 end
 [song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*0.01,fs);
@@ -81,7 +81,7 @@ msg{end+1} = ['strf paramG.BW= ' num2str(paramG.BW)];
 % =============== end log file ===================
 
 %% Run simulation script
-mean_rate=.1;
+mean_rate = 0.1;
 songLocs = 1:4;
 maskerLocs = 1:4;
 
@@ -92,6 +92,7 @@ tuningParam.strf = strf;
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
 
+% iterate over all location combinations
 set(0, 'DefaultFigureVisible', 'off')
 figure;
 for songloc = songLocs
