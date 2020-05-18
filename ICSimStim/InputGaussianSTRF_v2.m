@@ -65,7 +65,7 @@ switch tuning.type
         tuningcurve(2,:)=gaussmf(x,[sigma,0]);
         tuningcurve(3,:)=gaussmf(x,[sigma,45]);
         tuningcurve(4,:)=gaussmf(x,[sigma,90]);
-        neuronNames = {'gaussian','gaussian','gaussian','gaussian'};
+        neuronNames = {'-90d deg','0 deg','45 deg','90 deg'};
     case 'mouse'
         x=-108:108;
         tuningcurve=zeros(4,length(x));
