@@ -15,12 +15,16 @@ addpath('eval_scripts')
 addpath('genlib')
 addpath(genpath('../dynasim'))
 
-researchDrive = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\';
-ICdir = [researchDrive 'ICStim\Mouse\s30_sg0.5_ml0.01_20200205-162645'];
-% ICdir = 'ICSimStim\mouse\v2\145638_s30';
+% researchDrive = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\';
+% ICdir = [researchDrive 'ICStim\Mouse\s30_sg0.5_ml0.01_20200205-162645'];
+ICdir = 'ICSimStim\mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.4985\s30_STRFgain1.50_20200514-212400';
+
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
 if isempty(ICstruc), error('empty data directory'); end
+
+subz = find(contains({ICstruc.name},'m0.mat')); % sXm0 (target only) cases
+
 %% varied parameters
 varies(1).conxn = '(IC->IC)';
 varies(1).param = 'trial';
@@ -30,11 +34,12 @@ varies(end+1).conxn = 'C';
 varies(end).param = 'noise';
 varies(end).range = 0.03;%:0.01:0.05;
 
-varies(end+1).conxn = '(S->R)';
-varies(end).param = 'gSYN';
-varies(end).range = 0.19:0.01:0.22; %0.15:0.005:0.19;
+varies(end+1).conxn = '(IC->IC)';
+varies(end).param = 'g_postIC';
+varies(end).range = 0.027:0.01:0.1;
 
-variedParam = 'S-R_gsyn';
+variedParam = 'IC-IC-gsyn';
+% variedParam = 'S-R_gsyn';
 % varies(end+1).conxn = '(IC->R)';
 % varies(end).param = 'gSYN';
 % varies(end).range = .2; %0.15:0.005:0.19;
@@ -42,6 +47,7 @@ variedParam = 'S-R_gsyn';
 %% netcons
 nCells = 4; %synchronise this variable with mouse_network
 
+% x-channel inhibition
 % irNetcon = diag(ones(1,nCells))*0.1;
 irNetcon = zeros(nCells);
 % irNetcon(2,1) = 1;
@@ -49,15 +55,15 @@ irNetcon = zeros(nCells);
 % irNetcon(4,1) = 1;
 % irNetcon(2,4) = 1;
 
+% sharpening
 srNetcon = diag(ones(1,nCells));
-% srNetcon = zeros(nCells);
 
-rcNetcon = zeros(4,1); %add this as input to mouse_network
-% make rnNetcon have variable weights (instead of zeros)
+% may need to make rcNetcon have variable weights
+rcNetcon = 'ones(N_pre,N_post)'; 
 
 netCons.irNetcon = irNetcon;
 netCons.srNetcon = srNetcon;
-netcons.rcNetcon = rcNetcon;
+netCons.rcNetcon = rcNetcon;
 %% Initialize variables
 plot_rasters = 1;
 
@@ -68,8 +74,6 @@ datetime=datestr(now,'yyyymmdd-HHMMSS');
 
 set(0, 'DefaultFigureVisible', 'off')
 h = figure('Position',[50,50,850,690]);
-
-subz = find(contains({ICstruc.name},'m0.mat')); % sXm0 (target only) cases
 for z = subz %1:length(ICstruc)
     % restructure IC spikes
     load([ICdirPath ICstruc(z).name],'t_spiketimes');

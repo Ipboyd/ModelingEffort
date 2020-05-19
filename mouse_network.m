@@ -90,7 +90,7 @@ s.mechanisms(1).equations=synDoubleExp;
 
 if isfield(netCons,'irNetcon'), irNetcon = netCons.irNetcon; else, irNetcon = zeros(nCells); end %no xchan inhibition by default
 if isfield(netCons,'srNetcon'), srNetcon = netCons.srNetcon; else, srNetcon = diag(ones(1,nCells)); end %sharpening by default
-if isfield(netCons,'rcNetcon'), rcNetcon = netCons.srNetcon; else, rcNetcon = 'ones(N_pre,N_post)'; end
+if isfield(netCons,'rcNetcon'), rcNetcon = netCons.rcNetcon; else, rcNetcon = 'ones(N_pre,N_post)'; end
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list='IC';
