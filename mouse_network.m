@@ -1,4 +1,4 @@
-function [perf, annotstr] = mouse_network(study_dir,time_end,varies,netCons,plot_rasters)
+function [perf, fr, annotstr] = mouse_network(study_dir,time_end,varies,netCons,plot_rasters)
 % [performance, tauMax] = mouse_network(study_dir,time_end,varies,plot_rasters,plot_title)
 % study_dir: location of IC spike files + directory for log and data files
 % time_end: length of simulation in ms
@@ -6,7 +6,7 @@ function [perf, annotstr] = mouse_network(study_dir,time_end,varies,netCons,plot
 %   varies(1).conxn = '(IC->IC)';
 %   varies(1).param = 'trial';
 %   varies(1).range = 1:20;
-%   *first set of parameters should always be "trials"
+%   *first set of parameters should always be "trial" for IC->IC cxn
 % plot_rasters: 1 or 0
 % plot_title: so we know which files the figures correspond to 
 %
@@ -94,19 +94,19 @@ if isfield(netCons,'rcNetcon'), rcNetcon = netCons.rcNetcon; else, rcNetcon = 'o
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list='IC';
-s.connections(1).parameters={'g_postIC',0.027,'trial',5}; % 100 hz spiking
+s.connections(1).parameters={'g_postIC',0.16,'trial',5}; % 100 hz spiking
 
 s.connections(end+1).direction='IC->I';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
+s.connections(end).parameters={'gSYN',.21, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
 
 s.connections(end+1).direction='IC->S';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.18, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
+s.connections(end).parameters={'gSYN',.21, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
 
 s.connections(end+1).direction='IC->R';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.2, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells)),'delay',0}; 
+s.connections(end).parameters={'gSYN',.21, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells)),'delay',0}; 
 
 s.connections(end+1).direction='I->R';
 s.connections(end).mechanism_list='synDoubleExp';
@@ -118,7 +118,7 @@ s.connections(end).parameters={'gSYN',.17, 'tauR',0.4, 'tauD',5, 'netcon',srNetc
 
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list='synDoubleExp';
-s.connections(end).parameters={'gSYN',.25, 'tauR',0.4, 'tauD',2, 'netcon',rcNetcon}; 
+s.connections(end).parameters={'gSYN',.16, 'tauR',0.4, 'tauD',2, 'netcon',rcNetcon}; 
 
 if viz_network, vizNetwork; end
 
@@ -169,7 +169,7 @@ for vv = 1:jump % for each varied parameter
     for i = 1:4 %for each spatially directed neuron
         subplot(4,4,i+12)
         thisRaster = squeeze(ICspks(:,i,:));
-        calcPCandPlot(thisRaster,time_end,1,plot_rasters);        
+        [perf.IC(i,vv),fr.IC(i,vv)] = calcPCandPlot(thisRaster,time_end,1,plot_rasters);        
         if i==1, ylabel('IC'); end
 
         subplot(4,4,i+8)
@@ -180,12 +180,12 @@ for vv = 1:jump % for each varied parameter
 
         subplot(4,4,i+4)
         thisRaster = squeeze(Rspks(:,i,:));
-        perf.R(i,vv) = calcPCandPlot(thisRaster,time_end,1,plot_rasters);
+        [perf.R(i,vv),fr.R(i,vv)] = calcPCandPlot(thisRaster,time_end,1,plot_rasters);
         if i==1, ylabel('R'); end
         xticklabels([])
     end
     subplot(4,4,2)
-    perf.C(vv) = calcPCandPlot(Cspks,time_end,1,plot_rasters);  
+    [perf.C(vv),fr.C(vv)] = calcPCandPlot(Cspks,time_end,1,plot_rasters);  
     ylabel('C spikes')
     xticklabels([])
 
@@ -208,7 +208,7 @@ for vv = 1:jump % for each varied parameter
 end
 end
 
-function pc = calcPCandPlot(raster,time_end,calcPC,plot_rasters,h)
+function [pc,fr] = calcPCandPlot(raster,time_end,calcPC,plot_rasters,h)
     PCstr = '';
     if calcPC
         % spks to spiketimes in a cell array of 10x2
