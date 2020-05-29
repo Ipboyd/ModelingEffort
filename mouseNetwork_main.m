@@ -13,12 +13,9 @@ addpath('mechs')
 addpath('dependencies')
 addpath('eval_scripts')
 addpath('genlib')
-addpath(genpath('../dynasim'))
+addpath(genpath('dynasim'))
 
-% researchDrive = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\';
-% ICdir = [researchDrive 'ICStim\Mouse\s30_sg0.5_ml0.01_20200205-162645'];
-ICdir = 'ICSimStim\mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.4985\s30_STRFgain1.50_20200514-212400';
-
+ICdir = ['MiceSpatialGrids/' 'ICStim/Mouse/s30_sg0.5_ml0.01_20200424-145616'];
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
 if isempty(ICstruc), error('empty data directory'); end
@@ -185,7 +182,7 @@ for vv = 1:nvaried
     % save grid
     Dirparts = strsplit(study_dir, filesep);
     DirPart = fullfile(Dirparts{1:end-1});
-    saveas(gca,[DirPart filesep 'SpatialGrid vary ' variedParam num2str(varies(end).range(vv),'%0.2f') '.tiff'])
+    saveas(gca,[filesep DirPart filesep 'SpatialGrid vary ' variedParam num2str(varies(end).range(vv),'%0.2f') '.tiff'])
     clf
 end
 set(0, 'DefaultFigureVisible', 'on')
