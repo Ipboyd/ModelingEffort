@@ -123,7 +123,7 @@ maskerIdx = find(contains(temp,'s0'));
 mixedIdx = find(~contains(temp,'m0') & ~contains(temp,'s0') & ~contains(temp,'empty'));
 numNeuronTypes = 4;
 
-h = figure;
+h = figure('position',[200 200 1600 600]);
 for vv = 1:nvaried
     if ~isempty(mixedIdx)
         % mixed config cases
@@ -135,7 +135,6 @@ for vv = 1:nvaried
             fr.R(i,:) = data(mixedIdx(i)).fr.R(:,vv);
             fr.C(i) = data(mixedIdx(i)).fr.C(vv);
         end
-        figure('position',[200 200 1600 600]);
 
         % relay neurons
         order = [1,2,3,4];
