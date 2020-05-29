@@ -1,7 +1,10 @@
-function plotPerfGrid(neuronPerf,neuronFR,title_string,textColorThresh)
+function plotPerfGrid(neuronPerf,neuronFR,titleString,textColorThresh)
+% plotPerfGrid(neuronPerf,neuronFR,titleString,textColorThresh)
+%
 % plots performance grids; can handle a data array of 16 or 8 elements
 % works with mouseNetwork_main
 if ~exist('textColorThresh','var'), textColorThresh = 70; end
+if ~exist('neuronFR','var'), neuronFR = 'n/a'; end
 
 % 2D plot (imagesc)
 if numel(neuronPerf) == 16
@@ -24,7 +27,7 @@ elseif numel(neuronPerf) == 8
     ytickangle(60)
 end
 
-title(title_string)
+title(titleString)
 colormap('parula');
 t = text(X(:),Y(:)-0.15,str,'Fontsize',12,'HorizontalAlignment', 'Center');
 t2 = text(X(:),Y(:)+0.15,strcat('(',str2,')'),'Fontsize',12,'HorizontalAlignment', 'Center');
