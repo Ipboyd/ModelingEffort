@@ -186,6 +186,6 @@ for vv = 1:nvaried
     Dirparts = strsplit(study_dir, filesep);
     DirPart = fullfile(Dirparts{1:end-1});
     saveas(gca,[DirPart filesep 'SpatialGrid vary ' variedParam num2str(varies(end).range(vv),'%0.2f') '.tiff'])
-%     clf
+    clf
 end
 set(0, 'DefaultFigureVisible', 'on')
