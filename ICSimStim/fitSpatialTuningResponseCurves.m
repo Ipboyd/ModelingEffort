@@ -24,12 +24,14 @@ plot(x, f1(B1,x), '-','color',cr,'linewidth',2);
 
 % 2 - center-preferred neurons
 options = optimset('MaxFunEvals',500);
-B3 = fminsearch(@(b) norm(y2(1:4) - f1(b,x(1:4))), [100; 0.25; 0; 20],options); % Estimate Parameters
-B4 = fminsearch(@(b) norm(y2(4:end) - f1(b,x(4:end))), [5; -0.25; 60; 20],options); % Estimate Parameters
+B3 = fminsearch(@(b) norm(y2(1:4) - f1(b,x(1:4))), [100; 0.25; 0; 20],options); % piece-wise
+B4 = fminsearch(@(b) norm(y2(4:end) - f1(b,x(4:end))), [5; -0.25; 60; 20],options); % exponentials
+B5 = fminsearch(@(b) norm(y2 - g(b,x)), [0; 20; 90; 100],options); % try gaussian fit
 
 plot(x,y2,'o','color',cg,'markersize',8,'markerfacecolor',cg);
 plot(x(1:4),f1(B3,x(1:4)), '-','color',cg,'linewidth',2);
 plot(x(4:end),f1(B4,x(4:end)), '-','color',cg,'linewidth',2);
+plot(x,g(B5,x), '--','color',cg-0.25,'linewidth',2);
 
 % 3 - contra-preferred neurons
 B2 = fminsearch(@(b) norm(y3 - f1(b,x)), [1; 0.5; 0; 15]); % Estimate Parameters
