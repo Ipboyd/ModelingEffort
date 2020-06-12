@@ -1,4 +1,4 @@
-% data from Panniello et al., 2018; fig 3C
+% data from Panniello et al., 2018; fig 3C (Auditory Cortex)
 x = [-90 -61 -10 0 18 61 90];
 y1 = [18 20 23 40 55 60 100]; %ipsi preferred
 y2 = [30 40 50 100 45 25 20]; %center preferred
@@ -46,7 +46,7 @@ xlabel('\leftarrow contralateral side; azimuths (degrees).')
 ylabel('normalized responses (%\DeltaF/F)')
 title('fit to Panniello et al., 2018')
 
-%% data from Ono and Oliver 2014
+%% data from Ono and Oliver 2014 (IC)
 x = [-90 -61 -10 0 18 61 90];
 y1I = [95 85 85 80 65 50 48]; % fig 4B
 y1E = [78 79 48 50 48 35 35];
@@ -90,3 +90,14 @@ By3E = fminsearch(@(b) norm(y3E - g(b,x)), [0; 20; 90; 100]);
 plot(x, g(By3E,x), '-','color',cr,'linewidth',2);
 legend({'data','','fit',''});
 xlabel('azimuths')
+
+%% plotting the fitted functions with higher resolution
+x1 = -90:1:90
+s = @(b,x) b(1)./(1+exp(b(2)*x+b(3)))+b(4); % sigmoidal function
+g = @(b,x) b(4)*exp(-(x-b(1)).^2/(2*b(2).^2))+b(3); % gaussian
+u = @(b,x) -b(4)*exp(-(x-b(1)).^2/(2*b(2).^2))+b(3); % gaussian
+figure;
+plot(x1, s(By1E,x1), '-','linewidth',2); hold on;
+plot(x1, u(By2E,x1), '-','linewidth',2);
+plot(x1, g(By3E,x1), '-','linewidth',2);
+legend('sidmoidal','U-shaped','gaussian')
