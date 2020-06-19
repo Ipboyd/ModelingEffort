@@ -118,8 +118,9 @@ fclose(fid);
 %% Grids for each neuron
 % fileloc =
 % 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
-% fileloc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim\Mouse\s30_gain0.5_maskerLvl0.01_20200415-213511';
-fileloc = [saveParam.fileLoc];
+fileloc = 'mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.4985\s30_STRFgain1.50_20200514-212400';
+addpath('..')
+% fileloc = [saveParam.fileLoc];
 allfiles = dir([fileloc filesep '*.mat'])
 tgtalone = dir([fileloc filesep '*m0.mat'])
 mskalone = dir([fileloc filesep 's0*.mat'])
@@ -127,26 +128,19 @@ mixedfiles = setdiff({allfiles.name},[{tgtalone.name};{mskalone.name}])
 for i = 1:16
     data = load([fileloc filesep mixedfiles{i}]);
     perf(i,:) = data.disc;
+    avgFR(i,:) = data.avgSpkRate;
 end
 
 neurons = {'left sigmoid','gaussian','u','right sigmoid'};
-[X,Y] = meshgrid(songLocs,fliplr(maskerLocs));
-figure;
+figure('position',[200 200 675 600]);
 for i = 1:length(neurons)
     subplot(2,2,i)
     neuronPerf = perf(:,i);
-    str = cellstr(num2str(round(neuronPerf)));
-    neuronPerf = reshape(neuronPerf,4,4);
-    imagesc(flipud(neuronPerf));
-    colormap('parula');
+    plotPerfGrid(neuronPerf,avgFR(:,i),neurons(i));
     xticks([1:4]); xticklabels({'-90','0','45','90'})
     yticks([1:4]); yticklabels(fliplr({'-90','0','45','90'}))
-    title(neurons(i))
-    text(X(:)-0.2,Y(:),str,'Fontsize',12)
-    caxis([50,100])
     xlabel('Song Location')
     ylabel('Masker Location')
-    set(gca,'fontsize',12)
 end
 saveas(gca,[fileloc filesep 'performance_grid.tiff'])
 
