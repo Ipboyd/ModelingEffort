@@ -52,7 +52,7 @@ s.populations(1).equations = 'chouLIF';
 s.populations(1).size = nCells;
 s.populations(1).parameters = {'Itonic',0,'noise',0}; % 10-20 Hz spiking at rest
 
-s.populations(end+1).name = 'I';
+s.populations(end+1).name = 'X';
 s.populations(end).equations = 'chouLIF';
 s.populations(end).size = nCells;
 s.populations(end).parameters = {'Itonic',0, 'noise',0}; % 10-20 Hz spiking at rest
@@ -96,7 +96,7 @@ s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list='IC';
 s.connections(1).parameters={'g_postIC',0.16,'trial',5}; % 100 hz spiking
 
-s.connections(end+1).direction='IC->I';
+s.connections(end+1).direction='IC->X';
 s.connections(end).mechanism_list='synDoubleExp';
 s.connections(end).parameters={'gSYN',.21, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells))}; 
 
@@ -108,7 +108,7 @@ s.connections(end+1).direction='IC->R';
 s.connections(end).mechanism_list='synDoubleExp';
 s.connections(end).parameters={'gSYN',.21, 'tauR',0.4, 'tauD',2, 'netcon',diag(ones(1,nCells)),'delay',0}; 
 
-s.connections(end+1).direction='I->R';
+s.connections(end+1).direction='X->R';
 s.connections(end).mechanism_list='synDoubleExp';
 s.connections(end).parameters={'gSYN',.2, 'tauR',0.4, 'tauD',10, 'netcon',irNetcon, 'ESYN',-80}; 
 
@@ -158,7 +158,7 @@ for vv = 1:jump % for each varied parameter
     for i = 1:20
         for j = 1:4
             ICspks(i,j,:) = subData(i).IC_V_spikes(:,j);
-            Ispks(i,j,:) = subData(i).I_V_spikes(:,j);
+            Ispks(i,j,:) = subData(i).X_V_spikes(:,j);
             Rspks(i,j,:) = subData(i).R_V_spikes(:,j);
         end
         Cspks(i,:) = subData(i).C_V_spikes;
@@ -175,7 +175,7 @@ for vv = 1:jump % for each varied parameter
         subplot(4,4,i+8)
         thisRaster = squeeze(Ispks(:,i,:));
         calcPCandPlot(thisRaster,time_end,0,plot_rasters);        
-        if i==1, ylabel('I'); end
+        if i==1, ylabel('SI'); end
         xticklabels([])
 
         subplot(4,4,i+4)
@@ -204,7 +204,7 @@ for vv = 1:jump % for each varied parameter
 
     parts = strsplit(study_dir, filesep);
     DirPart = fullfile(parts{1:end-1});
-    saveas(gca,[filesep DirPart filesep parts{end} '_v2_' num2str(vv) '.tiff'])
+    saveas(gca,[DirPart filesep parts{end} '_v2_' num2str(vv) '.tiff'])
 end
 end
 

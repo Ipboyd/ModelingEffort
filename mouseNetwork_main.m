@@ -10,29 +10,28 @@ clearvars;
 close all;
 
 addpath('mechs')
-addpath('dependencies')
-addpath('eval_scripts')
+addpath('plotting')
 addpath('genlib')
-addpath(genpath('dynasim'))
+addpath(genpath('..\dynasim'))
 
-ICdir = ['MiceSpatialGrids/' 'ICStim/Mouse/s30_sg0.5_ml0.01_20200424-145616'];
+ICdir = 'ICSimStim\mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.4985\s30_STRFgain1.50_20200514-212400';
 ICdirPath = [ICdir filesep];
 ICstruc = dir([ICdirPath '*.mat']);
 if isempty(ICstruc), error('empty data directory'); end
 
 % specify the set or subset of configurations to run
-% subz = find(contains({ICstruc.name},'m0.mat')); % sXm0 (target only) cases
-subz = 1:length(ICstruc);
+subz = find(contains({ICstruc.name},'m0.mat')); % sXm0 (target only) cases
+% subz = 1:length(ICstruc);
 %% varied parameters
 varies(1).conxn = '(IC->IC)';
 varies(1).param = 'trial';
 varies(1).range = 1:20;
 
-varies(end+1).conxn = 'C';
-varies(end).param = 'noise';
-varies(end).range = 0.03;%:0.01:0.05;
+varies(end+1).conxn = '(IC->IC)';
+varies(end).param = 'g_postIC';
+varies(end).range = 0.1:0.01:0.16;
 
-variedParam = 'CNoise';
+variedParam = 'IC-IC-gsyn';
 % variedParam = 'S-R_gsyn';
 % varies(end+1).conxn = '(IC->R)';
 % varies(end).param = 'gSYN';
@@ -182,7 +181,7 @@ for vv = 1:nvaried
     % save grid
     Dirparts = strsplit(study_dir, filesep);
     DirPart = fullfile(Dirparts{1:end-1});
-    saveas(gca,[filesep DirPart filesep 'SpatialGrid vary ' variedParam num2str(varies(end).range(vv),'%0.2f') '.tiff'])
+    saveas(gca,[DirPart filesep 'SpatialGrid vary ' variedParam num2str(varies(end).range(vv),'%0.2f') '.tiff'])
     clf
 end
 set(0, 'DefaultFigureVisible', 'on')
