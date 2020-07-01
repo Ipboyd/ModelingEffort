@@ -1,7 +1,8 @@
 function vizNetwork(s)
 % vizNetwork(s)
 % s is the structure containing information for dynasim simulations
-% assumes there are 64 frequencys
+% assumes there are 64 frequencys, source and sink of graph are 'C' and 'R'
+% respectively
 %
 % @ Kenny F Chou, BU
 % 2020-06-09
@@ -57,17 +58,40 @@ namesIdx = 1;
 for p = 1:numPops
     popName = adjMtxIdx(p).pop;
     popSize = adjMtxIdx(p).size;
-    for l = 1:popSize/nFreqs
-        for f = 1:nFreqs
+    if popSize < nFreqs
+        l = 1;
+        for f = 1:popSize
             names{namesIdx} = sprintf('%s_%i_%i',popName,l,f);
             namesIdx = namesIdx + 1;
         end
-    end 
+    else
+        for l = 1:popSize/nFreqs
+            for f = 1:nFreqs
+                names{namesIdx} = sprintf('%s_%i_%i',popName,l,f);
+                namesIdx = namesIdx + 1;
+            end
+        end 
+    end
+end
+
+% display adj matrix
+imagesc(adjMtx);
+title('Consolidated NetCon Matrix')
+xlabel('post-synaptic population')
+ylabel('pre-synaptic population')
+xticks([adjMtxIdx.start]+[adjMtxIdx.size]/2)
+xticklabels(popLabels)
+set(gca,'xaxisLocation','top')
+yticks([adjMtxIdx.start]+[adjMtxIdx.size]/2)
+yticklabels(popLabels)
+for i = 1:numPops-1
+    line([1,size(adjMtx,2)],[adjMtxIdx(i).end+0.5 adjMtxIdx(i).end+0.5],'Color', 'r', 'LineWidth', 0.5);
+    line([adjMtxIdx(i).end+0.5 adjMtxIdx(i).end+0.5], [1,size(adjMtx,1)],'Color', 'r', 'LineWidth', 0.5);
 end
 
 % graph
 sources = 'C';
-sinks = 'R';
+sinks = 'E';
 sourcesIdx = find(ismember(popLabels,sources));
 sinksIdx = find(ismember(popLabels,sinks));
 sourceStart = adjMtxIdx(sourcesIdx).start;
