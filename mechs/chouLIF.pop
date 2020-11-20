@@ -1,17 +1,16 @@
 chouLIF:
 % Erik's Implementation
-%dV/dt = ( g_leak*(E_leak - V) + g_ad*(E_k - V) + @isyn + Itonic + noise*randn(1,N_pop)/dt )/C;
+% dV/dt = ( g_leak*(E_leak - V) + g_ad*(E_k - V) + @isyn + Itonic + noise*randn(1,N_pop)/dt )/C;
+V(0) = -65
 
-dV/dt = ( g_leak*(E_leak - V) + g_ad*(E_k - V) - @isyn + Itonic + noise*randn(1,N_pop)/dt )/C;
+dV/dt = ( g_leak*(E_leak - V) + g_ad.*(E_k - V) - @isyn + Itonic + noise*randn(1,N_pop)/dt )/C
 
+t_ref = 1; % refractory period, t_ref/fs = [ms]
+%if(any(t==tspike,1))(V = V_spike) % insert spike
+if(any(t==tspike+t_ref,1))(V = V_reset) % implement refractory period
 
-
-% use this to have no spikes:
-% if(V >= V_thresh)(V = V_reset)
-
-% use this to insert spikes:
-if(V >= V_spike-10)(V = V_reset)
-if(V >= V_thresh & V < V_spike-10)(V = V_spike)
+g_ad = 0;
+E_k = -70; % adaptation channel
 
 monitor V.spikes(V_thresh,1)
 
@@ -19,10 +18,7 @@ monitor V.spikes(V_thresh,1)
 C = 0.5; % nF
 
 g_leak = 1/100; % uS = 1/R (1/Mohm)
-g_ad = 0; % uS
-
 E_leak = -60; % mV, equilibrium potential
-E_k = -70; % adaptation channel
 
 V_thresh = -40; % spike threshold mV
 V_spike = 50; % spike value mV

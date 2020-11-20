@@ -1,0 +1,17 @@
+ESYN = 0
+tauD = 1.5
+tauR = 0.3
+delay = 0
+
+gSYN1 = 1
+gSYN2 = 1
+gSYN3 = 1
+gSYN4 = 1
+
+f(x) = (exp(-x/tauD) - exp(-x/tauR)).*(x>0)
+
+gSYN = buildgSYN(N_pre,N_post,gSYN1,gSYN2,gSYN3,gSYN4)
+
+synDoubleExp(X,t) = ( f(t - tspike_pre - delay) * gSYN ) .* (X - ESYN)
+
+@isyn += synDoubleExp(V_post,t)

@@ -1,19 +1,28 @@
-function vizNetwork(s)
+function vizNetwork(s,nFreqs,sourcePop,sinkPop)
 % vizNetwork(s)
 % s is the structure containing information for dynasim simulations
 % assumes there are 64 frequencys, source and sink of graph are 'C' and 'R'
 % respectively
+% 
+% SOURCEPOP and SINKPOP are population names of neurons to use as sources
+% and sinks in the graph.
+%
+% Examples:
+%   for the mouse model, use viznetwork(s,0,'C','Exc')
 %
 % @ Kenny F Chou, BU
 % 2020-06-09
+% 2020-11-18 added support for nFreqs = 0 and variable source/sink names
 
-nFreqs = 64;
+if ~exist('nFreqs','var'), nFreqs = 0; end
+if ~exist('sourcePop','var'), sourcePop = 'C'; end
+if ~exist('sinkPop','var'), sinkPop = 'E'; end
 
 % calculate indices for populating adjacency matrix
 numCons = length(s.connections);
 numPops = length(s.populations);
 popLabels = {s.populations.name};
-adjuMtx = zeros(sum([s.populations.size])+nFreqs);
+adjMtx = zeros(sum([s.populations.size])+nFreqs);
 currentIdx = 1;
 for i = 1:numPops
     adjMtxIdx(i).pop = popLabels{i};
@@ -42,7 +51,7 @@ for i = 1:numCons
         disp('use zeros')
         nPre = s.populations(popPreLabelIdx).size;
         nPost = s.populations(popPostLabelIdx).size;
-        adjMtx(popPreStart:popPreEnd,popPostStart:popPostEnd) = zeros(nPre,nPost);
+        adjMtx(popPreStart:popPreEnd,popPostStart:popPostEnd) = eye(nPre,nPost);
     else
         % find netcon matrix within the parameters field
         disp('use netcon')
@@ -65,6 +74,7 @@ for p = 1:numPops
             namesIdx = namesIdx + 1;
         end
     else
+        if nFreqs == 0, nFreqs = 1; end
         for l = 1:popSize/nFreqs
             for f = 1:nFreqs
                 names{namesIdx} = sprintf('%s_%i_%i',popName,l,f);
@@ -90,8 +100,8 @@ for i = 1:numPops-1
 end
 
 % graph
-sources = 'C';
-sinks = 'E';
+sources = sourcePop;
+sinks = sinkPop;
 sourcesIdx = find(ismember(popLabels,sources));
 sinksIdx = find(ismember(popLabels,sinks));
 sourceStart = adjMtxIdx(sourcesIdx).start;
