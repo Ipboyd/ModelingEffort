@@ -1,29 +1,42 @@
-function [perf,fr] = postProcessData(data,options)
+function [perf,fr] = postProcessData_new(data,s,options)
 % calculate performance and FR
 % no plotting function for now
 
 time_end = options.time_end;
 plot_rasters = options.plotRasters;
 numTrials = length(data);
+numChannels = 4;
+
+% network properties
+popNames = {s.populations.name};
+popSizes = [data(1).model.specification.populations.size];
+nPops = numel(popNames);
+fieldNames = strcat(popNames,'_V_spikes');
+
+% for this trial
+% tstart = options.trialStart;
+% tend = options.trialEnd;
 
 jump = length(find([data.Inh_Inh_trial]==1));
 
+if ~isfield(options,'subPops'), options.subPops = popNames; end
 for vv = 1:jump % for each varied parameter
     subData = data(vv:jump:length(data));
-
     % visualize spikes
-%     ICspks = zeros(numTrials,4,time_end);
-%     Rspks = zeros(numTrials,4,time_end);
-    Cspks = zeros(numTrials,time_end);
-    for i = 1:numTrials
-        for j = 1:4
-%             ICspks(i,j,:) = subData(i).Exc_V_spikes(:,j);
-%             Rspks(i,j,:) = subData(i).R_V_spikes(:,j);
+    for currentPop = 1:nPops
+        % skip processing for current population if not within specified subpopulation.
+        if ~contains(popNames(currentPop),options.subPops), continue; end
+        popSpks = zeros(numTrials,popSizes(currentPop),time_end);
+        for channelNum = 1:popSizes(currentPop) % for each spatial channel
+            channel = struct();
+            for trial = 1:numTrials % for each trial
+                channel(channelNum).popSpks(trial,:) = subData(trial).(fieldNames{currentPop})(:,channelNum);
+            end
+            [perf.(popNames{currentPop}).(['channel' num2str(channelNum)])(vv),...
+             fr.(popNames{currentPop}).(['channel' num2str(channelNum)])(vv)] = ...
+             calcPCandPlot(channel(channelNum).popSpks,time_end,1,plot_rasters,numTrials);
         end
-        Cspks(i,:) = subData(i).C_V_spikes(options.trialStart:options.trialEnd);
-%         Cspks(i,:) = subData(i).C_V_spikes;
     end
-    [perf.C(vv),fr.C(vv)] = calcPCandPlot(Cspks,time_end,1,plot_rasters,numTrials);     
 end
 
 end

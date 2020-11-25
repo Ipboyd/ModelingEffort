@@ -10,14 +10,21 @@ function sigIn = genICinput(trial, ICdir,locNum,label)
 %
 % 2020-11-17 - removed EPSP waveform estimation
 
-ICdir = ICdir(2:end-1); %remove extra ' character from Dynasim Parsing
-label = label(2:end-1);
-if strcmp(label,'I'), locNum = locNum + 1; end
+% ICdir = ICdir(2:end-1); %remove extra ' character from Dynasim Parsing
+% label = label(2:end-1);
+% if strcmp(label,'I'), locNum = locNum + 1; end
+% 
+% ICfiles = dir([ICdir filesep '*.mat']);
+% % subz = find(~contains({ICfiles.name},'s0') & contains({ICfiles.name},['_' label]));
+% targetFileName = [ICfiles(locNum).folder filesep ICfiles(locNum).name];
+% fileData = load(targetFileName,'spks');
 
-ICfiles = dir([ICdir filesep '*.mat']);
-% subz = find(~contains({ICfiles.name},'s0') & contains({ICfiles.name},['_' label]));
-targetFileName = [ICfiles(locNum).folder filesep ICfiles(locNum).name];
-fileData = load(targetFileName,'spks');
+if exist(['IC_spks_' label(2:end-1) '.mat'],'file')
+    fileData = load(['IC_spks_' label(2:end-1) '.mat'],'spks');
+else
+    fileData = load(['..\IC_spks_' label(2:end-1) '.mat'],'spks');
+end
+
 
 % IC data: trial x location x time
 % Desired: time x location x trial

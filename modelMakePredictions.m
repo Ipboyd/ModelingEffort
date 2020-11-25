@@ -18,101 +18,76 @@ addpath('genlib')
 addpath('plotting')
 addpath(genpath(dynasimPath))
 
-% check IC inputs
-if ~exist(ICdir,'dir'), restructureICspks(ICdir); end
-
-% load network parameters
-load([fittedDataPath filesep 'network_params.mat'],'varies','netcons','restricts')
-options.ICdir = ICdir;
-options.STRFgain = extractBetween(ICdir,'gain','_2020');
-options.plotRasters = 0;
-% netcons.xrNetcon = zeros(4);
+% setup directory for current simulation
+datetime = datestr(now,'yyyymmdd-HHMMSS');
+study_dir = fullfile(pwd,'run',datetime);
+if exist(study_dir, 'dir'),rmdir(study_dir, 's'); end
+mkdir(fullfile(study_dir, 'solve'));
 
 % get indices of STRFS, all locations, excitatory inputs only
 ICfiles = dir([ICdir filesep '*.mat']);
 % subz = find(contains({ICfiles.name},'m0') & contains({ICfiles.name},'_E')); % target only
 subz = find(~contains({ICfiles.name},'s0') & contains({ICfiles.name},'_E')); % all
 
-datetime = datestr(now,'yyyymmdd-HHMMSS');
-study_dir = fullfile(pwd,'run',datetime);
+% check IC inputs
+if ~exist(ICdir,'dir'), restructureICspks(ICdir); end
+
+% load network parameters
+load([fittedDataPath filesep 'network_params.mat'],'varies','netcons')
+options.ICdir = ICdir;
+options.STRFgain = extractBetween(ICdir,'gain','_2020');
+options.plotRasters = 0;
+% netcons.xrNetcon = zeros(4);
+
+% custom parameters
+varies(1).conxn = '(Inh->Inh,Exc->Exc)';
+varies(1).param = 'trial';
+varies(1).range = 1:20;
+
+varies(2) = [];
+
+% concatenate spike-time matrices, save to study dir
+trialDur = zeros(1,length(subz));
+trialStartTimes = zeros(1,length(subz));
+padToTime = 3300; %ms
+label = {'E','I'};
+for ICtype = 0:1
+    spks = [];
+    for z = 1:length(subz)
+        disp(ICfiles(subz(z)+ICtype).name)
+        spkTrain = load([ICdir filesep ICfiles(subz(z)+ICtype).name]);
+        trialDur(z) = size(spkTrain.spks,3);
+        trialStartTimes(z) = padToTime;
+        % pad each trial to have duration of timePerTrial
+        if size(spkTrain.spks,3) < padToTime
+            padSize = padToTime-size(spkTrain.spks,3);
+            spkTrain.spks = cat(3,spkTrain.spks,zeros(20,4,padSize)); 
+        end
+        % concatenate
+        spks = cat(3,spks,spkTrain.spks);
+    end
+    save(fullfile(study_dir, 'solve',sprintf('IC_spks_%s.mat',label{ICtype+1})),'spks');
+end
+
+% run simulation
+options.time_end = size(spks,3);
+[temp,s] = mouseNetwork(study_dir,varies,netcons,[],options);
+FR_TD = median(sum(temp(1).TD_V_spikes)/options.time_end*1000);
 
 data = struct();
+options.trialStartTimes = [1 cumsum(trialStartTimes)+1];
+options.plotRasters = 0;
+options.time_end = 3000;
+subPops = {'R','C'}; %individually specify population performances to plot
 for z = 1:length(subz)
-    % run network
-%     ic1 = load([ICdir filesep ICfiles(subz(z)).name]);
-%     ic2 = load([ICdir filesep ICfiles(subz(z)+1).name]);
-%     options.time_end = min([size(ic1.spks,3),size(ic2.spks,3)]); %ms
-    options.time_end = 2700;
-    options.locNum = subz(z);
-    [temp,s] = mouseNetwork(study_dir,varies,netcons,restricts,options);
-    
     % post process
+    options.trialStart = options.trialStartTimes(z);
+    options.trialEnd = options.trialStartTimes(z+1)-(padToTime-options.time_end+1);
+    options.subPops = subPops;
     [data(z).perf,data(z).fr] = postProcessData(temp,options);
 end
 
-% temp = data;
-% for z = 1:length(subz)
-%     data.perf(z).C = temp(z).perf.C.C;
-%     data.fr(z).C = temp(z).fr.C.C;
-% end
-%% performance grids
-% performance vector has dimensions [numSpatialChan,nvaried]
-neurons = {'left sigmoid','gaussian','u','right sigmoid'};
+figure;
+vizNetwork(s,0,'C','Exc')
 
-fileNames = {ICfiles.name};
-targetIdx = find(contains(fileNames,'m0') & contains({ICfiles.name},'_E')); %target only
-maskerIdx = find(contains(fileNames,'s0') & contains({ICfiles.name},'_E')); %masker only
-mixedIdx = find(~contains(fileNames,'m0') & ~contains(fileNames,'s0') & contains({ICfiles.name},'_E'));
-
-h = figure('position',[200 200 600 600]);
-
-clear perf fr
-vv = 1;
-
-% C neuron; mixed cases
-if sum(ismember(subz,mixedIdx)) > 0
-    for i = 1:length(mixedIdx)
-        idx = (mixedIdx(i) == subz);
-        perf.C(i) = data(idx).perf.C(vv);
-        fr.C(i) = data(idx).fr.C(vv);
-    end
-    subplot('Position',[0.4 0.15 0.45 0.35])
-    plotPerfGrid(perf.C',fr.C',[]);
-end
-
-% C neuron; target or masker only cases
-if sum(ismember(subz,targetIdx)) > 0
-    perf.CT = zeros(1,4);
-    perf.CM = zeros(1,4);
-    fr.CT = zeros(1,4);
-    fr.CM = zeros(1,4);
-    if ~isempty(targetIdx)
-        for i = 1:length(targetIdx)
-            idx = (targetIdx(i) == subz);
-            perf.CT(i) = data(idx).perf.C(vv);
-            fr.CT(i) = data(idx).fr.C(vv);
-        end
-    end    
-    if ~isempty(maskerIdx)
-        for i = 1:length(maskerIdx)
-            idx = (maskerIdx(i) == subz);
-            perf.CM(i) = data(i).perf.C(vv);
-            fr.CM(i) = data(i).fr.C(vv);
-        end
-    end    
-    subplot('Position',[0.4 0.6 0.45 0.2])
-    plotPerfGrid([perf.CT;perf.CM],[fr.CT;fr.CM],'Cortical');
-end
-
-% % simulation info
-% annotation('textbox',[.8 .85 .15 .2],...
-%        'string',data(z).annot(vv,3:end),...
-%        'FitBoxToText','on',...
-%        'LineStyle','none')
-
-% save grid
-% Dirparts = strsplit(study_dir, filesep);
-% DirPart = fullfile(Dirparts{1:end-1});
-% saveas(gca,[DirPart filesep 'SpatialGrid vary ' variedParam num2str(varies(end).range(vv),'%0.2f') '.tiff'])
-% clf
-
+plotPerformanceGrids;
