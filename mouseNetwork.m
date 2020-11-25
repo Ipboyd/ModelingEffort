@@ -67,8 +67,23 @@ s.populations(end).equations = 'chouLIF';
 s.populations(end).size = 1;
 s.populations(end).parameters = {'Ad_tau',0};
 
+% % Imask vector specifies the channels that receive Iapp
+Imask = ones(1,nCells);
+s.populations(end+1).name='TD';
+s.populations(end).equations = 'LIF_Iapp';
+s.populations(end).size = nCells;
+s.populations(end).parameters = {'Itonic',7,'noise',0,'Imask',Imask};
+
 %% connections
+if ~isfield(netcons,'tdxNetcon'), netcons.tdxNetcon = zeros(nCells); end
+if ~isfield(netcons,'tdrNetcon'), netcons.tdrNetcon = zeros(nCells); end
+if ~isfield(netcons,'xrNetcon'), netcons.xrNetcon = zeros(nCells); end
+if ~isfield(netcons,'irNetcon'), netcons.irNetcon = eye(nCells); end
+
+tdxNetcon = netcons.tdxNetcon;
+tdrNetcon = netcons.tdrNetcon;
 XRnetcon = netcons.xrNetcon;
+irNetcon = netcons.irNetcon;
 
 s.connections(1).direction='Exc->Exc';
 s.connections(1).mechanism_list={'IC'};
@@ -98,6 +113,13 @@ s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list={'synDoubleExp_variablegSYN'};
 s.connections(end).parameters={'netcon',ones(nCells,1)};
 
+s.connections(end+1).direction = 'TD->X';
+s.connections(end).mechanism_list={'synDoubleExp'};
+s.connections(end).parameters={'gSYN',0.12, 'tauR',2, 'tauD',10, 'netcon',tdxNetcon, 'ESYN',-80}; 
+
+s.connections(end+1).direction = 'TD->R';
+s.connections(end).mechanism_list={'synDoubleExp'};
+s.connections(end).parameters={'gSYN',0.06, 'tauR',2, 'tauD',10, 'netcon',tdrNetcon, 'ESYN',-80}; 
 %% vary params
 vary = cell(length(varies),3);
 for i = 1:length(varies)
@@ -111,10 +133,9 @@ tic;
 
 simdata = dsSimulate(s,'tspan',[dt time_end], 'solver',solverType, 'dt',dt,...
   'downsample_factor',1, 'save_data_flag',0, 'save_results_flag',1,...
-  'study_dir',study_dir, 'vary',vary, 'debug_flag', 0, 'verbose_flag',0,...
-  'restricts',restricts);
+  'study_dir',study_dir, 'vary',vary, 'debug_flag', 0, 'verbose_flag',0);
 
-simdata = rmfield(simdata,{'Exc_V','Inh_V','R_V','labels','simulator_options','model'});
+simdata = rmfield(simdata,{'Exc_V','Inh_V','R_V','labels','simulator_options'});
 
 % save(fullfile(study_dir,'simulation_results.mat'),'simdata','-v7.3');
 
