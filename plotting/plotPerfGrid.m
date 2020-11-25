@@ -23,11 +23,12 @@ elseif numel(neuronPerf) == 8
     str2 = cellstr(num2str(round(neuronFR(:))));
     imagesc(neuronPerf);
     xticks([]);
-    yticks(1:2); yticklabels({'target only','masker only'})
-    ytickangle(60)
+    yticks([]);
+%     yticks(1:2); yticklabels({'target only','masker only'})
+%     ytickangle(60)
 end
 
-title(titleString)
+% title(titleString)
 colormap('parula');
 t = text(X(:),Y(:)-0.15,str,'Fontsize',12,'HorizontalAlignment', 'Center');
 t2 = text(X(:),Y(:)+0.15,strcat('(',str2,')'),'Fontsize',12,'HorizontalAlignment', 'Center');
