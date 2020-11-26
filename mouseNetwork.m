@@ -72,7 +72,7 @@ Imask = ones(1,nCells);
 s.populations(end+1).name='TD';
 s.populations(end).equations = 'LIF_Iapp';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'Itonic',7,'noise',0,'Imask',Imask};
+s.populations(end).parameters = {'Itonic',7,'noise',0,'Imask',Imask,'toff',time_end};
 
 %% connections
 if ~isfield(netcons,'tdxNetcon'), netcons.tdxNetcon = zeros(nCells); end

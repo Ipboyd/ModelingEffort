@@ -45,6 +45,10 @@ varies(1).range = 1:20;
 
 varies(2) = [];
 
+varies(end+1).conxn = 'TD';
+varies(end).param = 'Itonic';
+varies(end).range = 7;
+
 % specify netcons
 netcons.xrNetcon = ones(4)-eye(4); % cross channel inhibition
 netcons.irNetcon = eye(4); %inh -> R
