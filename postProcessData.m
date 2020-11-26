@@ -4,9 +4,8 @@ function [perf,fr] = postProcessData(data,options)
 
 time_end = options.time_end;
 plot_rasters = options.plotRasters;
-numTrials = length(data);
-
 jump = length(find([data.Inh_Inh_trial]==1));
+numTrials = length(data)/jump;
 
 for vv = 1:jump % for each varied parameter
     subData = data(vv:jump:length(data));

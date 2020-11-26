@@ -133,7 +133,8 @@ tic;
 
 simdata = dsSimulate(s,'tspan',[dt time_end], 'solver',solverType, 'dt',dt,...
   'downsample_factor',1, 'save_data_flag',0, 'save_results_flag',1,...
-  'study_dir',study_dir, 'vary',vary, 'debug_flag', 0, 'verbose_flag',0);
+  'study_dir',study_dir, 'vary',vary, 'debug_flag', 0, 'verbose_flag',0,...
+  'parfor_flag',options.parfor_flag);
 
 simdata = rmfield(simdata,{'Exc_V','Inh_V','R_V','labels','simulator_options'});
 

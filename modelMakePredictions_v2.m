@@ -43,33 +43,44 @@ varies(1).conxn = '(Inh->Inh,Exc->Exc)';
 varies(1).param = 'trial';
 varies(1).range = 1:20;
 
-varies(2) = [];
-
 varies(end+1).conxn = 'TD';
 varies(end).param = 'Itonic';
-varies(end).range = 7;
+varies(end).range = 2;
+
+varies(end+1).conxn = 'TD->R';
+varies(end).param = 'gSYN';
+varies(end).range = 0;
+
+varied_param = find(cellfun(@length,{varies.range})>1);
+if length(varied_param) > 1, varied_param = varied_param(2); end
+expVar = [varies(varied_param).conxn '-' varies(varied_param).param];
+expVar = strrep(expVar,'->','_');
 
 % specify netcons
 netcons.xrNetcon = ones(4)-eye(4); % cross channel inhibition
 netcons.irNetcon = eye(4); %inh -> R
 netcons.tdxNetcon = eye(4); % I2 -> I
-netcons.tdrNetcon = zeros(4); % I2 -> R
+netcons.tdrNetcon = eye(4); % I2 -> R
 
 %%%%%%%%%%%%%%%%%%%%%% the slow way %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% data = struct();
-% for z = 1:length(subz)
-%     % run network
-%     options.time_end = 2700;
-%     options.locNum = subz(z);
-%     [temp,s] = mouseNetwork(study_dir,varies,netcons,options);
+% 
+% varies(2).conxn = '(Inh->Inh,Exc->Exc)';
+% varies(2).param = 'locNum';
+% varies(2).range = subz;
+% 
+% %run network
+% options.time_end = 2700;
+% optinos.parfor_flag = 1;
+% [temp,s] = mouseNetwork(study_dir,varies,netcons,options);
 %     
 %     % post process
 %     [data(z).perf,data(z).fr] = postProcessData(temp,options);
-% end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%% the fast way %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% remove redundant vary
+varies(2) = [];
 
 % concatenate spike-time matrices, save to study dir
 trialDur = zeros(1,length(subz));
@@ -96,6 +107,8 @@ end
 
 % run simulation
 options.time_end = size(spks,3);
+options.locNum = [];
+optinos.parfor_flag = 1;
 [temp,s] = mouseNetwork(study_dir,varies,netcons,options);
 FR_TD = median(sum(temp(1).TD_V_spikes)/options.time_end*1000);
 
