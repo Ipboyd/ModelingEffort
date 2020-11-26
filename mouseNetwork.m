@@ -1,4 +1,4 @@
-function [simdata,s] = mouseNetwork(study_dir,varies,netcons,restricts,options)
+function [simdata,s] = mouseNetwork(study_dir,varies,netcons,options)
 % [perf, fr, annotstr, distMat, VR] = mouse_network(study_dir,time_end,...
 %    varies,plot_rasters,plot_distances,data_spks,data_tau,restrict_vary_flag)
 
@@ -99,7 +99,7 @@ s.connections(end).parameters={'gSYN',0.18, 'tauR',0.3, 'tauD',1.5, 'netcon', ey
 
 s.connections(end+1).direction='Inh->R';
 s.connections(end).mechanism_list={'synDoubleExp_variablegSYN'};
-s.connections(end).parameters={'tauR',0.3,'tauD',1.5,'ESYN',-80}; 
+s.connections(end).parameters={'tauR',0.3,'tauD',1.5,'ESYN',-80,'netcon',irNetcon}; 
 
 s.connections(end+1).direction='Exc->R';
 s.connections(end).mechanism_list={'synDoubleExp'};
