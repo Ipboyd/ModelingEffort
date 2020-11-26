@@ -43,13 +43,22 @@ varies(1).conxn = '(Inh->Inh,Exc->Exc)';
 varies(1).param = 'trial';
 varies(1).range = 1:20;
 
-varies(end+1).conxn = 'TD';
-varies(end).param = 'Itonic';
-varies(end).range = 2;
+varies(2) = []; % remove redundant vary
 
 varies(end+1).conxn = 'TD->R';
 varies(end).param = 'gSYN';
-varies(end).range = 0;
+varies(end).range = 0.03;
+
+varies(end+1).conxn = 'Exc->R';
+varies(end).param = 'gSYN';
+varies(end).range = 0.23;
+
+varies(end+1).conxn = 'TD';
+varies(end).param = 'Itonic';
+varies(end).range = 1.5:0.5:2.5;
+
+% display parameters
+[{varies.conxn}' {varies.param}' {varies.range}']
 
 varied_param = find(cellfun(@length,{varies.range})>1);
 if length(varied_param) > 1, varied_param = varied_param(2); end
@@ -62,11 +71,11 @@ netcons.irNetcon = eye(4); %inh -> R
 netcons.tdxNetcon = eye(4); % I2 -> I
 netcons.tdrNetcon = eye(4); % I2 -> R
 
-%%%%%%%%%%%%%%%%%%%%%% the slow way %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% the slow way %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
-% varies(2).conxn = '(Inh->Inh,Exc->Exc)';
-% varies(2).param = 'locNum';
-% varies(2).range = subz;
+% varies(end+1).conxn = '(Inh->Inh,Exc->Exc)';
+% varies(end).param = 'locNum';
+% varies(end).range = subz;
 % 
 % %run network
 % options.time_end = 2700;
@@ -77,10 +86,9 @@ netcons.tdrNetcon = eye(4); % I2 -> R
 %     [data(z).perf,data(z).fr] = postProcessData(temp,options);
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%% the fast way %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%% the fast way: concatenate over time %%%%%%%%%%%%%%%%%
 
-% remove redundant vary
-varies(2) = [];
+
 
 % concatenate spike-time matrices, save to study dir
 trialDur = zeros(1,length(subz));
@@ -108,9 +116,19 @@ end
 % run simulation
 options.time_end = size(spks,3);
 options.locNum = [];
-optinos.parfor_flag = 1;
+options.parfor_flag = 1;
 [temp,s] = mouseNetwork(study_dir,varies,netcons,options);
-FR_TD = median(sum(temp(1).TD_V_spikes)/options.time_end*1000);
+
+% TD firing rates
+FR_TD = zeros(1,length(varies(varied_param).range));
+for i = 1:length(varies(varied_param).range)
+    FR_TD(i) = max(sum(temp(i).TD_V_spikes)/options.time_end*1000);
+    sprintf('%.02f: %03f',temp(i).TD_Itonic,FR_TD(i))
+end
+figure;plot(varies(varied_param).range,FR_TD)
+xlabel(expVar)
+ylabel('FR, Hz')
+
 
 data = struct();
 options.trialStartTimes = [1 cumsum(trialStartTimes)+1];

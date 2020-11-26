@@ -69,6 +69,7 @@ s.populations(end).parameters = {'Ad_tau',0};
 
 % % Imask vector specifies the channels that receive Iapp
 Imask = ones(1,nCells);
+Imask(3) = 0;
 s.populations(end+1).name='TD';
 s.populations(end).equations = 'LIF_Iapp';
 s.populations(end).size = nCells;
