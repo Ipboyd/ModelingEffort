@@ -17,12 +17,15 @@ addpath('mechs')
 addpath('genlib')
 addpath('plotting')
 addpath(genpath(dynasimPath))
+expName = '001 vary TD-E gsyn';
 
 % setup directory for current simulation
 datetime = datestr(now,'yyyymmdd-HHMMSS');
 study_dir = fullfile(pwd,'run',datetime);
 if exist(study_dir, 'dir'),rmdir(study_dir, 's'); end
 mkdir(fullfile(study_dir, 'solve'));
+simDataDir = [pwd filesep 'simData' filesep expName];
+if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 
 % get indices of STRFS, all locations, excitatory inputs only
 ICfiles = dir([ICdir filesep '*.mat']);
@@ -45,6 +48,10 @@ varies(1).range = 1:20;
 
 varies(2) = []; % remove redundant vary
 
+varies(end+1).conxn = 'TD->X';
+varies(end).param = 'gSYN';
+varies(end).range = 0.05;
+
 varies(end+1).conxn = 'TD->R';
 varies(end).param = 'gSYN';
 varies(end).range = 0.03;
@@ -55,7 +62,7 @@ varies(end).range = 0.23;
 
 varies(end+1).conxn = 'TD';
 varies(end).param = 'Itonic';
-varies(end).range = 1.5:0.5:2.5;
+varies(end).range = 1.5:0.01:1.55;
 
 % display parameters
 [{varies.conxn}' {varies.param}' {varies.range}']
@@ -129,23 +136,35 @@ figure;plot(varies(varied_param).range,FR_TD)
 xlabel(expVar)
 ylabel('FR, Hz')
 
-
+% post-process, calculate performance
 data = struct();
-options.trialStartTimes = [1 cumsum(trialStartTimes)+1];
-options.plotRasters = 0;
+dataOld = struct();
 options.time_end = 3000;
-subPops = {'R','C'}; %individually specify population performances to plot
-for z = 1:length(subz)
-    % post process
-    options.trialStart = options.trialStartTimes(z);
-    options.trialEnd = options.trialStartTimes(z+1)-(padToTime-options.time_end+1);
-    options.subPops = subPops;
-    [data(z).perf,data(z).fr] = postProcessData(temp,options);
+PPtrialStartTimes = [1 cumsum(trialStartTimes)+1];
+PPtrialEndTimes = PPtrialStartTimes(2:end)-(padToTime-options.time_end+1);
+options.plotRasters = 0;
+options.subPops = {'X','R','C'}; %individually specify population performances to plot
+configName = cellfun(@(x) strsplit(x,'_'),{ICfiles(subz).name}','UniformOutput',false);
+configName = vertcat(configName{:});
+configName = configName(:,1);
+options.variedField = strrep(expVar,'-','_');
+tic
+parfor z = 1:length(subz)
+    trialStart = PPtrialStartTimes(z);
+    trialEnd = PPtrialEndTimes(z);
+    figName = [simDataDir filesep configName{z}];
+    [data(z).perf,data(z).fr] = postProcessData_new(temp,s,trialStart,trialEnd,figName,options);
+    
+%     [dataOld(z).perf,dataOld(z).fr] = postProcessData(temp,trialStart,trialEnd,options);
 end
-
+toc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 figure;
 vizNetwork(s,0,'C','Exc')
 
-plotPerformanceGrids;
+% data = dataOld;
+% plotPerformanceGrids;
+
+% options.subPops = {'C'};
+plotPerformanceGrids_new;
