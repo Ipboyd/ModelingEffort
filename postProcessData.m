@@ -1,4 +1,4 @@
-function [perf,fr] = postProcessData(data,options)
+function [perf,fr] = postProcessData(data,tStart,tEnd,options)
 % calculate performance and FR
 % no plotting function for now
 
@@ -19,7 +19,7 @@ for vv = 1:jump % for each varied parameter
 %             ICspks(i,j,:) = subData(i).Exc_V_spikes(:,j);
 %             Rspks(i,j,:) = subData(i).R_V_spikes(:,j);
         end
-        Cspks(i,:) = subData(i).C_V_spikes(options.trialStart:options.trialEnd);
+        Cspks(i,:) = subData(i).C_V_spikes(tStart:tEnd);
 %         Cspks(i,:) = subData(i).C_V_spikes;
     end
     [perf.C(vv),fr.C(vv)] = calcPCandPlot(Cspks,time_end,1,plot_rasters,numTrials);     
