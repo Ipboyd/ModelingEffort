@@ -15,7 +15,6 @@ function t_spiketimes=InputGaussianSTRF(songloc,maskerloc,tuning,saveParam,mean_
 %
 % modified by KFC
 % 2019-08-07 added switch/case for two types of tuning curves
-%            removed 1/2 scaling factor for colocated stimulus spectrograms
 %            cleaned up input params
 % 2019-08-30 moved normalization to after spectrogram/tuning curve weighing
 
@@ -74,7 +73,8 @@ strf=STRFgen(tuning.H,tuning.G,f,t(2)-t(1));
 if saveParam.flag, savedir=saveParam.fileLoc; mkdir(savedir); end
 
 t_spiketimes={};
-spkrate=zeros(1,4);disc=zeros(1,4);
+fr={};
+avgSpkRate=zeros(1,4);disc=zeros(1,4);
 %% 
 for songn=1:2
     %convert sound pressure waveform to spectrogram representation
@@ -170,8 +170,10 @@ for songn=1:2
         end
         %% convolve STRF with spectrogram
         [spkcnt,rate,tempspk]=STRFconvolve(strf,currspec,mean_rate,10,songn);
-        spkrate(i)=spkcnt/max(t);
+        avgSpkRate(i)=spkcnt/max(t);
+        fr=[fr avgSpkRate];
         t_spiketimes=[t_spiketimes tempspk]; %sec
+        
         %% plot FR (of song1)
         %2nd row of plots- spectograph
         if songn==1
@@ -193,7 +195,7 @@ for songn=1:2
         if songn==2
             distMat = calcvr([t_spiketimes(:,i) t_spiketimes(:,i+4)], 10); % using ms as units, same as ts
             [disc(i), E, correctArray] = calcpc(distMat, 10, 2, 1,[], 'new');
-            title({['disc = ', num2str(disc(i))],['FR = ',num2str(spkrate(i))]})
+            title({['disc = ', num2str(disc(i))],['FR = ',num2str(avgSpkRate(i))]})
         end
     end   
 
@@ -202,6 +204,6 @@ for songn=1:2
         paramG = tuning.G;
         paramH = tuning.H;
         save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes','songloc','maskerloc',...
-            'sigma','paramG','paramH','mean_rate','disc','spkrate')
+            'sigma','paramG','paramH','mean_rate','disc','avgSpkRate','fr')
     end
 end
