@@ -58,7 +58,7 @@ end
 
 
 %% Load songs
-load('stimuli.mat','stimuli')
+load('stimuli_birdsongs.mat','stimuli')
 fs=44100;  % takes song 2
 n_length=length(stimuli{2});%t_end=length(song2/fs);
 songs=zeros(n_length,2);
@@ -71,7 +71,7 @@ masker=stimuli{3}(1:n_length); %creates masker (stored in stimuli.mat{3}) of len
 strf=STRFgen(tuning.H,tuning.G,f,t(2)-t(1));
 
 %% Save the figure and figure variables in the STRF folder
-if saveParam.flag, savedir=[tuning.type '\' saveParam.fileLoc]; mkdir(savedir); end
+if saveParam.flag, savedir=saveParam.fileLoc; mkdir(savedir); end
 
 t_spiketimes={};
 spkrate=zeros(1,4);disc=zeros(1,4);
