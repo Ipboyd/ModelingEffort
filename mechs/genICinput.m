@@ -9,6 +9,7 @@ function sigIn = genICinput(trial, ICdir,locNum,label)
 % Boston Univeristy, 2019
 %
 % 2020-11-17 - removed EPSP waveform estimation
+% 2021-01-05 - added EPSP waveform as a square pulse
 
 % ICdir = ICdir(2:end-1); %remove extra ' character from Dynasim Parsing
 % label = label(2:end-1);
@@ -33,4 +34,10 @@ spk_IC = fileData.spks;
 spk_IC = permute(spk_IC,[3,2,1]);
 sigIn = squeeze(spk_IC(:,:,trial)); % time x location x cells
 
+% convolve with short square pulse
+dt = 1; %ms
+dur = 2; %ms
+epsc = ones(1, round(dur/dt));
+sigIn = conv2(sigIn,epsc');
+sigIn(size(spk_IC,1)+1:end,:) = []; %trim off extras
 end
