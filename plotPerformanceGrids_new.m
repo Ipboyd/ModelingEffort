@@ -11,6 +11,12 @@ fileNames = {ICfiles.name};
 targetIdx = find(contains(fileNames,'m0') & contains({ICfiles.name},'_E')); %target only
 maskerIdx = find(contains(fileNames,'s0') & contains({ICfiles.name},'_E')); %masker only
 mixedIdx = find(~contains(fileNames,'m0') & ~contains(fileNames,'s0') & contains({ICfiles.name},'_E'));
+% if there are no E vs I distinction
+if isempty(targetIdx) && isempty(maskerIdx) && isempty(mixedIdx)
+    targetIdx = find(contains(fileNames,'m0')); %target only
+    maskerIdx = find(contains(fileNames,'s0')); %masker only
+    mixedIdx = find(~contains(fileNames,'m0') & ~contains(fileNames,'s0'));
+end
 
 % setup populations
 popNames = {s.populations.name};
@@ -21,25 +27,40 @@ subPops = options.subPops;
 numPops = numel(subPops);
 popSizes = [temp(1).model.specification.populations.size];
 popSizes = popSizes(contains(popNames,subPops));
+onlyC = contains(subPops,'C') & length(subPops) == 1;
 
 for vv = 1:length(varies(varied_param).range)
     % simulation annotation
-    currentVariedValue = varies(varied_param).range(vv);
-    annotStr = [{varies.conxn}' {varies.param}' {varies.range}'];
-    annotStr([1:2 3:10 varied_param],:) = [];
-    annotStr = strcat(annotStr(:,1), {' '}, annotStr(:,2), {' = '}, strtrim(num2str([annotStr{:,3}]')));
-    annotStr{end+1} = sprintf('RC-gSYN = [%.02f %.02f %.02f %.02f]', [varies(3:6).range]);
-    annotStr{end+1} = sprintf('InhR-gSYN = [%.02f %.02f %.02f %.02f]', [varies(7:10).range]);
-    annotStr{end+1} = [expVar ' = ' num2str(currentVariedValue)];
-
+    annotTable = [{varies.conxn}' {varies.param}' {varies.range}'];
+    
+    % if no parameter is varied
+    if varied_param == 1
+        % remove "R-C gSYN", trials
+        RCgSYN_idx = find(contains([{varies.conxn}'],'R->C') & contains([{varies.param}'],'gSYN'));
+        annotTable([RCgSYN_idx; varied_param],:, :) = []; 
+        
+        annotStr = strcat(annotTable(:,1), {' '}, annotTable(:,2), {' = '}, strtrim(num2str([annotTable{:,3}]')));
+        annotStr{end+1} = sprintf('RC-gSYN = [%.02f %.02f %.02f %.02f]', [varies(RCgSYN_idx).range]);
+    else
+        % remove "R-C gSYN", varied parameter, trials
+        RCgSYN_idx = find(contains([{varies.conxn}'],'R->C') & contains([{varies.param}'],'gSYN'));
+        annotTable([RCgSYN_idx;; varied_param],:, :) = [];
+        annotTable(1,:,:) = [];
+        
+        currentVariedValue = varies(varied_param).range(vv);
+        annotStr = strcat(annotTable(:,1), {' '}, annotTable(:,2), {' = '}, strtrim(num2str([annotTable{:,3}]')));
+        annotStr{end+1} = [expVar ' = ' num2str(currentVariedValue)];
+        annotStr{end+1} = sprintf('RC-gSYN = [%.02f %.02f %.02f %.02f]', [varies(RCgSYN_idx).range]);
+    end
+      
     % figure setup
     figwidth = 1200;
     figheight = min(length(popSizes)*300,800);
     h = figure('position',[200 50 figwidth figheight]);
     plotwidth = 0.175; % percentage
-    plotheight = 1/numPops*0.6; % percentage
+    plotheight = 1/numPops*0.55; % percentage
     xstart = 0.1;
-    ystart = 0.05;
+    ystart = 0.1;
     for pop = 1:numPops
         for chan = 1:popSizes(pop)
 
@@ -61,6 +82,14 @@ for vv = 1:length(varies(varied_param).range)
                 end
                 subplot('Position',[xoffset yoffset plotwidth plotheight])
                 plotPerfGrid(perf.(subPops{pop})',fr.(subPops{pop})',[]);
+                
+                % add axes
+                if onlyC
+                    xticks(1:4); xticklabels([-90 0 45 90])
+                    yticks(1:4); yticklabels([90 45 0 -90])
+                    xlabel('target location')
+                    ylabel('masker location')
+                end
             end
 
             % target or masker only cases
