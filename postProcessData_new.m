@@ -32,7 +32,12 @@ if ~isfield(options,'subPops'), options.subPops = popNames; end
 if plot_rasters, figure; end
 for vv = 1:jump % for each varied parameter
     subData = data(vv:jump:length(data)); %grab data for this param variation
-    variedParamVal = mode([subData.(options.variedField)]); % should all be the same
+    try
+        variedParamVal = mode([subData.(options.variedField)]); % should all be the same
+    catch
+        variedParamVal = 0;
+    end
+    
     for currentPop = 1:nPops
         
         % skip processing for current population if not within specified subpopulation.
