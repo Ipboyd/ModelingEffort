@@ -32,6 +32,7 @@ function t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuning,savePa
 %            added SPECS input parameter;
 %            made all default figures invisible to prevent focus stealing
 % 2020-05-14 moved figure call to main code
+% 2021-01-07 simplified code for spectrogram mixing
 %
 % To do: spatial tuning curves can be moved to the main code too
 
@@ -66,6 +67,7 @@ switch tuning.type
         tuningcurve(3,:)=gaussmf(x,[sigma,45]);
         tuningcurve(4,:)=gaussmf(x,[sigma,90]);
         neuronNames = {'-90d deg','0 deg','45 deg','90 deg'};
+%         tuningcurve = tuningcurve;
     case 'mouse'
         x=-108:108;
         tuningcurve=zeros(4,length(x));
@@ -146,33 +148,33 @@ for songn=1:2
 
 
     %% mix spectrograms using Gaussian weights
-    mixedspec=zeros(size(stim_spec));
-    weight=zeros(4,4);
-    for i=1:4  % summing of each channel, i.e. neuron type 1-4
+    for i=1:4  
+        % initialize weights
+        maskerWeight = 0;
+        songWeight = 0;
+        % for each tuning curve, i.e. neuron type 1-4, 
+        % 1. weight stimulus at each location by tuning curve amplitude
+        % 2. sum weighted stimuli
         for trial = 1:10         % for each trial, define a new random WGN masker
 %             masker = wgn(1,n_length,1);
             masker_spec = specs.maskers{trial};
+            
+            % for each location along the azimuth, weight stimuli spectrogram
+            % 2020-01-05 separate colocated configs
 
-            %% weight at each stimulus location
-            totalWeight = 0;
-            if songloc
-                weight(i,songloc) = tuningcurve(i,x==azimuth(songloc));
-                totalWeight = totalWeight + weight(i,songloc);
-                mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,songloc)*song_spec;
-            end
-            if maskerloc
-                weight(i,maskerloc) = tuningcurve(i,x==azimuth(maskerloc));
-                totalWeight = totalWeight + weight(i,maskerloc);
-                mixedspec(i,:,:) = squeeze(mixedspec(i,:,:)) + weight(i,maskerloc)*masker_spec;
-            end
+            %%%%%%%%%%%%%%
+            if maskerloc, maskerWeight = tuningcurve(i,x==azimuth(maskerloc)); end
+            if songloc, songWeight = tuningcurve(i,x==azimuth(songloc)); end
+            totalWeight = maskerWeight + songWeight;
 
-            % scale mixed spectrogram; cap total weight to maxWeight
-            if totalWeight <= maxWeight
-              mixedspec(i,:,:) = mixedspec(i,:,:)*stimGain;
-            else
-              mixedspec(i,:,:) = mixedspec(i,:,:)/totalWeight*maxWeight*stimGain;
+            mixed_spec = masker_spec*maskerWeight + song_spec*songWeight;
+
+            % cap total weight to maxWeight, then scale
+            if totalWeight > maxWeight
+                mixed_spec = mixed_spec/totalWeight*maxWeight;
             end
-            %mixedspec(i,:,:) = mixedspec(i,:,:).*stimGain;
+            mixed_spec = mixed_spec * stimGain;
+            %%%%%%%%%%%%%%%
 
             if i>1
                 subplotloc=i+1;
@@ -180,8 +182,9 @@ for songn=1:2
                 subplotloc=i;
             end
 
-            currspec=squeeze(mixedspec(i,:,:)); % currentspectrograms
-
+%             currspec=squeeze(mixedspec(i,:,:)); % currentspectrograms
+            
+            currspec = mixed_spec;
             %% plot mixed spectrograms (of song1)- 3rd row of graphs
             if songn==1 && trial==1
                 positionVector = [x0+subplotloc*(dx+lx) y0+2*(dy+ly) lx ly];
