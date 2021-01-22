@@ -69,7 +69,7 @@ s.populations(end).parameters = {'Ad_tau',0};
 
 % % Imask vector specifies the channels that receive Iapp
 Imask = ones(1,nCells);
-Imask(3) = 0;
+% Imask(3) = 0;
 s.populations(end+1).name='TD';
 s.populations(end).equations = 'LIF_Iapp';
 s.populations(end).size = nCells;
@@ -86,9 +86,21 @@ tdrNetcon = netcons.tdrNetcon;
 XRnetcon = netcons.xrNetcon;
 irNetcon = netcons.irNetcon;
 
+% jio params
+% epsc_rise = 0.3
+% epsc_fall = 1.4
+% ipsc_rise = 2
+% ipsc_fall = 10
+
+% junzi params
+epsc_rise = 1;
+epsc_fall = 3;
+ipsc_rise = 4;
+ipsc_fall = 50;
+
 s.connections(1).direction='Exc->Exc';
 s.connections(1).mechanism_list={'IC'};
-s.connections(1).parameters={'g_postIC',0.25,'label','E','ICdir',options.ICdir,'locNum',options.locNum}; % 100 hz spiking
+s.connections(1).parameters={'g_postIC',0.3,'label','E','ICdir',options.ICdir,'locNum',options.locNum}; % 100 hz spiking
 
 s.connections(end+1).direction='Inh->Inh';
 s.connections(end).mechanism_list={'IC'};
@@ -96,31 +108,32 @@ s.connections(end).parameters={'g_postIC',0.25,'label','I','ICdir',options.ICdir
 
 s.connections(end+1).direction='R->X';
 s.connections(end).mechanism_list={'synDoubleExp'};
-s.connections(end).parameters={'gSYN',0.18, 'tauR',0.3, 'tauD',1.5, 'netcon', eye(nCells)}; 
+s.connections(end).parameters={'gSYN',0.18, 'tauR',epsc_rise, 'tauD',epsc_fall, 'netcon', eye(nCells)}; 
 
 s.connections(end+1).direction='Inh->R';
 s.connections(end).mechanism_list={'synDoubleExp_variablegSYN'};
-s.connections(end).parameters={'tauR',0.3,'tauD',1.5,'ESYN',-80,'netcon',irNetcon}; 
+s.connections(end).parameters={'tauR',0.3,'tauD',1.5,'ESYN',-70,'netcon',irNetcon}; 
 
 s.connections(end+1).direction='Exc->R';
 s.connections(end).mechanism_list={'synDoubleExp'};
-s.connections(end).parameters={'gSYN',0.18, 'tauR',0.3, 'tauD',1.5, 'netcon', eye(nCells)}; 
+s.connections(end).parameters={'gSYN',0.25, 'tauR',epsc_rise, 'tauD',epsc_fall, 'netcon', eye(nCells)}; 
 
 s.connections(end+1).direction='X->R';
 s.connections(end).mechanism_list={'synDoubleExp'};
-s.connections(end).parameters={'gSYN',0.12, 'tauR',0.3, 'tauD',1.5, 'netcon',XRnetcon, 'ESYN',-80}; 
+s.connections(end).parameters={'gSYN',0.25, 'tauR',ipsc_rise, 'tauD',ipsc_fall, 'netcon',XRnetcon, 'ESYN',-70}; 
 
+rcNetcon = ones(nCells,1);
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list={'synDoubleExp_variablegSYN'};
-s.connections(end).parameters={'netcon',ones(nCells,1)};
+s.connections(end).parameters={'tauR',epsc_rise, 'tauD',epsc_fall, 'netcon',rcNetcon};
 
 s.connections(end+1).direction = 'TD->X';
 s.connections(end).mechanism_list={'synDoubleExp'};
-s.connections(end).parameters={'gSYN',0.12, 'tauR',2, 'tauD',10, 'netcon',tdxNetcon, 'ESYN',-80}; 
+s.connections(end).parameters={'gSYN',0.12, 'tauR',2, 'tauD',10, 'netcon',tdxNetcon, 'ESYN',-70}; 
 
 s.connections(end+1).direction = 'TD->R';
 s.connections(end).mechanism_list={'synDoubleExp'};
-s.connections(end).parameters={'gSYN',0.06, 'tauR',2, 'tauD',10, 'netcon',tdrNetcon, 'ESYN',-80}; 
+s.connections(end).parameters={'gSYN',0.06, 'tauR',2, 'tauD',10, 'netcon',tdrNetcon, 'ESYN',-70}; 
 %% vary params
 vary = cell(length(varies),3);
 for i = 1:length(varies)
