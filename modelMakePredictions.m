@@ -37,7 +37,6 @@ load([fittedDataPath filesep 'network_params.mat'],'varies','netcons')
 options.ICdir = ICdir;
 options.STRFgain = extractBetween(ICdir,'gain','_2020');
 options.plotRasters = 0;
-% netcons.xrNetcon = zeros(4);
 
 % custom parameters
 varies(1).conxn = '(Inh->Inh,Exc->Exc)';
@@ -45,6 +44,12 @@ varies(1).param = 'trial';
 varies(1).range = 1:20;
 
 varies(2) = [];
+
+% specify netcons
+netcons.xrNetcon = ones(4)-eye(4); % cross channel inhibition
+netcons.irNetcon = eye(4); %inh -> R
+netcons.tdxNetcon = eye(4); % I2 -> I
+netcons.tdrNetcon = zeros(4); % I2 -> R
 
 % concatenate spike-time matrices, save to study dir
 trialDur = zeros(1,length(subz));
@@ -71,7 +76,7 @@ end
 
 % run simulation
 options.time_end = size(spks,3);
-[temp,s] = mouseNetwork(study_dir,varies,netcons,[],options);
+[temp,s] = mouseNetwork(study_dir,varies,netcons,options);
 FR_TD = median(sum(temp(1).TD_V_spikes)/options.time_end*1000);
 
 data = struct();
