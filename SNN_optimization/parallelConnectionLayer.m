@@ -41,7 +41,7 @@ classdef parallelConnectionLayer < nnet.layer.Layer
 %             disp('b:')
 %             disp(size(layer.b))
             mask = eye(size(layer.W));
-            Z = X'*(mask.*layer.W) + layer.b;
+            Z = (mask.*layer.W)*X + layer.b;
         end
     end
 end
