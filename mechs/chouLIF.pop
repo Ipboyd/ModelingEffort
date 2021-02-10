@@ -14,7 +14,7 @@ if(any(t==tspike+t_ref,1))(V = V_reset) % implement refractory period
 g_ad = 0;
 E_k = -70; % adaptation channel
 
-monitor V.spikes(V_thresh,3)
+monitor V.spikes(V_thresh,1)
 
 % capacitance and leak resistance
 C = 0.5; % nF
