@@ -35,7 +35,7 @@ end
 
 %% solver params
 solverType = 'euler';
-dt = 1; %ms % the IC input is currently dt=1
+dt = 0.1; %ms
 time_end = options.time_end;
 
 %% neuron populations
@@ -83,6 +83,7 @@ tdxNetcon = netcons.tdxNetcon;
 tdrNetcon = netcons.tdrNetcon;
 XRnetcon = netcons.xrNetcon;
 irNetcon = netcons.irNetcon;
+rcNetcon = netcons.rcNetcon;
 
 % jio params
 % epsc_rise = 0.3
@@ -120,7 +121,7 @@ s.connections(end+1).direction='X->R';
 s.connections(end).mechanism_list={'synDoubleExp'};
 s.connections(end).parameters={'gSYN',0.25, 'tauR',ipsc_rise, 'tauD',ipsc_fall, 'netcon',XRnetcon, 'ESYN',-80}; 
 
-rcNetcon = ones(nCells,1);
+
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list={'synDoubleExp_variablegSYN'};
 s.connections(end).parameters={'tauR',epsc_rise, 'tauD',epsc_fall, 'netcon',rcNetcon};
