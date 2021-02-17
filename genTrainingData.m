@@ -65,7 +65,7 @@ varies(end).range = 3;
 
 varies(end+1).conxn = 'Exc->Exc';
 varies(end).param = 'g_postIC';
-varies(end).range = [0.27,0.3];
+varies(end).range = 0.27;
 
 varies(end+1).conxn = 'Exc->R';
 varies(end).param = 'gSYN';
@@ -77,7 +77,8 @@ varies(end).range = 0.01;
 
 varies(end+1).conxn = 'X';
 varies(end).param = 'noise';
-varies(end).range = [1.5];
+% varies(end).range = [1.5];
+varies(end).range = 0;
 
 varies(end+1).conxn = 'X->R';
 varies(end).param = 'gSYN';
@@ -109,26 +110,26 @@ varied_param = find(cellfun(@length,{varies.range})>1);
 if length(varied_param) > 1
     varied_param = varied_param(2); 
 else
-    varied_param = 1;
+    varied_param = 2;
 end
 expVar = [varies(varied_param).conxn '-' varies(varied_param).param];
 expVar = strrep(expVar,'->','_');
 
 
 % specify netcons
-% netcons.xrNetcon = zeros(4); % cross channel inhibition
-% netcons.xrNetcon(2,1) = 1;
-% netcons.xrNetcon(3,1) = 1;
-% netcons.xrNetcon(4,1) = 1;
-% netcons.xrNetcon(2,4) = 1;
+netcons.xrNetcon = zeros(4); % cross channel inhibition
+netcons.xrNetcon(2,1) = 1;
+netcons.xrNetcon(3,1) = 1;
+netcons.xrNetcon(4,1) = 1;
+netcons.xrNetcon(2,4) = 1;
 
 for trainingSetNum = 2
 
-netcons.xrNetcon = zeros(4);
-netcons.irNetcon = zeros(4); %inh -> R; sharpening
+% netcons.xrNetcon = zeros(4);
+netcons.irNetcon = eye(4); %inh -> R; sharpening
 netcons.tdxNetcon = zeros(4); % I2 -> I
 netcons.tdrNetcon = zeros(4); % I2 -> R
-netcons.rcNetcon = [1 0 0 0]';
+netcons.rcNetcon = [1 1 1 1]';
 %% prep input data
 % concatenate spike-time matrices, save to study dir
 trialStartTimes = zeros(1,length(subz));
@@ -204,14 +205,14 @@ toc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% plot results
-% figure;
-% vizNetwork(s,0,'C','Exc')
+figure;
+vizNetwork(s,0,'C','Exc')
 
 % data = dataOld;
 % plotPerformanceGrids;
 
-% options.subPops = {'C'};
-% plotPerformanceGrids_new;
+options.subPops = {'C'};
+plotPerformanceGrids_new;
 
 %% Smooth input and output data
 t = 0:0.001:0.100; % 0-100 ms, 1 ms interval
@@ -228,7 +229,7 @@ structured_input = reshape(permute(input_spks,[3,1,2]),[],4);
 smoothed_input = conv2(structured_input,kernel','same');
 
 % output data
-numVaried = 2;
+numVaried = 1;
 Cspks = [temp(1:numVaried:end).C_V_spikes];
 Cspks = Cspks(1+NumDelayTaps:end,:); %account for delay
 figure;
@@ -248,5 +249,5 @@ output_training = smoothed_Cspks;
 perf_data = data;
 % name = input('name of training set? ');
 name = sprintf('training_set_%i',trainingSetNum);
-save(['SNN_optimization\' name '.mat'],'input_training','output_training','perf_data','netcons','network_params','Cspks','options');
+% save(['SNN_optimization\' name '.mat'],'input_training','output_training','perf_data','netcons','network_params','Cspks','options');
 end
