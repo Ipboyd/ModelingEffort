@@ -28,8 +28,9 @@ if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 
 % get indices of STRFS, all locations, excitatory inputs only
 ICfiles = dir([ICdir filesep '*.mat']);
-subz = 1:length(ICfiles);
+% subz = 1:length(ICfiles);
 % subz = find(~contains({ICfiles.name},'s0')); % exclude masker-only.
+subz = find(contains({ICfiles.name},'s1m2'));
 fprintf('found %i files matching subz criteria\n',length(subz));
 
 % check IC inputs
@@ -65,7 +66,7 @@ varies(end).range = 3;
 
 varies(end+1).conxn = 'Exc->Exc';
 varies(end).param = 'g_postIC';
-varies(end).range = 0.27;
+varies(end).range = 0.35;
 
 varies(end+1).conxn = 'Exc->R';
 varies(end).param = 'gSYN';
@@ -73,7 +74,7 @@ varies(end).range = 0.20;
 
 varies(end+1).conxn = 'R';
 varies(end).param = 'noise';
-varies(end).range = 0.01;
+varies(end).range = 0.;
 
 varies(end+1).conxn = 'X';
 varies(end).param = 'noise';
@@ -86,7 +87,7 @@ varies(end).range = [0.25];
 
 varies(end+1).conxn = 'C';
 varies(end).param = 'noise';
-varies(end).range = [0.01];
+varies(end).range = [0.0];
 
 % R-C weights 0.18 by default
 varies(end+1).conxn = 'R->C';
@@ -119,11 +120,12 @@ expVar = strrep(expVar,'->','_');
 % specify netcons
 netcons.xrNetcon = zeros(4); % cross channel inhibition
 netcons.xrNetcon(2,1) = 1;
-netcons.xrNetcon(3,1) = 1;
-netcons.xrNetcon(4,1) = 1;
-netcons.xrNetcon(2,4) = 1;
+% netcons.xrNetcon(3,1) = 1;
+% netcons.xrNetcon(4,1) = 1;
+% netcons.xrNetcon(2,4) = 1;
 
-for trainingSetNum = 2
+%%% use runGenTrainingData to call specific trainingSets %%%
+% for trainingSetNum = 2
 
 % netcons.xrNetcon = zeros(4);
 netcons.irNetcon = eye(4); %inh -> R; sharpening
@@ -139,7 +141,7 @@ for ICtype = [0,1] %only E no I
     spks = [];
     for z = 1:length(subz)
         disp(ICfiles(subz(z)+0).name); %read in E spikes only
-        load([ICdir filesep ICfiles(z).name],'t_spiketimes');
+        load([ICdir filesep ICfiles(subz(z)).name],'t_spiketimes');
         
         % convert spike times to spike trains. This method results in
         % dt = 1 ms
@@ -205,49 +207,89 @@ toc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% plot results
-figure;
-vizNetwork(s,0,'C','Exc')
+% figure;
+% vizNetwork(s,0,'C','Exc')
 
 % data = dataOld;
 % plotPerformanceGrids;
-
-options.subPops = {'C'};
-plotPerformanceGrids_new;
+% 
+% options.subPops = {'C'};
+% plotPerformanceGrids_new;
 
 %% Smooth input and output data
-t = 0:0.001:0.100; % 0-100 ms, 1 ms interval
-tau = 0.100; %100 ms
+t = (0:dt:500)/1000; % 0-500ms
+tau = 0.01; %10 ms
 kernel = t.*exp(-t/tau);
 
 % amount of delay between input and output, in units of taps
-NumDelayTaps = 40;
+NumDelayTaps = 51;
 
 % input data: change from [trials x neurons x configs] to [(configs x trials) x neurons]
 input_spks = spks(:,:,1:end-NumDelayTaps); %account for delay
 input_spks = [sum(input_spks(1:10,:,:)) ; sum(input_spks(11:end,:,:))]; %psth
 structured_input = reshape(permute(input_spks,[3,1,2]),[],4);
-smoothed_input = conv2(structured_input,kernel','same');
+smoothed_input = conv2(structured_input,kernel');
+smoothed_input = smoothed_input(1:size(structured_input,1),:);
+
+% figure;
+% plotSpikeRasterFs(logical(squeeze(spks(:,3,:))),'PlotType','vertline2','Fs',1/dt);
+% xlim([0 temp(1).time(end)/dt])
+% title('input spikes')
 
 % output data
 numVaried = 1;
 Cspks = [temp(1:numVaried:end).C_V_spikes];
 Cspks = Cspks(1+NumDelayTaps:end,:); %account for delay
-figure;
-plotSpikeRasterFs(logical(Cspks'),'PlotType','vertline2','Fs',1/dt);
-xlim([0 temp(1).time(end)/dt])
+% figure;
+% plotSpikeRasterFs(logical(Cspks'),'PlotType','vertline2','Fs',1/dt);
+% xlim([0 temp(1).time(end)/dt])
 
 Cspks = [sum(Cspks(:,1:10),2), sum(Cspks(:,11:20),2)];
 structured_Cspks = Cspks(:);
-smoothed_Cspks = conv(structured_Cspks,kernel,'same');
+smoothed_Cspks = conv(structured_Cspks,kernel);
+smoothed_Cspks = smoothed_Cspks(1:size(structured_Cspks,1));
 
+% PSTH of intermediate neurons
+Rspks = [];
+Xspks = [];
+for i = 1:20 %number of trials
+    Rspks(i,:,:) = temp(i).R_V_spikes;
+    Xspks(i,:,:) = temp(i).X_V_spikes;
+end
 
-% figure;
-% imagesc(smoothed_Cspks')
+Rspks = Rspks(:,1:end-NumDelayTaps,:);
+Rspks = [sum(Rspks(1:10,:,:)) ; sum(Rspks(11:end,:,:))]; %psth
+structured_R = reshape(permute(Rspks,[2,1,3]),[],4);
+smoothed_R = conv2(structured_R,kernel');
+smoothed_R = smoothed_R(1:size(structured_R,1),:);
+
+Xspks = Xspks(:,1:end-NumDelayTaps,:);
+Xspks = [sum(Xspks(1:10,:,:)) ; sum(Xspks(11:end,:,:))]; %psth
+structured_X = reshape(permute(Xspks,[2,1,3]),[],4);
+smoothed_X = conv2(structured_X,kernel');
+smoothed_X = smoothed_X(1:size(structured_X,1),:);
+
 
 input_training = smoothed_input;
 output_training = smoothed_Cspks;
 perf_data = data;
 % name = input('name of training set? ');
 name = sprintf('training_set_%i',trainingSetNum);
-% save(['SNN_optimization\' name '.mat'],'input_training','output_training','perf_data','netcons','network_params','Cspks','options');
-end
+% save(['SNN_optimization' filesep name '.mat'],'input_training','output_training',...
+%     'perf_data','netcons','network_params','Cspks','options',...
+%     'Rspks','smoothed_R','Xspks','smoothed_X');end
+
+% end
+
+%% visualizations
+figure;
+plot(smoothed_Cspks);  hold on;
+plot(smoothed_input(:,1),'linewidth',1.5);
+plot(smoothed_R(:,1),'linewidth',1.5);
+plot(smoothed_X(:,1),'linewidth',1.5);
+
+plot(smoothed_input(:,2));
+plot(smoothed_R(:,2));
+plot(smoothed_X(:,2));
+
+legend('out','in_1','r_1','x_1','in_2','r_2','x_2')
