@@ -32,8 +32,9 @@ netcons.xrNetcon(2,4) = 1;
 genTrainingData;
 disp(['finished ' num2str(trainingSetNum)])
 
+xrNetconMask = ones(4)-eye(4);
 for trainingSetNum = 12:15
-	netcons.xrNetcon = round(rand(4)); % cross channel inhibition
+	netcons.xrNetcon = round(rand(4)) .* xrNetconMask; % cross channel inhibition
 	genTrainingData;
 	disp(['finished ' num2str(trainingSetNum)])
 end
