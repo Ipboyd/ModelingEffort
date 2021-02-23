@@ -105,9 +105,9 @@ s.connections(end+1).direction='Inh->Inh';
 s.connections(end).mechanism_list={'IC'};
 s.connections(end).parameters={'g_postIC',0.25,'label','I','ICdir',options.ICdir,'locNum',options.locNum}; % 100 hz spiking
 
-s.connections(end+1).direction='R->X';
+s.connections(end+1).direction='Exc->X';
 s.connections(end).mechanism_list={'synDoubleExp'};
-s.connections(end).parameters={'gSYN',0.25, 'tauR',epsc_rise, 'tauD',epsc_fall, 'netcon', eye(nCells)}; 
+s.connections(end).parameters={'gSYN',0.2, 'tauR',epsc_rise, 'tauD',epsc_fall, 'netcon', eye(nCells)}; 
 
 s.connections(end+1).direction='Inh->R';
 s.connections(end).mechanism_list={'synDoubleExp_variablegSYN'};
