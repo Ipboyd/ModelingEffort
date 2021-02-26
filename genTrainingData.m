@@ -30,7 +30,7 @@ if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 ICfiles = dir([ICdir filesep '*.mat']);
 % subz = 1:length(ICfiles);
 % subz = find(~contains({ICfiles.name},'s0')); % exclude masker-only.
-subz = find(contains({ICfiles.name},'s1m0'));
+subz = find(contains({ICfiles.name},'s1m2'));
 fprintf('found %i files matching subz criteria\n',length(subz));
 
 % check IC inputs
@@ -133,7 +133,7 @@ expVar = strrep(expVar,'->','_');
 %%% use runGenTrainingData to call specific trainingSets %%%
 % for trainingSetNum = 2
 
-% netcons.xrNetcon = zeros(4);
+netcons.xrNetcon = zeros(4);
 netcons.irNetcon = zeros(4); %inh -> R; sharpening
 netcons.tdxNetcon = zeros(4); % I2 -> I
 netcons.tdrNetcon = zeros(4); % I2 -> R
@@ -224,9 +224,9 @@ toc
 % options.subPops = {'C'};
 % plotPerformanceGrids_new;
 
-%% Smooth input and output data
+%% Smooth and delay spike trains
 t = (0:dt:500)/1000; % 0-500ms
-tau = 0.001; % second
+tau = 0.005; % second
 kernel = t.*exp(-t/tau);
 
 % amount of delay between input and output, in units of taps
@@ -242,6 +242,7 @@ snn_spks.X.delay = NumDelayTapsL1;
 snn_spks.C.delay = NumDelayTapsL2;
 
 % output data
+numVaried = 1;
 Cspks = [temp(1:numVaried:end).C_V_spikes];
 
 % intermediate neurons
@@ -284,25 +285,43 @@ for songn = 1:2
     snn_spks.C.smoothed.song{songn} = snn_spks.C.smoothed.song{songn}(1:m);
 end
 
-% visualizations
-channel = 1;
-for songn = 1:2
-    figure;
-    for neuron = {'IC','E','R','X'}
-        current_psth = snn_spks.(neuron{1}).smoothed.song{songn}(:,channel);
-        plot(current_psth,'linewidth',1.5,'linestyle','-'); hold on;
+%% visualizations
+non0chans = find(sum(spks(1,:,:),3));
+if length(non0chans)==1
+    % all neurons, one channel
+    channel = non0chans;
+    for songn = 1:2
+        figure;
+        for neuron = {'IC','E','R','X'}
+            current_psth = snn_spks.(neuron{1}).smoothed.song{songn}(:,channel);
+            plot(current_psth,'linewidth',1.5,'linestyle','-'); hold on;
+        end
+        plot(snn_spks.C.smoothed.song{songn},'linewidth',1.5,'linestyle','-.');
+        xlim([2500 3200])
+        legend('in','E','R','X','out')
     end
-    plot(snn_spks.C.smoothed.song{songn},'linewidth',1.5,'linestyle','-.');
-    xlim([2500 3200])
-    legend('in','E','R','X','out')
+elseif length(non0chans) == 2
+    % input & output only, 2 channels
+    chan1 = non0chans(1);
+    chan2 = non0chans(2);
+    for songn = 1:2
+        figure;
+        chan1_psth = snn_spks.IC.smoothed.song{songn}(:,chan1);
+        plot(chan1_psth,'linewidth',1.5,'linestyle','-'); hold on;
+        chan2_psth = snn_spks.IC.smoothed.song{songn}(:,chan2);
+        plot(chan2_psth,'linewidth',1.5,'linestyle','-'); hold on;
+        summed_psth = chan1_psth+chan2_psth;
+        plot(summed_psth,'linewidth',1.5,'linestyle','-'); hold on;
+        plot(snn_spks.C.smoothed.song{songn},'linewidth',1.5,'linestyle','-.');
+        xlim([2500 3200])
+        legend('IC 1st channel','IC 2nd channel','chan1+chan2','out')
+    end
 end
-
-
 %%%%%%%%%%%%%%%%%%%%%% save results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-input_training = smoothed_input;
-output_training = smoothed_Cspks;
-perf_data = data;
+% input_training = [snn_spks.IC.smoothed.song{1}; snn_spks.IC.smoothed.song{2}];
+% output_training = [snn_spks.C.smoothed.song{1}, snn_spks.C.smoothed.song{2}]';
+% perf_data = data;
 % name = input('name of training set? ');
 % name = sprintf('training_set_%i',trainingSetNum);
 % save(['SNN_optimization' filesep name '.mat'],'input_training','output_training',...
@@ -332,14 +351,14 @@ perf_data = data;
 % title('IC spike')
 % xlim([2500 3200])
 
-figure;
-for trialToPlot = 1:20
-    plot(temp(2).time,temp(trialToPlot).R_V(:,1) + 20*(trialToPlot-1),'color', 	[0, 0.4470, 0.7410]); hold on;
-    plot(temp(2).time,temp(trialToPlot).Exc_V(:,1) + 20*(trialToPlot-1),'color', [0.8500, 0.3250, 0.0980]);
-end
-legend('R','E')
-xlabel('time')
-ylabel('V')
-ylim([-75 350])
-yticks([-50:20:350])
-yticklabels([1:20])
+% figure;
+% for trialToPlot = 1:20
+%     plot(temp(2).time,temp(trialToPlot).R_V(:,1) + 20*(trialToPlot-1),'color', 	[0, 0.4470, 0.7410]); hold on;
+%     plot(temp(2).time,temp(trialToPlot).Exc_V(:,1) + 20*(trialToPlot-1),'color', [0.8500, 0.3250, 0.0980]);
+% end
+% legend('R','E')
+% xlabel('time')
+% ylabel('V')
+% ylim([-75 350])
+% yticks([-50:20:350])
+% yticklabels([1:20])
