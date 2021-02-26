@@ -28,9 +28,9 @@ if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 
 % get indices of STRFS, all locations, excitatory inputs only
 ICfiles = dir([ICdir filesep '*.mat']);
-% subz = 1:length(ICfiles);
+subz = 1:length(ICfiles);
 % subz = find(~contains({ICfiles.name},'s0')); % exclude masker-only.
-subz = find(contains({ICfiles.name},'s1m2'));
+% subz = find(contains({ICfiles.name},'s1m2'));
 fprintf('found %i files matching subz criteria\n',length(subz));
 
 % check IC inputs
@@ -133,11 +133,11 @@ expVar = strrep(expVar,'->','_');
 %%% use runGenTrainingData to call specific trainingSets %%%
 % for trainingSetNum = 2
 
-netcons.xrNetcon = zeros(4);
+% netcons.xrNetcon = zeros(4);
 netcons.irNetcon = zeros(4); %inh -> R; sharpening
 netcons.tdxNetcon = zeros(4); % I2 -> I
 netcons.tdrNetcon = zeros(4); % I2 -> R
-netcons.rcNetcon = [1 1 1 1]';
+% netcons.rcNetcon = [1 1 1 1]';
 %% prep input data
 % concatenate spike-time matrices, save to study dir
 trialStartTimes = zeros(1,length(subz)); %ms
@@ -319,14 +319,12 @@ elseif length(non0chans) == 2
 end
 %%%%%%%%%%%%%%%%%%%%%% save results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% input_training = [snn_spks.IC.smoothed.song{1}; snn_spks.IC.smoothed.song{2}];
-% output_training = [snn_spks.C.smoothed.song{1}, snn_spks.C.smoothed.song{2}]';
-% perf_data = data;
-% name = input('name of training set? ');
-% name = sprintf('training_set_%i',trainingSetNum);
-% save(['SNN_optimization' filesep name '.mat'],'input_training','output_training',...
-%     'perf_data','netcons','network_params','Cspks','options',...
-%     'Rspks','smoothed_R','Xspks','smoothed_X');
+input_training = [snn_spks.IC.smoothed.song{1}; snn_spks.IC.smoothed.song{2}];
+output_training = [snn_spks.C.smoothed.song{1}, snn_spks.C.smoothed.song{2}]';
+perf_data = data;
+name = sprintf('training_set_%i',trainingSetNum);
+save(['SNN_optimization' filesep name '.mat'],'input_training','output_training',...
+    'perf_data','netcons','network_params','options');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
