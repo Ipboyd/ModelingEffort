@@ -12,7 +12,7 @@ dt=time(2)-time(1); %s
 n=length(spike_rate);
 tw=0:dt:6/1000; % (ms) time vector for recovery rate
 w=1-1./(1+exp(4000*(tw-3.8/1000)));
-n_refab=6/1000/dt;
+n_refab=6/1000/dt; % absolute refractory period
 
 spike_train=zeros(1,n);
 spike_times=[];

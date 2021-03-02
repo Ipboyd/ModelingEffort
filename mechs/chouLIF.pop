@@ -18,7 +18,7 @@ V_reset = -60
 Itonic = 0
 noise = 0
 
-V(0) = E_leak
+V(0) = V_reset
 
 dV/dt = ( g_leak*(E_leak - V) + g_ad.*(E_k - V) - @isyn + Itonic + noise*randn(1,N_pop)/dt )/C
 
