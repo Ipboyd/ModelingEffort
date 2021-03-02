@@ -1,6 +1,10 @@
 % generate training data from custom-designed AIM network for optimizing
 % network weights with matlab's DNN toolbox.
 %
+% v1: archived working version of this script;
+%     comment/uncomment sections for netcon definition and saving results
+%     as needed
+%
 % inputs: user specified, raw IC output
 % network structure: user specified
 

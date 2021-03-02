@@ -63,7 +63,7 @@ s.populations(end).size = nCells;
 s.populations(end+1).name='C';
 s.populations(end).equations = 'chouLIF';
 s.populations(end).size = 1;
-s.populations(end).parameters = {'Ad_tau',0};
+% s.populations(end).parameters = {'Ad_tau',0};
 
 % % Imask vector specifies the channels that receive Iapp
 Imask = ones(1,nCells);
@@ -92,6 +92,12 @@ rcNetcon = netcons.rcNetcon;
 % ipsc_fall = 10
 
 % junzi params
+% epsc_rise = 0.4;
+% epsc_fall = 2;
+% ipsc_rise = 0.4;
+% ipsc_fall = 20;
+
+% testing params
 epsc_rise = 0.4;
 epsc_fall = 2;
 ipsc_rise = 0.4;
@@ -149,7 +155,7 @@ simdata = dsSimulate(s,'tspan',[dt time_end], 'solver',solverType, 'dt',dt,...
   'study_dir',study_dir, 'vary',vary, 'debug_flag', 0, 'verbose_flag',0,...
   'parfor_flag',options.parfor_flag);
 
-simdata = rmfield(simdata,{'Exc_V','Inh_V','R_V','labels','simulator_options'});
+simdata = rmfield(simdata,{'Inh_V','labels','simulator_options'});
 
 % save(fullfile(study_dir,'simulation_results.mat'),'simdata','-v7.3');
 
