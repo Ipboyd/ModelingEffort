@@ -2,12 +2,14 @@ classdef FCInhibitoryInput < nnet.layer.Layer
     % Custom fully connected layer, constrain weights to be positive.
     properties
         mask
+        
     end
     
     properties (Learnable)
         % Layer learnable parameters
         Weights
-        Bias
+        a
+        b
     end
     
     methods
@@ -29,7 +31,7 @@ classdef FCInhibitoryInput < nnet.layer.Layer
                 layer.Weights = initWeights;
             end
             
-            layer.Bias = zeros([num_units 1]);
+%             layer.Bias = zeros([num_units 1]);
             
             % Mask on weights
             if ~exist('mask','var')
@@ -37,6 +39,9 @@ classdef FCInhibitoryInput < nnet.layer.Layer
             else
                 layer.mask = mask;
             end
+            std = sqrt(2/(num_units+prev_units));
+            layer.a = std*rand([prev_units, 1]);
+            layer.b = rand([prev_units, 1])+0.5;
         end
         
         function Z = predict(layer, X)
@@ -56,7 +61,7 @@ classdef FCInhibitoryInput < nnet.layer.Layer
 %             disp('b:')
 %             disp(size(layer.b))
             W = layer.Weights .* layer.mask; %remove weights along diagnol
-            
+            W = max(0,W);
 %             geluW = 0.5*W*(1+tanh(sqrt(2/pi)*(W+0.044715*W.^3)));
 %             Z = geluW*X+layer.Bias;
 %             ELUW = W.*(W > 0) + 0.5*(exp(W)-1).*(W<0);
@@ -64,6 +69,9 @@ classdef FCInhibitoryInput < nnet.layer.Layer
 
             % simple relu
 %             Z = -(max(0,W))*X+layer.Bias; %relu
+            A  = max(0,layer.a);
+            B  = layer.b;
+            Z = -W*(max(1E-3,(X-A)).^B);
 
             % soft relu
 %             softW = log(1+exp(W))-0.6931;
@@ -71,7 +79,7 @@ classdef FCInhibitoryInput < nnet.layer.Layer
 %             Z = -W*softW(X)+layer.Bias;
             
             % basic forward eqn
-            Z = -W*X+layer.Bias;
+%             Z = -W*X;
         end
 
     end
