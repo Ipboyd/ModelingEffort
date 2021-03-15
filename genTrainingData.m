@@ -10,13 +10,17 @@ dynasimPath = 'C:\Users\Kenny\Desktop\GitHub\DynaSim';
 % ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s50_STRFgain1.00_20210104-114659';
 % ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s30_STRFgain1.00_20210104-165447';
 % ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s20_STRFgain1.00_20210106-133343';
-ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s7_STRFgain1.00_20210107-173527';
+% ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s7_STRFgain1.00_20210107-173527';
+ICdir = 'ICSimStim\mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.499\s1.5_STRFgain0.50_20200514-181040';
 
 addpath('mechs')
 addpath('genlib')
 addpath('plotting')
 addpath(genpath(dynasimPath))
-expName = 'training 001 birdTuning';
+expName = 'training 001 mouseTuning';
+
+debug_flag = 0;
+save_flag = 0;
 
 % setup directory for current simulation
 datetime = datestr(now,'yyyymmdd-HHMMSS');
@@ -30,9 +34,9 @@ if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 ICfiles = dir([ICdir filesep '*.mat']);
 subz = 1:length(ICfiles);
 % subz = find(~contains({ICfiles.name},'s0')); % exclude masker-only.
-% subz = find(contains({ICfiles.name},'s2m1'));
+% subz = find(contains({ICfiles.name},'s1m2'));
 % subz = [1:4,5,10,15,20,6,12,18,24]; %single channel
-% subz = [1,2,5,6,10,12]; %channels 1 & 2
+% subz = [5,7,10,11]; %channels 1 & 2
 fprintf('found %i files matching subz criteria\n',length(subz));
 
 % check IC inputs
@@ -126,24 +130,24 @@ expVar = strrep(expVar,'->','_');
 numVaried = length(varies(varied_param).range);
 
 % specify netcons
-netcons.xrNetcon = zeros(4); % cross channel inhibition
-netcons.xrNetcon(2,1) = 1;
-netcons.xrNetcon(3,1) = 1;
-netcons.xrNetcon(4,1) = 1;
-netcons.xrNetcon(2,4) = 1;
-
+if debug_flag
+    netcons.xrNetcon = zeros(4); % cross channel inhibition
+    netcons.xrNetcon(2,1) = 1;
+    % netcons.xrNetcon(1,4) = 1;
+    % netcons.xrNetcon(4,1) = 1;
+    % netcons.xrNetcon(4,2) = 1;
+    netcons.rcNetcon = [1 1 1 1]';
+end
 %%% use runGenTrainingData to call specific trainingSets %%%
 % for trainingSetNum = 2
 
-% netcons.xrNetcon = zeros(4);
 netcons.irNetcon = zeros(4); %inh -> R; sharpening
 netcons.tdxNetcon = zeros(4); % I2 -> I
 netcons.tdrNetcon = zeros(4); % I2 -> R
-netcons.rcNetcon = [1 1 1 1]';
 %% prep input data
 % concatenate spike-time matrices, save to study dir
 trialStartTimes = zeros(1,length(subz)); %ms
-padToTime = 2000; %ms
+padToTime = 3200; %ms
 label = {'E','I'};
 for ICtype = [0,1] %only E no I
     % divide all times by dt to upsample the time axis
@@ -166,6 +170,7 @@ for ICtype = [0,1] %only E no I
                 end
             end
         end
+        singleConfigSpks(:,3,:) = 0; % zero out the U channel
         
         trialStartTimes(z) = padToTime;
         % pad each trial to have duration of timePerTrial
@@ -180,6 +185,11 @@ for ICtype = [0,1] %only E no I
     save(fullfile(study_dir, 'solve',sprintf('IC_spks_%s.mat',label{ICtype+1})),'spks');
 end
 
+% figure;
+% plotSpikeRasterFs(logical(squeeze(spks(:,1,:))),'PlotType','vertline2','Fs',1/dt);
+% xlim([0 snn_out(1).time(end)/dt])
+% title('IC spike')
+% xlim([0 padToTime/dt])
 
 %% run simulation
 options.ICdir = ICdir;
@@ -226,6 +236,12 @@ toc
 if length(subz) == 24
     options.subPops = {'C'};
     plotPerformanceGrids_new;
+    
+    subplot(1,3,2); imagesc(netcons.xrNetcon);
+    colorbar; caxis([0 1])
+    
+    subplot(1,3,3); imagesc(netcons.rcNetcon);
+    colorbar; caxis([0 1])
 end
 %% Smooth and delay spike trains
 t = (0:dt:500)/1000; % 0-500ms
@@ -233,6 +249,7 @@ tau = 0.005; % second
 kernel = t.*exp(-t/tau);
 
 % amount of delay between input and output, in units of taps
+% 1,9,17 for bird data
 NumDelayTapsL0 = 1; %E
 NumDelayTapsL1 = 9; %R,X
 NumDelayTapsL2 = 17; %C
@@ -321,17 +338,60 @@ for variation = 1:numVaried
             xlim([2500 3200])
             legend('IC 1st channel','IC 2nd channel','chan1+chan2','out')
         end
+    else
+        for songn = 1:2
+%             psth = snn_spks(variation).IC.smoothed.song{songn};
+            psth = snn_spks(variation).R.smoothed.song{songn};
+            psth_converge = sum(psth.*netcons.rcNetcon',2);
+            psth_out = snn_spks(variation).C.smoothed.song{songn};
+
+            MAE_RC(songn) = mean(abs(psth_converge(1:length(psth_out))-(psth_out'))./(psth_out'+1E-6)); %mean absolute % error
+%             xrInhSpot(xrInhSpotIdx).MAE_RC = MAE_RC;
+            
+            figure;
+            plot(psth,'linewidth',1.5); hold on;
+            plot(psth_converge,'linewidth',1.5);
+            plot(psth_out,'linewidth',1.5,'linestyle','-.');
+            xlim([2500 3200])
+            legend('IC 1st channel','IC 2nd channel','IC 3nd channel','IC 4nd channel','sum','out')
+            title(['R->C Mean absolute % error = ' num2str(MAE_RC(songn)*100) '%'])
+
+
+            
+            % compare PSTH_IC to PSTH_R
+            % R =? R_est = Relu(X-WX)
+            R = snn_spks(variation).R.smoothed.song{songn};
+            R_est = (snn_spks(variation).IC.smoothed.song{songn} * (-1*netcons.xrNetcon + eye(4)) );
+            R_est = max(R_est,0);
+            Rlen = size(R_est,1);
+            
+%             xrInhSpot(xrInhSpotIdx).MAE_R(:,songn) = 100 * mean( abs((R_est - R(1:Rlen,:))) ./ (R(1:Rlen,:)+1E-6) );
+
+            figure;
+            cmap = [[0, 0.4470, 0.7410];[0.8500, 0.3250, 0.0980];[0.9290, 0.6940, 0.1250];[0.4940, 0.1840, 0.5560]];
+            RLen = min(length(R),length(R_est));
+            for i = 1:4
+                plot(R(:,i),'color',cmap(i,:)); hold on;
+                plot(R_est(:,i),'--','color',cmap(i,:))
+                MAE_XR(i) = mean(abs(R(1:RLen,i) - R_est(1:RLen,i)) ./ (R(1:RLen,i) + 1E-6)) * 100;
+            end
+            annotation('textbox',[.2 .6 .3 .3],'string', sprintf('MAE_XR, channel %i: %.02f \n',[(1:4); MAE_XR]),'FitBoxToText','on')
+            title('PSTH, R vs R_{est}')
+            legend('chan1','est','2','est','3','est','4','est')
+        end
     end
 end
+
 %%%%%%%%%%%%%%%%%%%%%% save results %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% input_training = [snn_spks.IC.smoothed.song{1}; snn_spks.IC.smoothed.song{2}];
-% output_training = [snn_spks.C.smoothed.song{1}, snn_spks.C.smoothed.song{2}]';
-% perf_data = data;
-% name = sprintf('training_set_%i',trainingSetNum);
-% save(['SNN_optimization' filesep name '.mat'],'input_training','output_training',...
-%     'perf_data','netcons','network_params','options');
-
+if save_flag
+    input_training = [snn_spks.IC.smoothed.song{1}; snn_spks.IC.smoothed.song{2}];
+    output_training = [snn_spks.C.smoothed.song{1}, snn_spks.C.smoothed.song{2}]';
+    perf_data = data;
+    trialLen = padToTime - NumDelayTapsL2;
+    name = sprintf('training_set_%i_noU',trainingSetNum);
+    save(['SNN_optimization' filesep name '.mat'],'input_training','output_training',...
+        'perf_data','netcons','network_params','options','trialLen','s','ICdir','varies');
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % end
@@ -359,15 +419,15 @@ end
 % title('IC spike')
 % xlim([2500 3200])
 
-figure;
-scaleFactor = 30;
-for trialToPlot = 1:20
-    plot(snn_out(2).time,snn_out(trialToPlot).R_V(:,1) + scaleFactor*(trialToPlot-1),'color', [0, 0.4470, 0.7410]); hold on;
-    plot(snn_out(2).time,snn_out(trialToPlot).X_V(:,2) + scaleFactor*(trialToPlot-1),'color', [0.8500, 0.3250, 0.0980]);
-end
-legend('R','X')
-xlabel('time')
-ylabel('V')
-ylim([-80 scaleFactor*20-70])
-yticks([-50:scaleFactor:scaleFactor*20-50])
-yticklabels([1:scaleFactor])
+% figure;
+% scaleFactor = 30;
+% for trialToPlot = 1:20
+%     plot(snn_out(2).time,snn_out(trialToPlot).R_V(:,1) + scaleFactor*(trialToPlot-1),'color', [0, 0.4470, 0.7410]); hold on;
+%     plot(snn_out(2).time,snn_out(trialToPlot).X_V(:,2) + scaleFactor*(trialToPlot-1),'color', [0.8500, 0.3250, 0.0980]);
+% end
+% legend('R','X')
+% xlabel('time')
+% ylabel('V')
+% ylim([-80 scaleFactor*20-70])
+% yticks([-50:scaleFactor:scaleFactor*20-50])
+% yticklabels([1:scaleFactor])
