@@ -25,7 +25,8 @@ popNamesT = strcat({s.populations.name},'T');
 popNamesM = strcat({s.populations.name},'M');
 subPops = options.subPops;
 numPops = numel(subPops);
-popSizes = [snn_out(1).model.specification.populations.size];
+popSizes = [s.populations.size];
+% popSizes = [snn_out(1).model.specification.populations.size];
 popSizes = popSizes(contains(popNames,subPops));
 onlyC = contains(subPops,'C') & length(subPops) == 1;
 
