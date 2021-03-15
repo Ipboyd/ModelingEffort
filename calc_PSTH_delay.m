@@ -2,12 +2,12 @@
 
 % define kernel
 t = (0:dt:500)/1000; % 0-500ms
-tau = 0.01; %10 ms
+tau = 0.001; %10 ms
 kernel = t.*exp(-t/tau);
 
 % input and output spikes
 input_spks = squeeze(spks(:,1,:));
-Cspks = [temp(1:numVaried:end).C_V_spikes];
+Cspks = [snn_out(1:numVaried:end).C_V_spikes];
 
 
 smoothed_in = conv2(input_spks',kernel','same');
@@ -30,9 +30,9 @@ ylabel('trial')
 [val,idx]=max(c,[],2);
 round(mean(lags(idx)))
 %% double check the delay is 0 after accounting for it
-NumDelayTaps = 51;
+NumDelayTaps = 37;
 input_spks = squeeze(spks(:,1,1:end-NumDelayTaps)); %account for delay
-Cspks = [temp(1:numVaried:end).C_V_spikes];
+Cspks = [snn_out(1:numVaried:end).C_V_spikes];
 Cspks = Cspks(1+NumDelayTaps:end,:); %account for delay
 
 smoothed_in = conv2(input_spks',kernel','same');
