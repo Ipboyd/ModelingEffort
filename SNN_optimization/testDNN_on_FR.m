@@ -1,17 +1,29 @@
 %% Prep data
-trainingSetNum = 15;
-trainingFileName = ['training_set_' num2str(trainingSetNum) '.mat'];
-load(trainingFileName,'input_training','output_training','netcons')
+trainingSetNum = 27;
+trainingFileName = ['training_set_' num2str(trainingSetNum) '_noU.mat'];
+load(trainingFileName,'input_training','output_training','netcons','trialLen')
 
 input_norm = input_training/max(output_training(:));
 output_norm = output_training/max(output_training(:));
 
+input_norm(:,3) =  0; %zero out 3rd channel
+
+% ====================== important parameters ========================
+maxEpochs = 3;
+lambda = 0.0002;
 % configs to train
-% trainConfigIdx = [1:4,5,10,15,20,6,12,18,24];
-% trainConfigIdx = [7,8,16,11];
+% trainConfigIdx = [1:4,5,10,15,20,6,12,18,24]; %single channel only
+% trainConfigIdx = [1:4,5,10,15,20]; %target only
+% trainConfigIdx = [5,10,7,11];
 trainConfigIdx = 1:24;
+
+IRWeightMask = ones(4)-eye(4);
+IRWeightMask(3,:) = 0;
+IRWeightMask(:,3) = 0;
+% ======================================================================
+
 songOnly = [];
-trialLen = 20000-17;
+trialLen = 32000-17;
 for sampleStart = [1,size(input_training,1)/2+1]
     for i = trainConfigIdx
         songOnlyStart = i*trialLen-trialLen+sampleStart;
@@ -48,7 +60,7 @@ mainPath = [
     featureInputLayer(4,'Name','input')
     
     additionLayer(2,'Name','add_In_Inh')
-    myRelu('R_out')
+    reluLayer('Name','R_out')
     
 %     fullyConnectedLayer(1,'Name','C','Weights',a + (b-a).*rand(1,4))
 %     FCpositiveWeights(4,1,'C',a + (b-a).*rand(1,4))
@@ -58,11 +70,11 @@ mainPath = [
     regressionLayer('Name','output')
     ]
 
-inhPath = [
-%     negationLayer('negation')
-    
+inhPath = [    
 %     fullyConnectedLayer(4,'Name','R','Weights',a + (b-a).*rand(4))
-    FCInhibitoryInput(4,4,'I->R',a + (b-a).*rand(4))
+    myReluExp('FI_approx')
+    FCInhibitoryInput(4,4,'I->R',a + (b-a).*rand(4),IRWeightMask)
+%     dropoutLayer('Name','dropout');
 %     FCInhibitoryInput(4,4,'I->R',netcons.xrNetcon)
 %     FCInhibitoryInput(4,4,'I->R',zeros(4))
     ]
@@ -72,7 +84,7 @@ plot(lgraph);
 
 % Add inh path to main path
 lgraph = addLayers(lgraph,inhPath)
-lgraph = connectLayers(lgraph,'input','I->R')
+lgraph = connectLayers(lgraph,'input','FI_approx')
 lgraph = connectLayers(lgraph,'I->R','add_In_Inh/in2')
 
 plot(lgraph)
@@ -80,16 +92,16 @@ plot(lgraph)
 % freeze specified layers - doesn't actually work?!
 % setLearnRateFactor(lgraph.Layers(7),'Weights',0)
 % getLearnRateFactor(lgraph.Layers(7),'Weights') %???
-lgraph.Layers(7).Weights;
+% lgraph.Layers(8).Weights;
 %% Analyze network
 % analyzeNetwork(lgraph);
 
 %% Train network
-maxEpochs = 15;
 miniBatchSize = 512;
 
 options = trainingOptions('adam', ...
     'ExecutionEnvironment','cpu', ...
+    'L2Regularization',lambda, ...
     'GradientThreshold',1, ...
     'MaxEpochs',maxEpochs, ...
     'MiniBatchSize',miniBatchSize, ...
@@ -107,7 +119,7 @@ net = trainNetwork(Xtrain,Ytrain,lgraph,options);
 %% Check network weights
 net.Layers
 
-IR_LayerIdx = 7  %choose appropriate index to get the desired layer
+IR_LayerIdx = 8  %choose appropriate index to get the desired layer
 net.Layers(IR_LayerIdx).Weights
 
 %% Train Network again with rectified weights
@@ -139,18 +151,21 @@ end
 net.Layers(4)
 net.Layers(IR_LayerIdx).Weights
 % net.Layers(IR_LayerIdx).Bias
+[X,Y] = meshgrid(1:4,1:4);
 
 figh = figure('position',[100 100 900 800]);
 subplot(3,3,1)
 imagesc(net.Layers(IR_LayerIdx).Weights); title('I->R weights')
+tt = cellstr(num2str(round(net.Layers(IR_LayerIdx).Weights(:),2)));
+text(X(:)-0.5,Y(:),tt,'FontSize',6)
 ylabel('learned')
 colorbar
-caxis([-1 1])
+caxis([0 1])
 
 subplot(3,3,2)
 imagesc(net.Layers(4).Weights); title('R->C weights')
 colorbar
-caxis([-1 1])
+caxis([0 1])
 % Visualize outputs
 out = predict(net,Xtrain);
 
@@ -180,13 +195,13 @@ temp_net.Layers(IR_LayerIdx).Weights = targetIRNetcon;
 subplot(3,3,4)
 imagesc(temp_net.Layers(IR_LayerIdx).Weights); 
 colorbar
-caxis([-1 1])
+caxis([0 1])
 
 ylabel('Desired')
 subplot(3,3,5)
 imagesc(temp_net.Layers(4).Weights); 
 colorbar
-caxis([-1 1])
+caxis([0 1])
 
 % train again with rectified weights
 ideal_net = net.loadobj(temp_net);
@@ -227,18 +242,18 @@ temp_net = net.saveobj;
 temp_net.Layers(4).Weights = targetRCnetcon;
 % temp_net.Layers(4).Bias = 0;
 temp_net.Layers(IR_LayerIdx).Weights = targetIRNetcon;
-temp_net.Layers(IR_LayerIdx).Bias = [0 0 0 0]';
+% temp_net.Layers(IR_LayerIdx).Bias = [0 0 0 0]';
 
 subplot(3,3,7)
 imagesc(temp_net.Layers(IR_LayerIdx).Weights); 
 colorbar
-caxis([-1 1])
+caxis([0 1])
 
 ylabel('Desired')
 subplot(3,3,8)
 imagesc(temp_net.Layers(4).Weights); 
 colorbar
-caxis([-1 1])
+caxis([0 1])
 
 % run network again with rectified weights
 ideal_net = net.loadobj(temp_net);
@@ -264,15 +279,21 @@ plot((0:0.01:1)*m,(0:0.01:1),'g','linewidth',2)
 saveas(figh,['learned_results_set_' num2str(trainingSetNum) '.tif'])
 % save net
 
+%% save learned weights
+learned.RCnetcon = net.Layers(4).Weights;
+learned.IRnetcon = net.Layers(IR_LayerIdx).Weights;
+save(sprintf('learnedWeights_set%02i.mat',trainingSetNum),'learned');
+
+
 %% visualize psth - song only configs
-configsToPlot = [5,10,15,20];
-plotIdentifier = 'song only';
-plotPSTHandScatter;
-
-configsToPlot = [6,12,18,24];
-plotIdentifier = 'colocated configs';
-plotPSTHandScatter;
-
-configsToPlot = [7,13,19,22];
-plotIdentifier = 'mixed configs';
-plotPSTHandScatter;
+% configsToPlot = [5,10,15,20];
+% plotIdentifier = 'song only';
+% plotPSTHandScatter;
+%  
+% configsToPlot = [6,12,18,24];
+% plotIdentifier = 'colocated configs';
+% plotPSTHandScatter;
+% 
+% configsToPlot = [7,13,19,22];
+% plotIdentifier = 'mixed configs';
+% plotPSTHandScatter;

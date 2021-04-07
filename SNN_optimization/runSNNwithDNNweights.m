@@ -14,9 +14,9 @@ addpath(genpath(dynasimPath))
 expName = 'training 001 birdTuning';
 
 % load DNN data
-trainingSet = 8;
-snnDataDir = 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\SNN_optimization';
-load(sprintf('%s\\training_set_%01i_noU.mat',snnDataDir,trainingSet)); %need ICdir, output_training
+trainingSet = 3;
+snnDataDir = 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\data_recordings\DNN_results';
+load(sprintf('%s\\training_set_%02i.mat',snnDataDir,trainingSet)); %need ICdir, output_training
 
 ICfiles = dir([ICdir filesep '*.mat']);
 data = perf_data;
@@ -34,10 +34,14 @@ colorbar; caxis([0 1])
 
 
 %% run Network with imported parameters
-dnnDataDir = 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\SNN_optimization\data\Mouse tuning single Inh Spot no U channel';
+dnnDataDir = 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\data_recordings\DNN_results';
 load(sprintf('%s\\learnedWeights_set%02i.mat',dnnDataDir,trainingSet)) % learned weights
 netcons.xrNetcon = learned.IRnetcon;
 netcons.rcNetcon = learned.RCnetcon';
+netcons.xrNetcon = zeros(4);
+netcons.xrNetcon(3,4) = 1;
+netcons.rcNetcon = [1 1 1 1]';
+
 padToTime = 3200;
 
 genTrainingData;
