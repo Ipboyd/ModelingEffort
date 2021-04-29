@@ -10,7 +10,7 @@ There are two sets of "tuning", defined as "bird" and "mouse".
 The STRFs for each option were optimized for their respective stimuli.
 You can define your own sets of parameters and give it a name.
 
-The model assumes stimuli are located at certain locations (`azimuth` in `InputGaussianSTRF_v2`).
+The model assumes stimuli are located at certain locations along the horizontal plane (`azimuth` in `InputGaussianSTRF_v2`).
 The model weighs the stimuli's spectrograms by user-defined tuning curves, comebines them, convolves then with STRFs to generate firing rates, then create spike trains with poisson spiking generator.
 
 Then the model calculates a discriminability measure based on the van Rossum spike distance, as described in [Dong et al., 2016](https://www.eneuro.org/content/3/1/ENEURO.0086-15.2015).
