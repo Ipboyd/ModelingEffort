@@ -1,0 +1,14 @@
+tauD = 1.5
+tauR = 0.3
+delay = 0
+
+inh_multiplier = 1
+gSYN = 1
+
+netcon = eye(N_pre,N_post)
+
+f(x) = (exp(-x/tauD) - exp(-x/tauR)).*(x>0)
+
+synDoubleExp(X,t) = gSYN .* ( f(t - tspike_pre - delay) * netcon ) .* (X) * inh_multiplier
+
+@isyn += synDoubleExp(V_post,t)

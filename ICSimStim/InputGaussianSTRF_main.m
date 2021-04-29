@@ -101,21 +101,21 @@ for songloc = songLocs
     close all
     maskerloc=0;
     
-%     t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
-%     t_spiketimes=InputGaussianSTRF_v2(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
-%     for maskerloc = maskerLocs
-%         t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
-%     end
-    
-    param.sigma = sigma;
-    param.type = tuning;
-    param.H = paramH;
-    param.G = paramG;
-    t_spiketimes=InputGaussianSTRF(songloc,maskerloc,param,saveParam,mean_rate,stimGain);
-    t_spiketimes=InputGaussianSTRF(maskerloc,songloc,param,saveParam,mean_rate,stimGain);
+    t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
+    t_spiketimes=InputGaussianSTRF_v2(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
     for maskerloc = maskerLocs
-        t_spiketimes=InputGaussianSTRF(songloc,maskerloc,param,saveParam,mean_rate,stimGain);
+        t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
     end
+    
+%     param.sigma = sigma;
+%     param.type = tuning;
+%     param.H = paramH;
+%     param.G = paramG;
+%     t_spiketimes=InputGaussianSTRF(songloc,maskerloc,param,saveParam,mean_rate,stimGain);
+%     t_spiketimes=InputGaussianSTRF(maskerloc,songloc,param,saveParam,mean_rate,stimGain);
+%     for maskerloc = maskerLocs
+%         t_spiketimes=InputGaussianSTRF(songloc,maskerloc,param,saveParam,mean_rate,stimGain);
+%     end
 end
 set(0, 'DefaultFigureVisible', 'on')
 
@@ -131,12 +131,13 @@ fclose(fid);
 % need to fix:
 % all 4 columns showing the same masker/target only performances
 
-fileloc = saveParam.fileLoc;
+% fileloc = saveParam.fileLoc;
 % 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
 % fileloc = 'mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.4985\s30_STRFgain1.50_20200514-212400';
 % fileloc = 'bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s50_STRFgain1.00_20210104-114659';
 % fileloc = 'bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s20_STRFgain1.00_20210106-133343';
 % fileloc = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s7_STRFgain1.00_20210107-144044';
+fileloc = 'mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.499\s1.5_STRFgain0.50_20200514-181040';
 addpath('..')
 
 % fileloc = [saveParam.fileLoc];
@@ -153,8 +154,8 @@ for i = 1:16
     avgFR(i,:) = data.avgSpkRate;
 end
 
-% neurons = {'left sigmoid','gaussian','u','right sigmoid'};
-neurons = {'-90','0','45','90'};
+neurons = {'left sigmoid','gaussian','u','right sigmoid'};
+% neurons = {'-90','0','45','90'};
 figure('position',[50 400 1600 400]);
 left = 0.05;
 bottom = 0.15;

@@ -33,6 +33,8 @@ if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 % get indices of STRFS, all locations, excitatory inputs only
 ICfiles = dir([ICdir filesep '*.mat']);
 subz = 1:length(ICfiles);
+% subz = [[20:-5:5],fliplr([6:9,11:14,16:19,21:24])]; %to match experiment data
+% subz = [20:-5:5];
 % subz = find(~contains({ICfiles.name},'s0')); % exclude masker-only.
 % subz = find(contains({ICfiles.name},'s1m2'));
 % subz = [1:4,5,10,15,20,6,12,18,24]; %single channel
@@ -170,7 +172,7 @@ for ICtype = [0,1] %only E no I
                 end
             end
         end
-        singleConfigSpks(:,3,:) = 0; % zero out the U channel
+%         singleConfigSpks(:,3,:) = 0; % zero out the U channel
         
         trialStartTimes(z) = padToTime;
         % pad each trial to have duration of timePerTrial
@@ -178,10 +180,9 @@ for ICtype = [0,1] %only E no I
             padSize = padToTime/dt-size(singleConfigSpks,3);
             singleConfigSpks = cat(3,singleConfigSpks,zeros(20,4,padSize)); 
         end
-        % concatenate & upsample - pretty important
+        % concatenate
         spks = cat(3,spks,singleConfigSpks);
     end
-%     spks = imresizen(spks,[1,1,1/dt]);
     save(fullfile(study_dir, 'solve',sprintf('IC_spks_%s.mat',label{ICtype+1})),'spks');
 end
 
@@ -255,7 +256,8 @@ NumDelayTapsL1 = 9; %R,X
 NumDelayTapsL2 = 17; %C
 
 snn_spks = [];
-snn_spks.IC.delay = NumDelayTapsL2; %not strictly necessary for now 
+% snn_spks.IC.delay = NumDelayTapsL2; %not strictly necessary for now 
+snn_spks.IC.delay = 0;
 snn_spks.E.delay = NumDelayTapsL0;
 snn_spks.R.delay = NumDelayTapsL1;
 snn_spks.X.delay = NumDelayTapsL1;

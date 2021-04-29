@@ -36,7 +36,7 @@ sigIn = squeeze(spk_IC(:,:,trial)); % time x location x cells
 
 % convolve with short square pulse
 dt = 0.1; %ms
-dur = 0.5; %ms
+dur = 0.5;%0.75; %ms
 epsc = ones(1, round(dur/dt));
 sigIn = conv2(sigIn,epsc');
 sigIn(size(spk_IC,1)+1:end,:) = []; %trim off extras

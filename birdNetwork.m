@@ -1,5 +1,6 @@
 function [simdata,s] = birdNetwork(study_dir,varies,netcons,options)
 % network for bird IC parameters
+% works for mouse parameters
 % 
 % study_dir: location of IC spike files + directory for log and data files
 % time_end: length of simulation in ms
@@ -41,7 +42,7 @@ time_end = options.time_end;
 %% neuron populations
 % tonic = bias = cells spontaneous firing
 
-nCells = 4;
+nCells = 3;
 s = struct();
 
 s.populations(1).name = 'Exc';
@@ -91,13 +92,6 @@ rcNetcon = netcons.rcNetcon;
 % ipsc_rise = 2
 % ipsc_fall = 10
 
-% junzi params
-% epsc_rise = 0.4;
-% epsc_fall = 2;
-% ipsc_rise = 0.4;
-% ipsc_fall = 20;
-
-% testing params
 epsc_rise = 0.4;
 epsc_fall = 2;
 ipsc_rise = 0.4;

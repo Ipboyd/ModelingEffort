@@ -6,13 +6,12 @@ delay = 0
 gSYN1 = 1
 gSYN2 = 1
 gSYN3 = 1
-gSYN4 = 1
 
 netcon = eye(N_pre,N_post)
 
 f(x) = (exp(-x/tauD) - exp(-x/tauR)).*(x>0)
 
-gSYN = buildgSYN(N_pre,N_post,gSYN1,gSYN2,gSYN3,gSYN4)
+gSYN = buildgSYN(N_pre,N_post,gSYN1,gSYN2,gSYN3)
 
 synDoubleExp(X,t) = ( f(t - tspike_pre - delay) * (netcon .* gSYN) ) .* (X - ESYN)
 
