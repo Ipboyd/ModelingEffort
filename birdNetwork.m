@@ -1,6 +1,7 @@
 function [simdata,s] = birdNetwork(study_dir,varies,netcons,options)
 % network for bird IC parameters
-% works for mouse parameters
+% works for mouse parameters as well. Maybe I should rename this to
+% "spiking network".
 % 
 % study_dir: location of IC spike files + directory for log and data files
 % time_end: length of simulation in ms
