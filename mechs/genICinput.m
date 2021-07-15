@@ -23,7 +23,7 @@ function sigIn = genICinput(trial, ICdir,locNum,label)
 if exist(['IC_spks_' label(2:end-1) '.mat'],'file')
     fileData = load(['IC_spks_' label(2:end-1) '.mat'],'spks');
 else
-    fileData = load(['..\IC_spks_' label(2:end-1) '.mat'],'spks');
+    fileData = load(['..' filesep 'IC_spks_' label(2:end-1) '.mat'],'spks');
 end
 
 

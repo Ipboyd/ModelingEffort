@@ -4,20 +4,23 @@
 % inputs: user specified, raw IC output
 % network structure: user specified
 
-cd('C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid')
-dynasimPath = 'C:\Users\Kenny\Desktop\GitHub\DynaSim';
-% ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s60_STRFgain1.00_20210104-221956';
-% ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s50_STRFgain1.00_20210104-114659';
-% ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s30_STRFgain1.00_20210104-165447';
-% ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s20_STRFgain1.00_20210106-133343';
-% ICdir = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s7_STRFgain1.00_20210107-173527';
-ICdir = 'ICSimStim\mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.499\s1.5_STRFgain0.50_20200514-181040';
+% cd('/Users/jionocon/Documents/MATLAB/MouseSpatialGrid')
+dynasimPath = '../DynaSim';
+% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s60_STRFgain1.00_20210104-221956';
+% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s50_STRFgain1.00_20210104-114659';
+% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s30_STRFgain1.00_20210104-165447';
+% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s20_STRFgain1.00_20210106-133343';
+% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s7_STRFgain1.00_20210107-173527';
+% ICdir = 'ICSimStim/mouse/full_grids/BW_0.009 BTM_3.8 t0_0.1 phase0.499/s1.5_STRFgain0.50_20200514-181040';
+ICdir = uigetdir('ICSimStim');
 
+addpath(cd)
 addpath('mechs')
 addpath('genlib')
 addpath('plotting')
 addpath(genpath(dynasimPath))
 expName = 'training 001 mouseTuning';
+addpath('cSPIKE'); InitializecSPIKE;
 
 debug_flag = 0;
 save_flag = 0;
@@ -39,7 +42,7 @@ subz = 1:length(ICfiles);
 % subz = find(contains({ICfiles.name},'s1m2'));
 % subz = [1:4,5,10,15,20,6,12,18,24]; %single channel
 % subz = [5,7,10,11]; %channels 1 & 2
-fprintf('found %i files matching subz criteria\n',length(subz));
+fprintf('found %i files matching subz criteria/n',length(subz));
 
 % check IC inputs
 if ~exist(ICdir,'dir'), restructureICspks(ICdir); end
@@ -194,7 +197,7 @@ end
 
 %% run simulation
 options.ICdir = ICdir;
-options.STRFgain = extractBetween(ICdir,'gain','_2020');
+options.STRFgain = extractBetween(ICdir,'gain','_202');
 options.plotRasters = 0;
 options.time_end = size(spks,3)*dt; %ms;
 options.locNum = [];

@@ -7,10 +7,10 @@
 
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
-addpath('..\genlib')
-addpath('..\stimuli')
-addpath('..\plotting')
-% dataSaveLoc = 'Z:\eng_research_hrc_binauralhearinglab\kfchou\ActiveProjects\MiceSpatialGrids\ICStim';
+addpath('../genlib')
+addpath('../stimuli')
+addpath('../plotting')
+% dataSaveLoc = 'Z:/eng_research_hrc_binauralhearinglab/kfchou/ActiveProjects/MiceSpatialGrids/ICStim';
 dataSaveLoc = pwd; %local save location
 
 % Spatial tuning curve parameters
@@ -68,7 +68,7 @@ specs.f = f;
 strf=STRFgen(paramH,paramG,f,t(2)-t(1));
 strf.w1 = strf.w1*strfGain;
 % ============ log message (manual entry?) ============
-saveName = sprintf('full_grids\\BW_%0.3f BTM_3.8 t0_0.1 phase%0.4f\\s%d_STRFgain%0.2f_%s',...
+saveName = sprintf('full_grids//BW_%0.3f BTM_3.8 t0_0.1 phase%0.4f//s%d_STRFgain%0.2f_%s',...
                 paramH.BW,paramH.phase/pi,sigma,strfGain,datestr(now,'YYYYmmdd-HHMMSS'));
 saveFlag = 0;
 
@@ -125,19 +125,19 @@ fid = fopen(fullfile(saveParam.fileLoc, 'notes.txt'), 'a');
 if fid == -1
   error('Cannot open log file.');
 end
-for k=1:length(msg), fprintf(fid, '%s: %s\n', datestr(now, 0), msg{k}); end
+for k=1:length(msg), fprintf(fid, '%s: %s/n', datestr(now, 0), msg{k}); end
 fclose(fid);
 %% Grids for each neuron
 % need to fix:
 % all 4 columns showing the same masker/target only performances
 
-% fileloc = saveParam.fileLoc;
-% 'C:\Users\Kenny\Desktop\GitHub\MouseSpatialGrid\ICSimStim\mouse\v2\155210_seed142307_s30'; dataloc?
-% fileloc = 'mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.4985\s30_STRFgain1.50_20200514-212400';
-% fileloc = 'bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s50_STRFgain1.00_20210104-114659';
-% fileloc = 'bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s20_STRFgain1.00_20210106-133343';
-% fileloc = 'ICSimStim\bird\full_grids\BW_0.004 BTM_3.8 t0_0.1 phase0.4900\s7_STRFgain1.00_20210107-144044';
-fileloc = 'mouse\full_grids\BW_0.009 BTM_3.8 t0_0.1 phase0.499\s1.5_STRFgain0.50_20200514-181040';
+fileloc = saveParam.fileLoc;
+% 'C:/Users/Kenny/Desktop/GitHub/MouseSpatialGrid/ICSimStim/mouse/v2/155210_seed142307_s30'; dataloc?
+% fileloc = 'mouse/full_grids/BW_0.009 BTM_3.8 t0_0.1 phase0.4985/s30_STRFgain1.50_20200514-212400';
+% fileloc = 'bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s50_STRFgain1.00_20210104-114659';
+% fileloc = 'bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s20_STRFgain1.00_20210106-133343';
+% fileloc = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s7_STRFgain1.00_20210107-144044';
+% fileloc = /full_grids/BW_0.009 BTM_3.8 t0_0.1 phase0.499/s1.5_STRFgain0.50_20200514-181040';
 addpath('..')
 
 % fileloc = [saveParam.fileLoc];

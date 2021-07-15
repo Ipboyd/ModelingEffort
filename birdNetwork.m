@@ -43,7 +43,7 @@ time_end = options.time_end;
 %% neuron populations
 % tonic = bias = cells spontaneous firing
 
-nCells = 3;
+nCells = 4;
 s = struct();
 
 s.populations(1).name = 'Exc';
@@ -80,6 +80,7 @@ if ~isfield(netcons,'tdxNetcon'), netcons.tdxNetcon = zeros(nCells); end
 if ~isfield(netcons,'tdrNetcon'), netcons.tdrNetcon = zeros(nCells); end
 if ~isfield(netcons,'xrNetcon'), netcons.xrNetcon = zeros(nCells); end
 if ~isfield(netcons,'irNetcon'), netcons.irNetcon = eye(nCells); end
+if ~isfield(netcons,'rcNetcon'), netcons.rcNetcon = zeros(nCells,1); end
 
 tdxNetcon = netcons.tdxNetcon;
 tdrNetcon = netcons.tdrNetcon;
@@ -121,7 +122,6 @@ s.connections(end).parameters={'gSYN',0.2, 'tauR',epsc_rise, 'tauD',epsc_fall, '
 s.connections(end+1).direction='X->R';
 s.connections(end).mechanism_list={'synDoubleExp'};
 s.connections(end).parameters={'gSYN',0.25, 'tauR',ipsc_rise, 'tauD',ipsc_fall, 'netcon',XRnetcon, 'ESYN',-80}; 
-
 
 s.connections(end+1).direction='R->C';
 s.connections(end).mechanism_list={'synDoubleExp_variablegSYN'};

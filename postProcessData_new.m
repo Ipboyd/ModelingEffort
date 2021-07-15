@@ -69,12 +69,17 @@ PCstr = '';
 
 if calcPC
     % spks to spiketimes in a cell array of 20x2
-    tau = linspace(1,30,100);
     spkTime = cell(numTrials,1);
     for ii = 1:numTrials, spkTime{ii} = find(raster(ii,:)); end
     spkTime = reshape(spkTime,numTrials/2,2);
     % calculate distance matrix & performance
-    distMat = calcvr(spkTime, tau);
+    % tau = linspace(1,30,100);
+    % distMat = calcvr(spkTime, tau);
+    
+    input = reshape(spkTime,1,numTrials);
+    STS = SpikeTrainSet(input,0,3);
+    distMat = STS.SPIKEdistanceMatrix(0,3);
+    
     [performance, ~] = calcpc(distMat, numTrials/2, 2, 1,[], 'new');
     pc = mean(max(performance));
     PCstr = ['PC = ' num2str(pc)];
