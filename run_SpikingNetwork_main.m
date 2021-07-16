@@ -234,9 +234,21 @@ toc
 % data = dataOld;
 % plotPerformanceGrids;
 % 
+
+locLabels = [90 45 0 -90];
+chanLabels = {'ipsi sigmoid', 'gauss', 'contra sigmoid'};
 if length(subz) == 24
     options.subPops = {'C'};
-    plotPerformanceGrids_new;
+    targetIdx = 1:4;
+    mixedIdx = 5:20;
+    simOptions.varied_param = varied_param;
+    simOptions.varies = varies;
+    simOptions.expVar = expVar;
+    simOptions.subz = subz; % configurations
+    simOptions.locationLabels = locLabels;
+    simOptions.chanLabels = chanLabels;
+
+    plotPerformanceGrids_v3(data,s,options.subPops,targetIdx,mixedIdx,simOptions)
     
     subplot(1,3,2); imagesc(netcons.xrNetcon);
     colorbar; caxis([0 1])
