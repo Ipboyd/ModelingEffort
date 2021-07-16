@@ -105,3 +105,4 @@ cSPIKE/SpikeTrainOrder/SpikeTrainOrderWithSurrogates.m
 cSPIKE/SpikeTrainOrder/SPIKY_f_generate_surros_np_cSPIKE.m
 cSPIKE/SpikeTrainSet.m
 cSPIKE/test_spikes.mat
+.DS_Store
