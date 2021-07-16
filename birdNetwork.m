@@ -80,7 +80,7 @@ if ~isfield(netcons,'tdxNetcon'), netcons.tdxNetcon = zeros(nCells); end
 if ~isfield(netcons,'tdrNetcon'), netcons.tdrNetcon = zeros(nCells); end
 if ~isfield(netcons,'xrNetcon'), netcons.xrNetcon = zeros(nCells); end
 if ~isfield(netcons,'irNetcon'), netcons.irNetcon = eye(nCells); end
-if ~isfield(netcons,'rcNetcon'), netcons.rcNetcon = zeros(nCells,1); end
+if ~isfield(netcons,'rcNetcon'), netcons.rcNetcon = ones(nCells,1); end
 
 tdxNetcon = netcons.tdxNetcon;
 tdrNetcon = netcons.tdrNetcon;

@@ -231,20 +231,32 @@ toc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% plot results
-% figure;
-% vizNetwork(s,0,'C','Exc')
+figure;
+vizNetwork(s,0,'C','Exc')
 
 % data = dataOld;
 % plotPerformanceGrids;
 % 
+targetIdx = find(cellfun(@(x) contains(x,'m0'),{ICfiles.name}));
+mixedIdx = find(cellfun(@(x) ~contains(x,'m0') && ~contains(x,'s0'),{ICfiles.name}));
+
+simOptions = struct;
+
+simOptions.subz = subz;
+simOptions.varies = varies;
+simOptions.varied_param = varied_param;
+simOptions.locationLabels = {'90','45','0','-90'};
+simOptions.expVar = expVar;
+simOptions.chanLabels = simOptions.locationLabels;
+
 if length(subz) == 24
     options.subPops = {'C'};
-    plotPerformanceGrids_new;
+    plotPerformanceGrids_v3(data,s,options.subPops,targetIdx,mixedIdx,simOptions);
     
-    subplot(1,3,2); imagesc(netcons.xrNetcon);
-    colorbar; caxis([0 1])
-    
-    subplot(1,3,3); imagesc(netcons.rcNetcon);
-    colorbar; caxis([0 1])
+%     subplot(1,3,2); imagesc(netcons.xrNetcon);
+%     colorbar; caxis([0 1])
+%     
+%     subplot(1,3,3); imagesc(netcons.rcNetcon);
+%     colorbar; caxis([0 1])
 end
 
