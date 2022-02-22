@@ -4,25 +4,33 @@
 % inputs: user specified, raw IC output
 % network structure: user specified
 
-% cd('/Users/jionocon/Documents/MATLAB/MouseSpatialGrid')
+cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid')
 dynasimPath = '../DynaSim';
-% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s60_STRFgain1.00_20210104-221956';
-% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s50_STRFgain1.00_20210104-114659';
-% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s30_STRFgain1.00_20210104-165447';
-% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s20_STRFgain1.00_20210106-133343';
-% ICdir = 'ICSimStim/bird/full_grids/BW_0.004 BTM_3.8 t0_0.1 phase0.4900/s7_STRFgain1.00_20210107-173527';
-% ICdir = 'ICSimStim/mouse/full_grids/BW_0.009 BTM_3.8 t0_0.1 phase0.499/s1.5_STRFgain0.50_20200514-181040';
-ICdir = uigetdir('ICSimStim');
+% ICdir = uigetdir('ICSimStim');
+
+% % 1.5ms refractory period
+%ICdir = 'U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid\ICSimStim\mouse\full_grids\alpha_83.333 N1_5 N2_7\s38_STRFgain0.80_20210914-161309';
+
+% 3ms refractory period
+% ICdir = 'U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid\ICSimStim\mouse\full_grids//alpha_83.333 N1_5 N2_7//s38_STRFgain0.80_20210922-153448';
+
+% 3ms refractory period, lower gain
+
+%ICdir = 'U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid\ICSimStim\mouse\full_grids\alpha_83.333 N1_5 N2_7\s38_STRFgain0.40_20210922-162928';
+
+% for grant
+ICdir = 'U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid\ICSimStim\mouse\full_grids//alpha_83.333 N1_5 N2_7//s38_STRFgain0.40_20210923-211301';
 
 addpath(cd)
 addpath('mechs')
 addpath('genlib')
 addpath('plotting')
 addpath(genpath(dynasimPath))
-expName = 'training 001 mouseTuning';
+expName = 'T-type only';
 addpath('cSPIKE'); InitializecSPIKE;
+addpath('fixed-stimuli');
 
-debug_flag = 0;
+debug_flag = 1;
 save_flag = 0;
 
 % setup directory for current simulation
@@ -50,111 +58,81 @@ if ~exist(ICdir,'dir'), restructureICspks(ICdir); end
 %% define network parameters
 clear varies
 
-dt = 0.1; %ms
+% gSYN = maximal synaptic conductance [uS]
+% default value: 0.015 uS ensures 1:1 spike transfer
+% double exponential function is scaled such that max value is 1 regardless
+% of rise and decay times
 
-gsyn_same = 0.35;
+dt = 0.1; %ms
+tonic_FR = 6; %Hz
+Vdiff = 5; R = 200; C = 0.1; E_leak = -65; V_th = -47;
+Itonic = 0.04; %nA
+% C*(Vdiff*(tonic_FR/1000) - (E_leak - V_th)/(R*C)) / 2, analytical solution from Dayan and Abbott, 2001
+
+Vstd = 6; % standard deviation of voltage [mV]
+Rnoise = Vstd*C; %nA
 
 % custom parameters
-varies(1).conxn = '(Inh->Inh,Exc->Exc)';
+varies(1).conxn = 'Exc->Exc';
 varies(1).param = 'trial';
 varies(1).range = 1:20;
 
-% deactivate TD neuron
-varies(end+1).conxn = 'TD';
-varies(end).param = 'Itonic';
-varies(end).range = 0;
-
-% inh neuron = sharpen
-varies(end+1).conxn = 'Inh->Inh';
-varies(end).param = 'g_postIC';
-varies(end).range = 0.18;
-
-varies(end+1).conxn = 'Inh->R';
+varies(end+1).conxn = 'S->R';
 varies(end).param = 'gSYN';
-varies(end).range = 0;
-
-varies(end+1).conxn = 'Inh->R';
-varies(end).param = 'delay';
-varies(end).range = 3;
-
-varies(end+1).conxn = 'Exc->Exc';
-varies(end).param = 'g_postIC';
-varies(end).range = 1;
-
-varies(end+1).conxn = 'Exc->R';
-varies(end).param = 'gSYN';
-varies(end).range = gsyn_same;
-
-varies(end+1).conxn = 'Exc->X';
-varies(end).param = 'gSYN';
-varies(end).range = gsyn_same;
-
-varies(end+1).conxn = 'R';
-varies(end).param = 'noise';
-varies(end).range = 0.;
-
-varies(end+1).conxn = 'X';
-varies(end).param = 'noise';
-% varies(end).range = [1.5];
 varies(end).range = 0;
 
 varies(end+1).conxn = 'X->R';
 varies(end).param = 'gSYN';
-varies(end).range = 0.35;
+varies(end).range = 0.012;
 
-varies(end+1).conxn = 'C';
+varies(end+1).conxn = 'R';
+varies(end).param = 'Itonic';
+varies(end).range = Itonic;
+
+varies(end+1).conxn = 'R';
 varies(end).param = 'noise';
-varies(end).range = [0.0];
+varies(end).range = Rnoise;
 
-% R-C weights 0.18 by default
 varies(end+1).conxn = 'R->C';
-varies(end).param = 'gSYN1';
-varies(end).range = gsyn_same;
-varies(end+1).conxn = 'R->C';
-varies(end).param = 'gSYN2';
-varies(end).range = gsyn_same;
-varies(end+1).conxn = 'R->C';
-varies(end).param = 'gSYN3';
-varies(end).range = gsyn_same;
-varies(end+1).conxn = 'R->C';
-varies(end).param = 'gSYN4';
-varies(end).range = gsyn_same;
+varies(end).param = '(gSYN1,gSYN2,gSYN3,gSYN4)';
+varies(end).range = [0.008;0;0.012;0.008];
 
 % display parameters
-network_params = [{varies.conxn}' {varies.param}' {varies.range}']
+network_params = [{varies.conxn}' {varies.param}' {varies.range}'];
 
 % find varied parameter other, than the trials
-varied_param = find(cellfun(@length,{varies.range})>1);
+varied_param = find( (cellfun(@length,{varies.range}) > 1 & ~cellfun(@iscolumn,{varies.range})));
+
 if length(varied_param) > 1
     varied_param = varied_param(2); 
-else
+else % if no varied params, settle on 2nd entry in varies
     varied_param = 2;
 end
+
 expVar = [varies(varied_param).conxn '-' varies(varied_param).param];
 expVar = strrep(expVar,'->','_');
 numVaried = length(varies(varied_param).range);
 
 % specify netcons
+netcons.rxNetcon = zeros(4);
 if debug_flag
     netcons.xrNetcon = zeros(4); % cross channel inhibition
-    netcons.xrNetcon(2,1) = 1;
-    % netcons.xrNetcon(1,4) = 1;
-    % netcons.xrNetcon(4,1) = 1;
-    % netcons.xrNetcon(4,2) = 1;
-    netcons.rcNetcon = [1 1 1 1]';
+    netcons.xrNetcon(3,4) = 1;
+    netcons.xrNetcon(3,1) = 1;
+    netcons.xrNetcon(3,2) = 1;
+    netcons.rcNetcon = [1 0 1 1]';
 end
-%%% use runGenTrainingData to call specific trainingSets %%%
 % for trainingSetNum = 2
 
-netcons.irNetcon = zeros(4); %inh -> R; sharpening
-netcons.tdxNetcon = zeros(4); % I2 -> I
-netcons.tdrNetcon = zeros(4); % I2 -> R
+netcons.rxNetcon = zeros(4,4);
+netcons.rxNetcon(3,3) = 1; % R -> X; drive cross-channel
+
 %% prep input data
 % concatenate spike-time matrices, save to study dir
 trialStartTimes = zeros(1,length(subz)); %ms
-padToTime = 3200; %ms
+padToTime = 3500; %ms
 label = {'E','I'};
-for ICtype = [0,1] %only E no I
+for ICtype = [0,1] % only E no I
     % divide all times by dt to upsample the time axis
     spks = [];
     for z = 1:length(subz)
@@ -175,7 +153,7 @@ for ICtype = [0,1] %only E no I
                 end
             end
         end
-%         singleConfigSpks(:,3,:) = 0; % zero out the U channel
+        singleConfigSpks(:,2,:) = 0; % zero out the U channel
         
         trialStartTimes(z) = padToTime;
         % pad each trial to have duration of timePerTrial
@@ -201,7 +179,7 @@ options.STRFgain = extractBetween(ICdir,'gain','_202');
 options.plotRasters = 0;
 options.time_end = size(spks,3)*dt; %ms;
 options.locNum = [];
-options.parfor_flag = 1;
+options.parfor_flag = 0;
 [snn_out,s] = birdNetwork(study_dir,varies,netcons,options);
 
 %% post-process
@@ -212,7 +190,7 @@ dataOld = struct();
 options.time_end = padToTime; %ms
 PPtrialStartTimes = [1 cumsum(trialStartTimes)/dt+1]; %units of samples
 PPtrialEndTimes = PPtrialStartTimes(2:end)-(padToTime/dt-options.time_end/dt+1);
-options.plotRasters = 0;
+options.plotRasters = 1;
 options.subPops = {'Exc','R','C'}; %individually specify population performances to plot
 configName = cellfun(@(x) strsplit(x,'_'),{ICfiles(subz).name}','UniformOutput',false);
 configName = vertcat(configName{:});
@@ -228,19 +206,25 @@ for z = 1:length(subz)
 %     [dataOld(z).perf,dataOld(z).fr] = postProcessData(snn_out,trialStart,trialEnd,options);
 end
 toc
+close all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% plot results
 figure;
 vizNetwork(s,0,'C','Exc')
+saveas(figure(1),fullfile('simData',expName,'netcons.png'));
+saveas(figure(2),fullfile('simData',expName,'network.png'));
+close all;
 
 % data = dataOld;
 % plotPerformanceGrids;
-% 
+
 targetIdx = find(cellfun(@(x) contains(x,'m0'),{ICfiles.name}));
 mixedIdx = find(cellfun(@(x) ~contains(x,'m0') && ~contains(x,'s0'),{ICfiles.name}));
 
 simOptions = struct;
+
+annotTable = createSimNotes(snn_out,expName);
 
 simOptions.subz = subz;
 simOptions.varies = varies;
@@ -251,7 +235,7 @@ simOptions.chanLabels = simOptions.locationLabels;
 
 if length(subz) == 24
     options.subPops = {'C'};
-    plotPerformanceGrids_v3(data,s,options.subPops,targetIdx,mixedIdx,simOptions);
+    plotPerformanceGrids_v3(data,s,annotTable,options.subPops,targetIdx,mixedIdx,simOptions,expName);
     
 %     subplot(1,3,2); imagesc(netcons.xrNetcon);
 %     colorbar; caxis([0 1])
@@ -259,4 +243,5 @@ if length(subz) == 24
 %     subplot(1,3,3); imagesc(netcons.rcNetcon);
 %     colorbar; caxis([0 1])
 end
+
 

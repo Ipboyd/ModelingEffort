@@ -1,4 +1,4 @@
-function [spkcnt,frate,spike_times]=STRFconvolve(strf,stim_spec,mean_rate,trialn,songn)
+function [spkcnt,frate,spike_times]=STRFconvolve(strf,stim_spec,mean_rate,trialn,songn,t_ref)
 % 
 %
 %% Inputs
@@ -12,9 +12,13 @@ function [spkcnt,frate,spike_times]=STRFconvolve(strf,stim_spec,mean_rate,trialn
 if nargin==3
     trialn=1;
     songn=[];
+    t_ref=3;
 elseif nargin==4
     songn=[];
-elseif nargin<3||nargin>5
+    t_ref=3;
+elseif nargin==5
+    t_ref=3;
+elseif nargin<3||nargin>6
     disp('wrong number of inputs')
     return
 end
@@ -46,12 +50,12 @@ rng('shuffle')
 
 for i=1:trialn
     if exist('rand_seed','var')
-        disp('using seed random numbers')
-        [~,temptspk]=spike_generator_seed_rr(frate,t,rand_seed(:,i,songn));
+        % disp('using seed random numbers')
+        [~,temptspk]=spike_generator_seed_rr(frate,t,rand_seed(:,i,songn),t_ref);
         spike_times{i,1}=temptspk*1000;
     else
-        disp('using novel random numbers')
-        [~,temptspk]=spike_generator_rr(frate,t);
+        % disp('using novel random numbers')
+        [~,temptspk]=spike_generator_rr(frate,t,t_ref);
         spike_times{i,1}=temptspk*1000;
     end
     spkcnt=spkcnt+length(temptspk);

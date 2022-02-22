@@ -86,7 +86,7 @@ end
 %% Generate STRFs with specified parameters
 % Create STRF of [f] frequecy channels, and time delays of 40 dts
 % Parameters from Amin et al., 2010, J Neurophysiol
-if length(fieldnames(paramH))==4
+if length(fieldnames(paramH))==4    
     strf.exp=exp(-.5*((strf.t-paramH.t0)/paramH.BW).^2);
     strf.cos=cos(2*pi*paramH.BTM*(strf.t-paramH.t0)+paramH.phase);
     strf.H=strf.exp.*strf.cos;

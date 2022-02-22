@@ -5,18 +5,21 @@
 % note:
 % large bottleneck lies in r/w to network drive
 
+cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid\ICSimStim');
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
 addpath('../genlib')
-addpath('../stimuli')
+addpath('../fixed-stimuli')
 addpath('../plotting')
+addpath('../cSPIKE')
+InitializecSPIKE;
 % dataSaveLoc = 'Z:/eng_research_hrc_binauralhearinglab/kfchou/ActiveProjects/MiceSpatialGrids/ICStim';
 dataSaveLoc = pwd; %local save location
 
 % Spatial tuning curve parameters
-sigma = 7; %60 for bird but 38 for mouse
-tuning = 'bird'; %'bird' or 'mouse'
-stimGain = 0.75;
+sigma = 38; %60 for bird but 38 for mouse
+tuning = 'mouse'; %'bird' or 'mouse'
+stimGain = 0.5;
 targetlvl = 0.01;
 maskerlvl = 0.01; %default is 0.01
 maxWeight = 1; %maximum mixed tuning weight; capped at this level.
@@ -32,15 +35,25 @@ if strcmp(tuning,'mouse')
         masker_specs{trial} = spec;
     end
     
-    %strf parameters
-    paramH.BW= 0.05; %bandwidth
-    paramH.BTM= 3.8 ; %best temporal modulation
-    paramH.t0= 0.1; % t0, peak latency (s)
-    paramH.phase= 0.48*pi; % phase
-    paramG.BW=2000;  % Hz
-    paramG.BSM=5.00E-05; % 1/Hz=s best spectral modulation
-    paramG.f0=4300;
-    strfGain = 0.35;
+%     %strf parameter s
+%     paramH.BW= 0.0375; %bandwidth
+%     paramH.BTM = 5.2; %best temporal modulation
+%     paramH.t0 = 0.08; % t0, peak latency (s)
+%     % paramH.t0 = 0.03;
+%     paramH.phase= 0.455*pi; % phase
+%     % paramH.phase = 0.25*pi;
+
+    paramH.alpha = 0.01; % s
+    paramH.N1 = 5;
+    paramH.N2 = 7;
+    paramH.SC1 = 1;
+    paramH.SC2 = 1;  % increase -> more inhibition
+    
+    paramG.BW = 2000;  % Hz
+    paramG.BSM = 5.00E-05; % 1/Hz=s best spectral modulation
+    paramG.f0 = 4300; % ~strf.f(30)
+    strfGain = 0.2;
+    
 elseif strcmp(tuning,'bird')
     % stimuli
     load('stimuli_birdsongs.mat','stimuli','fs')
@@ -64,21 +77,30 @@ specs.dims = size(song1_spec);
 specs.t = t;
 specs.f = f;
 
+
 % make STRF
-strf=STRFgen(paramH,paramG,f,t(2)-t(1));
+% strf=STRFgen(paramH,paramG,f,t(2)-t(1));
+strf = STRFgen_V2(paramH,paramG,f,t(2)-t(1));
 strf.w1 = strf.w1*strfGain;
 % ============ log message (manual entry?) ============
-saveName = sprintf('full_grids//BW_%0.3f BTM_3.8 t0_0.1 phase%0.4f//s%d_STRFgain%0.2f_%s',...
-                paramH.BW,paramH.phase/pi,sigma,strfGain,datestr(now,'YYYYmmdd-HHMMSS'));
+% saveName = sprintf('full_grids//BW_%0.3f BTM_3.8 t0_0.1 phase%0.4f//s%d_STRFgain%0.2f_%s',...
+%                 paramH.BW,paramH.phase/pi,sigma,strfGain,datestr(now,'YYYYmmdd-HHMMSS'));
+saveName = sprintf('full_grids//alpha_%0.3f N1_%0.0f N2_%0.0f//s%d_STRFgain%0.2f_%s',...
+                paramH.alpha,paramH.N1,paramH.N2,sigma,strfGain,datestr(now,'YYYYmmdd-HHMMSS'));
 saveFlag = 0;
 
 msg{1} = ['capped tuning weight to' num2str(maxWeight)];
 msg{end+1} = ['maskerlvl = ' num2str(maskerlvl)];
 msg{end+1} = ['strfGain = ' num2str(strfGain)];
-msg{end+1} = ['strf paramH.BW = ' num2str(paramH.BW)];
-msg{end+1} = ['strf paramH.BTM = ' num2str(paramH.BTM)];
-msg{end+1} = ['strf paramH.t0 = ' num2str(paramH.t0)];
-msg{end+1} = ['strf paramH.phase = ' num2str(paramH.phase)];
+% msg{end+1} = ['strf paramH.BW = ' num2str(paramH.BW)];
+% msg{end+1} = ['strf paramH.BTM = ' num2str(paramH.BTM)];
+% msg{end+1} = ['strf paramH.t0 = ' num2str(paramH.t0)];
+% msg{end+1} = ['strf paramH.phase = ' num2str(paramH.phase)];
+msg{end+1} = ['strf paramH.alpha = ' num2str(paramH.alpha)];
+msg{end+1} = ['strf paramH.N1 = ' num2str(paramH.N1)];
+msg{end+1} = ['strf paramH.N2 = ' num2str(paramH.N2)];
+msg{end+1} = ['strf paramH.SC1 = ' num2str(paramH.SC1)];
+msg{end+1} = ['strf paramH.SC2 = ' num2str(paramH.SC2)];
 msg{end+1} = ['strf paramG.BW= ' num2str(paramG.BW)];
 % =============== end log file ===================
 
@@ -94,17 +116,21 @@ tuningParam.strf = strf;
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
 
+% use below 2 lines to quickly check conv of STRF and spectrogram 
+strfData(song1_spec, zeros(size(song1_spec)));
+[~,resp] = linFwd_Junzi(strf);
+
 % iterate over all location combinations
-set(0, 'DefaultFigureVisible', 'off')
+% set(0, 'DefaultFigureVisible', 'off')
 figure;
 for songloc = songLocs
     close all
     maskerloc=0;
     
-    t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
-    t_spiketimes=InputGaussianSTRF_v2(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
+    t_spiketimes=InputGaussianSTRF_v3(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
+    t_spiketimes=InputGaussianSTRF_v3(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
     for maskerloc = maskerLocs
-        t_spiketimes=InputGaussianSTRF_v2(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
+        t_spiketimes=InputGaussianSTRF_v3(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
     end
     
 %     param.sigma = sigma;
@@ -146,42 +172,43 @@ tgtalone = dir([fileloc filesep '*m0.mat'])
 mskalone = dir([fileloc filesep 's0*.mat'])
 mixedfiles = setdiff({allfiles.name},[{tgtalone.name};{mskalone.name}])
 
-% mixed configs
-clear perf fr
+% call mixed configs and build grids for each channel
+clear perf fr avgFR
 for i = 1:16
     data = load([fileloc filesep mixedfiles{i}]);
     perf(i,:) = data.disc;
     avgFR(i,:) = data.avgSpkRate;
 end
 
-neurons = {'left sigmoid','gaussian','u','right sigmoid'};
+neurons = fliplr({'ipsi sigmoid','gaussian','u','contra sigmoid'});
 % neurons = {'-90','0','45','90'};
 figure('position',[50 400 1600 400]);
 left = 0.05;
 bottom = 0.15;
 width = 0.24;
 height = 0.6;
+
+% plot mixed grid
 for i = 1:length(neurons)
     subplot('position',[left+width*(i-1) bottom width*0.8 height])
     neuronPerf = perf(:,i);
     plotPerfGrid(neuronPerf,avgFR(:,i),'');
-    xticks([1:4]); xticklabels({'-90','0','45','90'})
-    yticks([1:4]); yticklabels(fliplr({'-90','0','45','90'}))
+    xticks([1:4]); xticklabels(fliplr({'-90','0','45','90'}))
+    yticks([1:4]); yticklabels({'-90','0','45','90'})
     xlabel('Song Location')
     ylabel('Masker Location')
 end
 
 % target only, masker only configs
-clear perf fr
-for i = 1:4
+clear perf fr avgFR
+for i = 1:4 % per location
     data = load([fileloc filesep tgtalone(i).name]);
-    perf(1,i) = data.disc(i);
-    avgFR(1,i) = data.avgSpkRate(i);
-end
-for i = 1:4
+    perf(:,i,1) = data.disc;
+    avgFR(:,i,1) = data.avgSpkRate;
+
     data = load([fileloc filesep mskalone(i).name]);
-    perf(2,i) = data.disc(i);
-    avgFR(2,i) = data.avgSpkRate(i);
+    perf(:,i,2) = data.disc;
+    avgFR(:,i,2) = data.avgSpkRate;
 end
 left = 0.05;
 bottom = 0.76;
@@ -189,8 +216,8 @@ width = 0.24;
 height = 0.15;
 for i = 1:length(neurons)
     subplot('position',[left+width*(i-1) bottom width*0.8 height])
-    neuronPerf = perf;
-    plotPerfGrid(neuronPerf,avgFR(i),neurons(i));
+    neuronPerf = squeeze(perf(i,:,:))';
+    plotPerfGrid(neuronPerf,squeeze(avgFR(i,:,:))',neurons(i));
 end
 saveas(gca,[fileloc filesep 'performance_grid.tiff'])
 
