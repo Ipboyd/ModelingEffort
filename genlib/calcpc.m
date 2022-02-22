@@ -39,16 +39,26 @@ switch ver
 		if ~exist('numPerms', 'var') || isempty(numPerms)
 			numPerms = 1e4;
 		end
-		s = size(distMat);%(numTrains, numTrains, numTaus)
-		pc = zeros(prod(s(3:end)), s(1)/numTrials/numTargets, numTrials);
-		for trialNum = 1:numTrials
-			inds = setxor(1:numTrials:s(1), 1:s(1));
-            %C = setxor(A,B) for vectors A and B, returns the values that 
-            %are not in the intersection of A and B with no repetitions. 
-            %C will be sorted
-			pc(:,:,trialNum) = calcpcNew(distMat(inds, inds, :), numTrials - 1, numTargets, tempNum, ceil(numPerms/numTrials));
+		s = size(distMat); % [numTrains, numTrains, numTaus]
+% 		pc = zeros(prod(s(3:end)), s(1)/numTrials/numTargets, numTrials);        
+% 		for trialNum = 1:numTrials
+% 			inds = setxor(trialNum:numTrials:s(1), 1:s(1));
+%             %C = setxor(A,B) for vectors A and B, returns the values that 
+%             %are not in the intersection of A and B with no repetitions. 
+%             %C will be sorted
+% 			pc(:,:,trialNum) = calcpcNew(distMat(inds, inds, :), numTrials - 1, numTargets, tempNum, ceil(numPerms/numTrials));
+% 		end
+        
+        % LOO approach for all possible pairs of removed trials
+        pc = zeros(prod(s(3:end)), s(1)/numTrials/numTargets, numTrials^2);        
+		for trialNum = 1:numTrials^2
+            [r1,r2] = ind2sub([numTrials numTrials],trialNum);
+			inds_t1 = setxor(r1:numTrials:s(1), 1:s(1));
+            inds_t2 = setxor(r2:numTrials:s(1), 1:s(1));
+			pc(:,:,trialNum) = calcpcNew(distMat(inds_t1, inds_t2, :), numTrials - 1, numTargets, tempNum, ceil(numPerms/numTrials));
 		end
-		E = std(pc, [], 3);
+
+		E = std(pc, [], 3)/sqrt(numTrials^2);   % standard error
 		meanY = mean(pc, 3);
 	case 'old'
 		if ~exist('numPerms', 'var') || isempty(numPerms)

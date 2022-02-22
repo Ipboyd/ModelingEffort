@@ -1,0 +1,40 @@
+% double-exponential synaptic current
+% Jio Nocon, September 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+ESYN = 0            % reversal potential [mV]
+tauD = 1.5          % decay time [ms]
+tauR = 0.3          % rise time [ms]
+delay = 0           % synaptic delay [ms]
+gSYN = 1            % synaptic connectivity [uS]
+
+fF = 0              % degree of synaptic facilitation ([0 1])
+fP = 0              % degree of synaptic depression ([0 1])
+tauF = 200          % facilitation decay time [ms]
+tauP = 80           % depression decay time [ms]
+
+%%%%%%%% network parameters %%%%%%%%%%
+netcon = eye(N_pre,N_post)
+
+%%%%%%%% calculate post-synaptic current %%%%%%%%%%
+tau_rise = tauD*tauR/(tauD-tauR)                  
+b = ((tauR/tauD)^(tau_rise/tauD) - (tauR/tauD)^(tau_rise/tauR))^-1
+f(t) =  b * ( exp(-t/tauD) - exp(-t/tauR) ).*(t>=0)
+
+tnew(0) = -1e6
+Fac(0) = 0
+Pde(0) = 1
+
+syn(X,t) = gSYN .* ( f(t - tnew) * ( (1 + Fac)'*Pde .* netcon ) ) .* (X - ESYN)
+dFac/dt = (0 - Fac)/tauF
+dPde/dt = (1 - Pde)/tauP
+dtnew/dt = 0
+
+% syn is in units [nA = uS*mV] and scaled such that max value 
+% before multiplication by (X - ESYN) is gSYN regardless of dynamics
+
+if(any(t == tspike_pre+delay,1))(tnew = t-dt,Fac = Fac + fF*(2.5-Fac), Pde = Pde - fP*Pde)
+
+@isyn += syn(V_post,t)
+
+monitor syn.functions

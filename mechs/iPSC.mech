@@ -1,0 +1,26 @@
+% double-exponential synaptic current
+% Jio Nocon, September 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+ESYN = 0            % reversal potential [mV]
+tauD = 1.5          % decay time [ms]
+tauR = 0.3          % rise time [ms]
+delay = 0           % synaptic delay [ms]
+gSYN = 1            % synaptic connectivity [uS]
+
+%%%%%%%% network parameters %%%%%%%%%%
+netcon = eye(N_pre,N_post)
+
+%%%%%%%% calculate post-synaptic current %%%%%%%%%%
+tau_rise = tauD*tauR/(tauD-tauR)                  
+b = ((tauR/tauD)^(tau_rise/tauD) - (tauR/tauD)^(tau_rise/tauR))^-1
+f(t) =  b * ( exp(-t/tauD) - exp(-t/tauR) ).*(t>=0)
+
+syn(X,t) = gSYN .* ( f(t - tspike_pre - delay) * netcon ) .* (X - ESYN)
+
+% syn is in units [nA = uS*mV] and scaled such that max value 
+% before multiplication by (X - ESYN) is gSYN regardless of rise and decay
+
+@isyn += syn(V_post,t)
+
+monitor syn.functions

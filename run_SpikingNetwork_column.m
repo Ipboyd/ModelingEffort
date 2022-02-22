@@ -1,0 +1,252 @@
+% generate training data from custom-designed AIM network for optimizing
+% network weights with matlab's DNN toolbox.
+%
+% inputs: user specified, raw IC output
+% network structure: user specified
+
+cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid')
+dynasimPath = '../DynaSim';
+
+ICdir = 'U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid\ICSimStim\mouse\with_offset//alpha_0.009 N1_5 N2_7//s38_STRFgain0.17_20220214-114313';
+
+addpath(cd)
+addpath('mechs')
+addpath('genlib')
+addpath('plotting')
+addpath(genpath(dynasimPath))
+expName = '02-18-2022 final';
+addpath('cSPIKE'); InitializecSPIKE;
+addpath('fixed-stimuli');
+
+debug_flag = 1;
+save_flag = 0;
+
+% setup directory for current simulation
+datetime = datestr(now,'yyyymmdd-HHMMSS');
+study_dir = fullfile(pwd,'run',datetime);
+if exist(study_dir, 'dir'),rmdir(study_dir, 's'); end
+mkdir(fullfile(study_dir, 'solve'));
+simDataDir = [pwd filesep 'simData' filesep expName];
+if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
+
+% get indices of STRFS, all locations, excitatory inputs only
+ICfiles = dir([ICdir filesep '*.mat']);
+subz = 1:length(ICfiles);
+fprintf('found %i files matching subz criteria /n',length(subz));
+
+% check IC inputs
+if ~exist(ICdir,'dir'), restructureICspks(ICdir); end
+
+[y1,fs] = audioread('200k_target1.wav');
+[y2] = audioread('200k_target2.wav');
+
+%% define network parameters
+clear varies
+
+dt = 0.1; %ms
+
+varies(1).conxn = '(On->On,Off->Off)';
+varies(1).param = 'trial';
+varies(1).range = 1:20;
+
+% from TC to L4
+varies(end+1).conxn = '(On->R1On,Off->R1Off)';
+varies(end).param = '(gSYN,tauR,tauD,fP)';
+varies(end).range = [ 0.009 ; 2 ; 3 ; 0 ];
+
+varies(end+1).conxn = '(On->S1On,Off->S1Off)';
+varies(end).param = '(gSYN,tauR,tauD,fP)';
+varies(end).range = [ 0.016 ; 0.15 ; 1 ; 0.06 ];
+
+varies(end+1).conxn = '(S1On->R1On,S1Off->R1Off)';
+varies(end).param = '(tauR,tauD,fP)';
+varies(end).range = [ 2 ; 3 ; 0.2 ];
+
+varies(end+1).conxn = '(S1On->R1On,S1Off->R1Off)';
+varies(end).param = 'gSYN';
+varies(end).range = [ 0.02 ];
+
+% from L4 to L2/3
+varies(end+1).conxn = '(R1On->R2On,R1Off->R2Off)';
+varies(end).param = '(gSYN,tauR,tauD,fP)';
+varies(end).range = [ 0.009 ; 2 ; 3 ; 0 ]; %0.009
+
+varies(end+1).conxn = '(R1On->S2On,R1Off->S2Off)';
+varies(end).param = '(gSYN,tauR,tauD,fP)';
+varies(end).range = [ 0.016 ; 0.15 ; 1 ; 0.06 ];
+
+varies(end+1).conxn = '(S2On->R2On,S2Off->R2Off)';
+varies(end).param = '(gSYN,tauR,tauD,fP)';
+varies(end).range = [ 0.02 ; 2 ; 3 ; 0.2 ];
+
+% % control and opto conditions
+% varies(end+1).conxn = '(S1On,S1Off)'; %'(S1On,S2On,S1Off,S2Off)';
+% varies(end).param = 'Itonic';
+% varies(end).range = [ 0 -0.1 ];
+
+% % convergence
+% varies(end+1).conxn = 'R2On->C';
+% varies(end).param = 'gSYN';
+% varies(end).range = 0.015;
+% 
+% % convergence
+% varies(end+1).conxn = 'R2Off->C';
+% varies(end).param = 'gSYN';
+% varies(end).range = 0.015;
+
+% display parameters
+network_params = [{varies.conxn}' {varies.param}' {varies.range}'];
+
+% find varied parameter other, than the trials
+varied_param = find( (cellfun(@length,{varies.range}) > 1 & ~cellfun(@iscolumn,{varies.range})));
+
+if length(varied_param) > 1
+    varied_param = varied_param(2); 
+else % if no varied params, settle on 2nd entry in varies
+    varied_param = 2;
+end
+
+expVar = [varies(varied_param).conxn '-' varies(varied_param).param];
+expVar = strrep(expVar,'->','_');
+numVaried = length(varies(varied_param).range);
+
+netcons = struct; netcons.rcNetcon = 1;
+
+%% prep input data
+% concatenate spike-time matrices, save to study dir
+trialStartTimes = zeros(1,length(subz)); %ms
+padToTime = 3500; %ms
+label = {'On','Off'};
+for ICtype = [0 1] % only E no I
+    % divide all times by dt to upsample the time axis
+    spks = [];
+    for z = 1:length(subz)
+        disp(ICfiles(subz(z)+0).name); %read in E spikes only
+        load([ICdir filesep ICfiles(subz(z)).name],'t_spiketimes_on','t_spiketimes_off');
+        
+        % convert spike times to spike trains. This method results in
+        % dt = 1 ms
+        temp = cellfun(@max,t_spiketimes_on,'UniformOutput',false);
+        tmax = round(max([temp{:}])/dt);
+        singleConfigSpks = zeros(20,4,tmax); %I'm storing spikes in a slightly different way...
+        for j = 1:size(t_spiketimes_on,1) %trials [1:10]
+            for k = 1:size(t_spiketimes_on,2) %neurons [(1:4),(1:4)]
+                if k < 5 %song 1
+                    if ICtype == 0
+                        singleConfigSpks(j,k,round(t_spiketimes_on{j,k}/dt)) = 1;
+                    else
+                        singleConfigSpks(j,k,round(t_spiketimes_off{j,k}/dt)) = 1;
+                    end
+                    
+                else
+                    if ICtype == 0
+                        singleConfigSpks(j+10,k-4,round(t_spiketimes_on{j,k}/dt)) = 1;
+                    else
+                        singleConfigSpks(j+10,k-4,round(t_spiketimes_off{j,k}/dt)) = 1;
+                    end
+                end
+            end
+        end
+        singleConfigSpks(:,2,:) = 0; % zero out the U channel
+        
+        trialStartTimes(z) = padToTime;
+        % pad each trial to have duration of timePerTrial
+        if size(singleConfigSpks,3) < padToTime/dt
+            padSize = padToTime/dt-size(singleConfigSpks,3);
+            singleConfigSpks = cat(3,singleConfigSpks,zeros(20,4,padSize)); 
+        end
+%         % concatenate
+%         spks = cat(3,spks,singleConfigSpks);
+        
+        % for single channel, since column network only has one location
+        spks = cat(3,spks,singleConfigSpks(:,1,:));
+    end
+    save(fullfile(study_dir, 'solve',sprintf('IC_spks_%s.mat',label{ICtype+1})),'spks');
+end
+
+%% run simulation
+options.ICdir = ICdir;
+options.STRFgain = extractBetween(ICdir,'gain','_202');
+options.plotRasters = 0;
+
+% all locations
+
+% options.time_end = size(spks,3)*dt; %ms;
+% options.locNum = [];
+
+options.time_end = padToTime;
+options.locNum = 5;
+
+options.parfor_flag = 0;
+
+[snn_out,s] = columnNetwork(study_dir,varies,netcons,options);
+
+%% post-process
+
+% calculate performance
+data = struct();
+dataOld = struct();
+options.time_end = padToTime; %ms
+PPtrialStartTimes = [1 cumsum(trialStartTimes)/dt+1]; %units of samples
+PPtrialEndTimes = PPtrialStartTimes(2:end)-(padToTime/dt-options.time_end/dt+1);
+options.plotRasters = 1;
+options.subPops = {'On','Off','R','C','S','X'}; %individually specify population performances to plot
+configName = cellfun(@(x) strsplit(x,'_'),{ICfiles(subz).name}','UniformOutput',false);
+configName = vertcat(configName{:});
+configName = configName(:,1);
+options.variedField = strrep(expVar,'-','_');
+options.chansToPlot = [1 3 4]; % focus on 0deg channel only
+
+tic
+if ~isempty(options.locNum)
+    trialStart = 1;
+    trialEnd = padToTime/dt;
+    figName = [simDataDir filesep configName{options.locNum}(1:end-4)];
+    [data.perf,data.fr] = postProcessData_new(snn_out,s,trialStart,trialEnd,figName,options);
+else
+    for z = 1:length(subz)
+        trialStart = PPtrialStartTimes(z);
+        trialEnd = PPtrialEndTimes(z);
+        figName = [simDataDir filesep configName{z}];
+        [data(z).perf,data(z).fr] = postProcessData_new(snn_out,s,trialStart,trialEnd,figName,options);
+    end
+end
+toc
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% plot results
+% close all
+figure;
+vizNetwork(s,0,'C','On')
+saveas(figure(1),fullfile('simData',expName,'netcons.png'));
+saveas(figure(2),fullfile('simData',expName,'network.png'));
+close all;
+
+targetIdx = find(cellfun(@(x) contains(x,'m0'),{ICfiles.name}));
+mixedIdx = find(cellfun(@(x) ~contains(x,'m0') && ~contains(x,'s0'),{ICfiles.name}));
+
+annotTable = createSimNotes(snn_out,expName);
+
+if isempty(options.locNum)
+    
+    simOptions = struct;
+    
+    simOptions.subz = subz;
+    simOptions.varies = varies;
+    simOptions.varied_param = varied_param;
+    simOptions.locationLabels = {'90','45','0','-90'};
+    simOptions.expVar = expVar;
+    simOptions.chanLabels = simOptions.locationLabels;
+    
+    options.subPops = {'R','C'};
+    plotPerformanceGrids_v3(data,s,annotTable,options.subPops,targetIdx,mixedIdx,simOptions,expName);
+    
+%     subplot(1,3,2); imagesc(netcons.xrNetcon);
+%     colorbar; caxis([0 1])
+%     
+%     subplot(1,3,3); imagesc(netcons.rcNetcon);
+%     colorbar; caxis([0 1])
+end
+
+

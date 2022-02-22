@@ -1,4 +1,4 @@
-function plotPerformanceGrids_v3(data,s,subPops,targetIdx,mixedIdx,simOptions)
+function plotPerformanceGrids_v3(data,s,annotTable,subPops,targetIdx,mixedIdx,simOptions,expName)
 % plot performance grids for specified subpopulation of neurons
 %
 % v3 changes the script into a function
@@ -22,39 +22,31 @@ onlyC = contains(subPops,'C') & length(subPops) == 1;
 
 % chanLabel = {'left sig','gauss','U','right sig'};
 chanLabel = simOptions.chanLabels;
-for vv = 1:length(varies(varied_param).range)
-    % simulation annotation
-    annotTable = [{varies.conxn}' {varies.param}' {varies.range}'];
+
+% check if varied parameter is vector or matrix
+numVars = length(annotTable);
+
+for vv = 1:numVars
+    annotStr = annotTable{vv};
     
-    % if no parameter is varied
-    if varied_param == 1
-        % remove "R-C gSYN", trials
-        RCgSYN_idx = find(contains([{varies.conxn}'],'R->C') & contains([{varies.param}'],'gSYN'));
-        annotTable([RCgSYN_idx; varied_param],:, :) = []; 
-        
-        annotStr = strcat(annotTable(:,1), {' '}, annotTable(:,2), {' = '}, strtrim(num2str([annotTable{:,3}]')));
-        annotStr{end+1} = sprintf('RC-gSYN = [%.02f %.02f %.02f %.02f]', [varies(RCgSYN_idx).range]);
-    else
-        % remove "R-C gSYN", varied parameter, trials
-        RCgSYN_idx = find(contains([{varies.conxn}'],'R->C') & contains([{varies.param}'],'gSYN'));
-        annotTable([RCgSYN_idx;; varied_param],:, :) = [];
-        annotTable(1,:,:) = [];
-        
-        currentVariedValue = varies(varied_param).range(vv);
-        annotStr = strcat(annotTable(:,1), {' '}, annotTable(:,2), {' = '}, strtrim(num2str([annotTable{:,3}]')));
-        annotStr{end+1} = [expVar ' = ' num2str(currentVariedValue)];
-        annotStr{end+1} = sprintf('RC-gSYN = [%.02f %.02f %.02f %.02f]', [varies(RCgSYN_idx).range]);
-    end
-      
     % figure setup
-    figwidth = 900; %300 * number of neurons?
+    figwidth = max(length(popSizes)*300,900); % 300 * number of neurons?
     figheight = min(length(popSizes)*300,800);
     h = figure('position',[200 50 figwidth figheight]);
-    plotwidth = 0.233; % percentage, 0.7*num neurons
+    
     plotheight = 1/numPops*0.55; % percentage
+    
     xstart = 0.1;
     ystart = 0.1;
     for pop = 1:numPops
+        
+        % vary grid width depending on the number of neurons in subpopulation
+        if popSizes(pop) == 1
+            plotwidth = 0.233; % percentage, 0.7*num neurons
+        else
+            plotwidth = 0.14;
+        end
+        
         for chan = 1:popSizes(pop)
 
             % subfigure positions
@@ -91,6 +83,8 @@ for vv = 1:length(varies(varied_param).range)
                 perf.(popNamesM{pop}) = zeros(1,4);
                 fr.(popNamesT{pop}) = zeros(1,4);
                 fr.(popNamesM{pop}) = zeros(1,4);
+                
+                % clean grid
                 if ~isempty(targetIdx)
                     for i = 1:length(targetIdx)
                         idx = (targetIdx(i) == subz);
@@ -98,6 +92,8 @@ for vv = 1:length(varies(varied_param).range)
                         fr.(popNamesT{pop})(i) = data(idx).fr.(subPops{pop}).(['channel' num2str(chan)])(vv);
                     end
                 end
+                
+                % masked grid
                 if exist('maskerIdx','var')
                     if ~isempty(maskerIdx)
                         for i = 1:length(maskerIdx)
@@ -108,11 +104,9 @@ for vv = 1:length(varies(varied_param).range)
                     end
                 end
                 subplot('Position',[xoffset yoffset+plotheight+0.01 plotwidth plotheight*0.4])
-                if pop == 1
-                    plotPerfGrid([perf.(popNamesT{pop});perf.(popNamesM{pop})],[fr.(popNamesT{pop});fr.(popNamesM{pop})],chanLabel{chan});
-                else
+                %if pop == 1
                     plotPerfGrid([perf.(popNamesT{pop});perf.(popNamesM{pop})],[fr.(popNamesT{pop});fr.(popNamesM{pop})],'');
-                end
+                %end
 
                 if chan == 1, ylabel(subPops{pop}); end
             end
@@ -123,4 +117,6 @@ for vv = 1:length(varies(varied_param).range)
            'string',annotStr,...
            'FitBoxToText','on',...
            'LineStyle','none')
+       
+    saveas(gcf,fullfile('simData',expName,['C_grid_vary' num2str(vv) '.png']));
 end

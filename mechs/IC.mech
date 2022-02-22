@@ -1,17 +1,19 @@
 % IC Input
+% Jio Nocon, September 2021
 
+
+%%%%%%%% default parameters %%%%%%%%%%
 trial = 1;
-label = 'E'; % E or I label
-ICdir = '';
-locNum = 1;
-ICinput = genICinput(trial,ICdir,locNum,label);
+label = 'On'; % On or Off label
+locNum = [];
 
+%%%%%%%% network parameters %%%%%%%%%%
 g_postIC = 0.1
 E_exc = 0
-tauR = 1
-tauD = 3
-netcon=eye(N_pre,N_post)
+netcon = eye(N_pre,N_post)
 
+%%%%%%%% network parameters %%%%%%%%%%
+ICinput = genICinput(trial,[],locNum,label);
 iIC(X,t) = g_postIC .* ICinput(ceil((t+dt*0.01)/dt),:) * netcon .* (X - E_exc);
 
 % monitor functions
