@@ -8,8 +8,8 @@ nSYN = 0.15;
 netcon = eye(N_pre,N_post);
 locNum = [];
 
-tauD_N = 0.4        % decay time [ms]
-tauR_N = 2          % rise time [ms]
+tauD_N = 0.5        % decay time [ms]
+tauR_N = 3          % rise time [ms]
 E_exc = 0
 
 token = genPoissonToken(N_pop,dt,FR,sigma,tauD_N,tauR_N,locNum)

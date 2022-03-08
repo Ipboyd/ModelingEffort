@@ -43,7 +43,7 @@ if strcmp(tuning,'mouse')
 %     paramH.phase= 0.455*pi; % phase
 %     % paramH.phase = 0.25*pi;
 
-    paramH.alpha = 0.0092; % s
+    paramH.alpha = 0.0097; % time constant of temporal kernel [s]
     paramH.N1 = 5;
     paramH.N2 = 7;
     paramH.SC1 = 1;
@@ -77,6 +77,7 @@ specs.dims = size(song1_spec);
 specs.t = t;
 specs.f = f;
 
+offsetFrac = 1;
 
 % make STRF
 % strf=STRFgen(paramH,paramG,f,t(2)-t(1));
@@ -92,6 +93,7 @@ saveFlag = 0;
 msg{1} = ['capped tuning weight to' num2str(maxWeight)];
 msg{end+1} = ['maskerlvl = ' num2str(maskerlvl)];
 msg{end+1} = ['strfGain = ' num2str(strfGain)];
+msg{end+1} = ['offsetRateFrac = ' num2str(offsetFrac)];
 % msg{end+1} = ['strf paramH.BW = ' num2str(paramH.BW)];
 % msg{end+1} = ['strf paramH.BTM = ' num2str(paramH.BTM)];
 % msg{end+1} = ['strf paramH.t0 = ' num2str(paramH.t0)];
@@ -116,9 +118,9 @@ tuningParam.strf = strf;
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
 
-% use below 2 lines to quickly check conv of STRF and spectrogram 
-strfData(song1_spec, zeros(size(song1_spec)));
-[~,resp] = linFwd_Junzi(strf);
+% % use below 2 lines to quickly check conv of STRF and spectrogram 
+% strfData(song1_spec, zeros(size(song1_spec)));
+% [~,resp] = linFwd_Junzi(strf);
 
 % iterate over all location combinations
 % set(0, 'DefaultFigureVisible', 'off')
@@ -127,10 +129,10 @@ for songloc = songLocs
     close all
     maskerloc=0;
     
-    InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
-    InputGaussianSTRF_v4(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
+    InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,offsetFrac);
+    InputGaussianSTRF_v4(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,offsetFrac);
     for maskerloc = maskerLocs
-        InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight);
+        InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,offsetFrac);
     end
     
 %     param.sigma = sigma;

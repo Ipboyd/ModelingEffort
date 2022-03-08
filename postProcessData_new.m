@@ -67,16 +67,16 @@ for vv = 1:jump % for each varied parameter
             figName = sprintf('%s_%s%.03f_%s_channel%i_%s',configName,options.variedField,variedParamVal,popNames{currentPop},channelNum,num2str(vv));
             
             if (strcmp(popNames{currentPop},'On') || strcmp(popNames{currentPop},'Off')) && vv > 1
-                plot_rasters = 0;
+                plot_rasters_final = 0;
             elseif ismember(channelNum,chansToPlot)
-                plot_rasters = 1;
+                plot_rasters_final = plot_rasters;
             else
-                plot_rasters = 0;
+                plot_rasters_final = 0;
             end
             
             [perf.(popNames{currentPop}).(['channel' num2str(channelNum)])(vv),...
                 fr.(popNames{currentPop}).(['channel' num2str(channelNum)])(vv)] = ...
-                calcPCandPlot(channel(channelNum).popSpks,time_end,1,numTrials,plot_rasters,y1,y2,t,figName);
+                calcPCandPlot(channel(channelNum).popSpks,time_end,1,numTrials,plot_rasters_final,y1,y2,t,figName);
             
         end
     end
@@ -128,7 +128,7 @@ if plot_rasters
     ypos = ypos - dy - y_raster;
     subplot('position',[x0 ypos x y_raster]);
     plotSpikeRasterFs(flipud(logical(raster)), 'PlotType','vertline');
-    xlim([0 time_end*10])
+    xlim([0 time_end*10]);
     line([0,time_end*10],[numTrials/2 + 0.5,numTrials/2 + 0.5],'color',[0.3 0.3 0.3]); set(gca,'xtick',[],'ytick',[])
     
     ypos = ypos - dy - y_psth;

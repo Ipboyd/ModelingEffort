@@ -1,4 +1,5 @@
-function [t_spiketimes_on,t_spiketimes_off]=InputGaussianSTRF_v4(specs,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maxWeight)
+function [t_spiketimes_on,t_spiketimes_off]=InputGaussianSTRF_v4...
+    (specs,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maxWeight,offsetFrac)
 % Inputs
 %   specs - spectrogram representation of stimuli, with fields
 %       .songs{2} for the two songs
@@ -46,6 +47,7 @@ function [t_spiketimes_on,t_spiketimes_off]=InputGaussianSTRF_v4(specs,songloc,m
 
 % spike refractory period
 t_ref = 0; %ms
+% offsetFrac = 1;
 
 % Plotting parameters
 colormap = parula;
@@ -201,7 +203,7 @@ for songn=1:2
 
             %% convolve STRF with spectrogram for onset and offset firing
             [spkcnt_on,spkcnt_off,frate_on,frate_off,temp_on,temp_off] = ...
-                STRFconvolve_V2(strf,currspec,mean_rate,1,songn,t_ref);
+                STRFconvolve_V2(strf,currspec,mean_rate,1,songn,t_ref,offsetFrac);
             
             avgSpkRate_on(i)=spkcnt_on/max(t);
             fr_on{trial,i+4*(songn-1)} = frate_on;

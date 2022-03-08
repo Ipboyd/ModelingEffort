@@ -107,3 +107,53 @@ cSPIKE/SpikeTrainSet.m
 cSPIKE/test_spikes.mat
 .DS_Store
 *.png
+temp/preprocessed_stim_1.mat
+spikingNetwork_puretiming.m
+solve/solve_ode_20211019123258_587.m
+solve/solve_ode_20211019123223_170.m
+solve/solve_ode_20211019123209_172.m
+solve/solve_ode_20211019123200_339.m
+solve/solve_ode_20211019123142_388.m
+solve/solve_ode_20211019123129_826.m
+solve/solve_ode_20211019123118_435.m
+solve/params.mat
+sepkerneltensor.m
+run_SpikingNetwork_offset.m
+run_SpikingNetwork_main.m
+run_SpikingNetwork_L4.m
+run_SpikingNetwork_adaptation.m
+mechs/synDoubleExp_variablegSYN_V2.mech
+mechs/synDoubleExp_variablegSYN.mech
+mechs/synDoubleExp_V2.mech
+mechs/synDoubleExp_test1.mech
+mechs/synDoubleExp_LTP.mech
+mechs/synDoubleExp.mech
+mechs/storeSpks.m
+mechs/nonhomPoissonGeneratorSpikeTimes.m
+mechs/iPSC_LTP_old.mech
+mechs/iNoise.mech
+birdNetwork.m
+birdNetwork_V2.m
+birdNetwork_V3.m
+EPSC, voltage, and condutance.fig
+EPSC and Voltage.fig
+example C cell dynamics.fig
+ICSimStim/InputGaussianSTRF.m
+ICSimStim/InputGaussianSTRF_main.m
+example response in dud channel.fig
+ICSimStim/InputGaussianSTRF_v2.m
+ICSimStim/InputGaussianSTRF_v3.m
+ICSimStim/STRFconvolve.m
+ICSimStim/STRFgen.m
+InputGaussianSTRF_tone.m
+mat files/bestgrantsim.mat
+mat files/examplecell.mat
+mat files/grant_grid.mat
+mechs/dsSynapse.mech
+mechs/dummy.mech
+mechs/getGenExtPoissonTotalGating.m
+mechs/getPoissonGating.m
+mechs/IC_input.mech
+mechs/IF.pop
+mechs/iH_d.mech
+mechs/iH_V2.mech

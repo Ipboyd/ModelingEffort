@@ -50,7 +50,7 @@ for i = 1:numCons
     userDefinedNetcon = ismember(s.connections(i).parameters(1:2:end),'netcon');
     if ~userDefinedNetcon
         % netcon matrix is ones(size_pre,size_post)
-        disp('use zeros')
+        % disp('use zeros')
         nPre = s.populations(popPreLabelIdx).size;
         nPost = s.populations(popPostLabelIdx).size;
         adjMtx(popPreStart:popPreEnd,popPostStart:popPostEnd) = eye(nPre,nPost);
@@ -61,7 +61,7 @@ for i = 1:numCons
     
     else
         % find netcon matrix within the parameters field
-        disp('use netcon')
+        % disp('use netcon')
         netConIdx = find(userDefinedNetcon)*2; %hacky; but works
         netCon = s.connections(i).parameters{netConIdx};
         adjMtx(popPreStart:popPreEnd,popPostStart:popPostEnd) = netCon;

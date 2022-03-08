@@ -1,5 +1,5 @@
 function [spkcnt_on,spkcnt_off,onset_rate,offset_rate,spktimes_on,spktimes_off]=...
-    STRFconvolve_V2(strf,stim_spec,mean_rate,trialn,songn,t_ref)
+    STRFconvolve_V2(strf,stim_spec,mean_rate,trialn,songn,t_ref,offsetFrac)
 %
 %% Inputs
 % strf
@@ -18,7 +18,7 @@ elseif nargin==4
     t_ref=3;
 elseif nargin==5
     t_ref=3;
-elseif nargin<3||nargin>6
+elseif nargin<3||nargin>7
     disp('wrong number of inputs')
     return
 end
@@ -33,8 +33,8 @@ frate=frate*mean_rate;
 % frate(find(frate<0))=zeros(size(find(frate<0))); % half-wave rec
 
 % offset rate
-offset_rate = -frate + max(frate)*0.85; %-frate + max(frate)*0.6;
-firstneg = find(offset_rate < 0,1,'first');
+offset_rate = -frate + max(frate)*offsetFrac; %-frate + max(frate)*0.6;
+firstneg = find(offset_rate <= 0,1,'first');
 offset_rate(1251:firstneg-1) = 0;
 offset_rate(offset_rate < 0) = 0;
 
