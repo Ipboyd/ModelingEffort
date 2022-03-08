@@ -13,9 +13,9 @@ You can define your own sets of parameters and give it a name.
 The model assumes stimuli are located at certain locations along the horizontal plane (`azimuth` in `InputGaussianSTRF_v4`).
 The model weighs the stimuli's spectrograms by user-defined tuning curves, comebines them, convolves then with STRFs to generate firing rates, then create spike trains with poisson spiking generator.
 
-Onset-sensitive and offset-sensitive input spikes are created; the latter activity is created by flipping the convolution of the STRF and stimulus across the x-axis and adding an offset based on 85% of the maximum onset firing rate. The resulting trace is then half-wave rectified. Modeling onset and offset-sensitive inputs is based on findings of parallel processing of onset and offset in mouse auditory cortex [Li et al. 2019] (https://www.cell.com/cell-reports/fulltext/S2211-1247(19)30399-7).
+Onset-sensitive and offset-sensitive input spikes are created; the latter activity is created by flipping the convolution of the STRF and stimulus across the x-axis and adding an offset based on the maximum onset firing rate. The resulting trace is then half-wave rectified. Modeling onset and offset-sensitive inputs is based on findings of parallel processing of onset and offset in mouse auditory cortex [Li et al. 2019](https://www.cell.com/cell-reports/fulltext/S2211-1247(19)30399-7).
 
-Then the model calculates a discriminability measure based on the SPIKE-distance, using the same template-matching procedure as described in [Nocon et al. 2021] (https://www.biorxiv.org/content/10.1101/2021.09.11.459906v2.full).
+Then the model calculates a discriminability measure based on the SPIKE-distance, using the same template-matching procedure as described in [Nocon et al. 2021](https://www.biorxiv.org/content/10.1101/2021.09.11.459906v2.full).
 
 ### 1.a Bird Tuning
 If you set `tuning = 'bird'`, then the model will use birdsongs (located in `\stimuli`) as the stimuli.
@@ -23,12 +23,12 @@ It assumes that tuning curves are Gaussian-shaped, with tuning width being some 
 
 ### 1.b Mouse Tuning
 Here, the input stimuli is white gaussian noise that were modulated with human speech.
-The tuning curves were defined to be left sigmoid, right sigmoid, Gaussian centered at 0, and U-shaped (inverted Gaussian). These were based on work by [Ono & Oliver, 2014](https://www.jneurosci.org/content/34/10/3779) and [Panniello et al. 2018] (https://pubmed.ncbi.nlm.nih.gov/29136122/). 
+The tuning curves were defined to be left sigmoid, right sigmoid, Gaussian centered at 0, and U-shaped (inverted Gaussian). These were based on work by [Ono & Oliver, 2014](https://www.jneurosci.org/content/34/10/3779) and [Panniello et al. 2018](https://pubmed.ncbi.nlm.nih.gov/29136122/). 
 
 ## 2. The spiking Network Model
-To get started, use `run_SpikingNetwork_column.m`. You can specify the location of the input spike trains (generated using the input model) by un-commenting 'uigetdir'.
+To get started, use `run_SpikingNetwork_column.m`. You can specify the location of the input spike trains (generated using the input model) by un-commenting `uigetdir`.
 
 Here, the `varies` and `netcons` structure must be specified for the model to run correctly.
-The `varies` structure specifies parameters of the synapses and neurons within the network, and `netcons` specifies the connections between populations of neurons. The script calls the 'columnNetwork' function, which then calls Dynasim to build the model and run simulations.
+The `varies` structure specifies parameters of the synapses and neurons within the network, and `netcons` specifies the connections between populations of neurons. The script calls the `columnNetwork` function, which then calls Dynasim to build the model and run simulations.
 
-After the simulation, the post-processing step will calculate the firing rate and discrimination performance for each neuron in the network by calling 'postProcessData_new'. 'createSimNotes' writes a txtfile with the information on all varied parameters in the 'varies' struct in the same folder as the cell rasters. Keep in mind that 'createSimNotes' does not track the parameter values in the 'columnNetwork' function. The results are then displayed by calling `plotPerformanceGrids_V3`.
+After the simulation, the post-processing step will calculate the firing rate and discrimination performance for each neuron in the network by calling `postProcessData_new`. `createSimNotes` writes a txtfile with the information on all varied parameters in the `varies` struct in the same folder as the cell rasters. Keep in mind that `createSimNotes` does not track the parameter values in the `columnNetwork` function. The results are then displayed by calling `plotPerformanceGrids_V3`.
