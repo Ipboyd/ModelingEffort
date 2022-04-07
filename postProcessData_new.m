@@ -12,7 +12,9 @@ function [perf,fr,spks] = postProcessData_new(data,s,trialStart,trialEnd,configN
 
 time_end = options.time_end;
 plot_rasters = options.plotRasters;
-jump = length(find([data.On_On_trial]==1));
+fields = fieldnames(data);
+ind = find(contains(fields,'_trial'),1);
+jump = length(find([data.(fields{ind})]==1));  % number of variations/parameter sets
 numTrials = length(data)/jump; %usually, 20 trials
 % numChannels = 4;
 

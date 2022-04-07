@@ -12,18 +12,21 @@ else
     len = 35000*24;
 end
 
-temp = (rand(len,N_pop) < dt/1000*(FR + std*randn(len,N_pop)));
+temp = (rand(len,N_pop) < (FR + std*randn(len,N_pop))*dt/1000);
 
 % delete spikes that violate refractory period
 for i = 1:N_pop
-    spk_inds = find(temp(:,i)); ISIs = diff(spk_inds);
-    temp(spk_inds(find(ISIs < 3/dt)+1),i) = 0;
+    spk_inds = find(temp(:,i));
+    ISIs = diff(spk_inds);
+    temp(spk_inds(find(ISIs < 1.5/dt)+1),i) = 0;
 end
 
 % convolve token with EPSC
 for i = 1:N_pop
     token(:,i) = conv(f,temp(:,i));
 end
-token(1+len:end,:) = [];
+
+% token should have the same number of elements as simulation
+token((len+1):end,:) = [];
 
 end

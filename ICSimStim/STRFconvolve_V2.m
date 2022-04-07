@@ -1,5 +1,5 @@
 function [spkcnt_on,spkcnt_off,onset_rate,offset_rate,spktimes_on,spktimes_off]=...
-    STRFconvolve_V2(strf,stim_spec,mean_rate,trialn,songn,t_ref,offsetFrac)
+    STRFconvolve_V2(strf,stim_spec,mean_rate,trialn,songn,t_ref,t_ref_rel,offsetFrac,rec)
 %
 %% Inputs
 % strf
@@ -18,7 +18,7 @@ elseif nargin==4
     t_ref=3;
 elseif nargin==5
     t_ref=3;
-elseif nargin<3||nargin>7
+elseif nargin<3||nargin>9
     disp('wrong number of inputs')
     return
 end
@@ -72,10 +72,10 @@ for i=1:trialn
         spktimes_off{i,1}=temptspk_off*1000;
     else
         % disp('using novel random numbers')
-        [~,temptspk_on]=spike_generator_rr(onset_rate,t,t_ref);
+        [~,temptspk_on]=spike_generator_rr(onset_rate,t,t_ref,t_ref_rel,rec);
         spktimes_on{i,1}=temptspk_on*1000;
         
-        [~,temptspk_off]=spike_generator_rr(offset_rate,t,t_ref);
+        [~,temptspk_off]=spike_generator_rr(offset_rate,t,t_ref,t_ref_rel,rec);
         spktimes_off{i,1}=temptspk_off*1000;
     end
     spkcnt_on=spkcnt_on+length(temptspk_on);

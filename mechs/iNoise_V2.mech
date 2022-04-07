@@ -4,7 +4,7 @@
 FR = 0;                     % spontaneous FR mean [Hz]
 sigma = 0;                     % spontaneous FR std [Hz]
 dt = 0.1;
-nSYN = 0.15;
+nSYN = 0.01;
 netcon = eye(N_pre,N_post);
 locNum = [];
 

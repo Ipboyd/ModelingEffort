@@ -63,7 +63,8 @@ function tfrep = timefreq(audioWaveform, sampleRate, typeName, params)
             winLength = fix(twindow*sampleRate);  % Window length in number of points
             winLength = fix(winLength/2)*2; % Enforce even window length
             % increment = fix(0.001*sampleRate); % Sampling rate of spectrogram in number of points - set at 1 kHz
-            increment = fix(sampleRate/5000); % Sampling rate of spectrogram in number of points - set at 5 kHz
+            % increment = fix(sampleRate/5000); % Sampling rate of spectrogram in number of points - set at 5 kHz
+            increment = fix(sampleRate/10000); % Sampling rate of spectrogram in number of points - set at 10 kHz (same dt as Dynasim)
             %\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
             [s, t0, f0, pg] = GaussianSpectrum(audioWaveform, increment, winLength, sampleRate); 
             %/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\

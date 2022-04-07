@@ -1,5 +1,5 @@
 function [t_spiketimes_on,t_spiketimes_off]=InputGaussianSTRF_v4...
-    (specs,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maxWeight,offsetFrac)
+    (specs,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maxWeight,paramSpk)
 % Inputs
 %   specs - spectrogram representation of stimuli, with fields
 %       .songs{2} for the two songs
@@ -44,10 +44,6 @@ function [t_spiketimes_on,t_spiketimes_off]=InputGaussianSTRF_v4...
 % 2021-12-10 broadened tuning curves to match Ono and Oliver data
 % 
 % To do: spatial tuning curves can be moved to the main code too
-
-% spike refractory period
-t_ref = 0; %ms
-% offsetFrac = 1;
 
 % Plotting parameters
 colormap = parula;
@@ -203,7 +199,7 @@ for songn=1:2
 
             %% convolve STRF with spectrogram for onset and offset firing
             [spkcnt_on,spkcnt_off,frate_on,frate_off,temp_on,temp_off] = ...
-                STRFconvolve_V2(strf,currspec,mean_rate,1,songn,t_ref,offsetFrac);
+                STRFconvolve_V2(strf,currspec,mean_rate,1,songn,paramSpk.t_ref,paramSpk.t_ref_rel,paramSpk.offsetFrac,paramSpk.rec);
             
             avgSpkRate_on(i)=spkcnt_on/max(t);
             fr_on{trial,i+4*(songn-1)} = frate_on;
@@ -243,7 +239,7 @@ for songn=1:2
             STS = SpikeTrainSet(input,250,max(t)*1000);
             distMat = STS.SPIKEdistanceMatrix(250,max(t)*1000);
             disc(i) = calcpc(distMat, 10, 2, 1,[], 'new');
-            firingRate = round(sum(cellfun(@length,t_spiketimes_on(:,i+4)))/10/(max(t)-0.250));
+            firingRate = round(mean(cellfun(@length,t_spiketimes_on(:,i+4)))/(max(t)-0.250));
             title({neuronNames{i},['disc = ', num2str(disc(i))],['FR = ',num2str(firingRate)]})
         end
 

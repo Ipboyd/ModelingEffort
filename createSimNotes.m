@@ -1,9 +1,13 @@
-function annotParams = createSimNotes(snn_out,expName)
+function annotParams = createSimNotes(snn_out,expName,model)
 % create txt file with information on all simulations in experiment
 
 varied_params = snn_out(1).varied;
-%varied_params(1) = [];
-varied_params(1:2) = [];
+
+if strcmp(model.type,'On') || strcmp(model.type,'Off') 
+varied_params(1) = [];   % if varies(1) includes On ad Off
+else
+varied_params(1:2) = [];   % On and Off
+end
 
 numVaries = length(snn_out)/20;
 
@@ -23,6 +27,9 @@ else
     annotInds = 1:length(varied_params);
 end
 
+feat_interaction = {'No','Yes'};
+
+fprintf(fid,['Model type: ' model.type ', Interaction: ' feat_interaction{model.interaction + 1}  '\n\n']);
 
 for vv = 1:numVaries
     

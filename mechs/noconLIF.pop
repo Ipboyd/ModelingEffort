@@ -2,18 +2,20 @@
 % Jio Nocon, September 2021
 
 %%%%%%%% default parameters %%%%%%%%%%
-C = 0.1;            % membrane capacitance [nF]
-g_leak = 1/200;     % leak resistance [uS]
-R = 1/g_leak;       % membrane resistance [Mohm]
-tau = C*R;          % membrane time constant [ms]
-E_leak = -65;       % equilibrium potential/resting potential [mV]
-noise = 0;          % noise [nA]
-Itonic = 0;         % injected current, [nA]
-t_ref = 3;          % refractory period [ms]
+C = 0.1;           % membrane capacitance [nF]
+g_L = 1/200;       % leak resistance [uS]
+R = 1/g_L;         % membrane resistance [Mohm]
+tau = C*R;         % membrane time constant [ms]
+E_L = -65;         % equilibrium potential/resting potential [mV]
+noise = 0;         % noise [nA]
+t_ref = 3;         % refractory period [ms]
 
-E_k = -80;          % spike-rate adaptation potential [mV]
-tau_ad = 5;         % spike-rate adaptation time constant [ms]
-g_ad_inc = 0;       % spike-rate adaptation increment [uS]
+Itonic = 0;        % injected current, [nA]
+Imask = ones(1,N_pop); % current masker
+
+E_k = -80;         % spike-rate adaptation potential [mV]
+tau_ad = 5;        % spike-rate ad(aptation time constant [ms]
+g_inc = 0;         % spike-rate adaptation increment [uS]
 
 % @isyn = synaptic current [nA]
 
@@ -25,16 +27,16 @@ g_ad_inc = 0;       % spike-rate adaptation increment [uS]
 %%%%%% action potential voltages %%%%%
 V_thresh = -47;     % spike threshold [mV]
 V_reset = -52;      % reset voltage, originally -50mV. [mV]
-V_init = E_leak;    % initial voltage
+V_init = E_L;    % initial voltage
 
 % voltage dynamic, spiking, refractory period
 g_ad(0) = 0
-dV/dt = ( (E_leak-V) - R*g_ad.*(V - E_k) - R*@isyn + R*Itonic + R*noise*randn(1,N_pop) )/tau
-V(0) = E_leak
+dV/dt = ( (E_L-V) - R*g_ad.*(V-E_k) - R*@isyn + R*Itonic.*Imask + R*noise*randn(1,N_pop) ) / tau
+V(0) = E_L
 dg_ad/dt = -g_ad / tau_ad
 
-if(any(V >= V_thresh,1))(V = V_reset, g_ad = g_ad + g_ad_inc)
+if(any(V >= V_thresh,1))(V = V_reset, g_ad = g_ad + g_inc)
 if(any(t<=tspike+t_ref,1))(V = V_reset) % implement refractory period
 
-% keep track of spikes
+% keep track of the last 5 spike times for iPSC_LTP
 monitor V.spikes(V_thresh,5)

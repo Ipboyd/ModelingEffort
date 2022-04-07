@@ -26,23 +26,17 @@ maxWeight = 1; %maximum mixed tuning weight; capped at this level.
 tic;
 
 % load stimuli & calc spectrograms
+% load stimuli & calc spectrograms
 if strcmp(tuning,'mouse')
-    [song1,~] = audioread('200k_target1.wav');
-    [song2,~] = audioread('200k_target2.wav');
-    for trial = 1:10
-        [masker,fs] = audioread(['200k_masker' num2str(trial) '.wav']);
-        [spec,~,~] = STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
-        masker_specs{trial} = spec;
-    end
+%     [song1,~] = audioread('200k_target1.wav');
+%     [song2,~] = audioread('200k_target2.wav');
     
-%     %strf parameter s
-%     paramH.BW= 0.0375; %bandwidth
-%     paramH.BTM = 5.2; %best temporal modulation
-%     paramH.t0 = 0.08; % t0, peak latency (s)
-%     % paramH.t0 = 0.03;
-%     paramH.phase= 0.455*pi; % phase
-%     % paramH.phase = 0.25*pi;
-
+%     for trial = 1:10
+%         [masker,fs] = audioread(['200k_masker' num2str(trial) '.wav']);
+%         [spec,~,~] = STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
+%         masker_specs{trial} = spec;
+%     end
+    
     paramH.alpha = 0.0097; % time constant of temporal kernel [s]
     paramH.N1 = 5;
     paramH.N2 = 7;
@@ -52,48 +46,58 @@ if strcmp(tuning,'mouse')
     paramG.BW = 2000;  % Hz
     paramG.BSM = 5.00E-05; % 1/Hz=s best spectral modulation
     paramG.f0 = 4300; % ~strf.f(30)
-    strfGain = 0.17;
+    strfGain = 0.10;
+    load('preprocessed_stims.mat'); % don't need to run STRFspectrogram again
     
 elseif strcmp(tuning,'bird')
     % stimuli
     load('stimuli_birdsongs.mat','stimuli','fs')
-    minlen = min(cellfun(@length,stimuli));
-    song1 = stimuli{1}(1:minlen);
-    song2 = stimuli{2}(1:minlen);
-    masker = stimuli{3}(1:minlen);
-    [spec,~,~]=STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
-    for trial = 1:10
-        masker_specs{trial} = spec;
-    end
+%     minlen = min(cellfun(@length,stimuli));
+%     song1 = stimuli{1}(1:minlen);
+%     song2 = stimuli{2}(1:minlen);
+%     masker = stimuli{3}(1:minlen);
+%     [spec,~,~]=STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
+%     for trial = 1:10
+%         masker_specs{trial} = spec;
+%     end
     % STRF parameters from Junzi's simulations
     load('bird_STRF_params.mat');
 end
-[song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*targetlvl,fs);
-[song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*targetlvl,fs);
-specs.songs{1} = song1_spec;
-specs.songs{2} = song2_spec;
-specs.maskers = masker_specs;
-specs.dims = size(song1_spec);
-specs.t = t;
-specs.f = f;
 
-offsetFrac = 1;
+% [song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*targetlvl,fs);
+% [song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*targetlvl,fs);
+% specs.songs{1} = song1_spec;
+% specs.songs{2} = song2_spec;
+% specs.maskers = masker_specs;
+% specs.dims = size(song1_spec);
+% specs.t = t;
+% specs.f = f;
+
 
 % make STRF
 % strf=STRFgen(paramH,paramG,f,t(2)-t(1));
-strf = STRFgen_V2(paramH,paramG,f,t(2)-t(1));
+strf = STRFgen_V2(paramH,paramG,specs.f,specs.t(2)-specs.t(1));
 strf.w1 = strf.w1*strfGain;
 % ============ log message (manual entry?) ============
 % saveName = sprintf('full_grids//BW_%0.3f BTM_3.8 t0_0.1 phase%0.4f//s%d_STRFgain%0.2f_%s',...
 %                 paramH.BW,paramH.phase/pi,sigma,strfGain,datestr(now,'YYYYmmdd-HHMMSS'));
-saveName = sprintf('with_offset//alpha_%0.3f N1_%0.0f N2_%0.0f//s%d_STRFgain%0.2f_%s',...
-                paramH.alpha,paramH.N1,paramH.N2,sigma,strfGain,datestr(now,'YYYYmmdd-HHMMSS'));
+
+paramSpk.t_ref = 1;
+paramSpk.t_ref_rel = 4;
+paramSpk.rec = 2;
+paramSpk.offsetFrac = 1;
+
+saveName = sprintf('vary_recovery//alpha_%0.3f//STRFgain %0.2f, %0.1fms tau_rel',...
+                paramH.alpha,strfGain,paramSpk.t_ref_rel);
 saveFlag = 0;
 
-msg{1} = ['capped tuning weight to' num2str(maxWeight)];
+msg{1} = ['capped tuning weight to ' num2str(maxWeight)];
 msg{end+1} = ['maskerlvl = ' num2str(maskerlvl)];
 msg{end+1} = ['strfGain = ' num2str(strfGain)];
-msg{end+1} = ['offsetRateFrac = ' num2str(offsetFrac)];
+msg{end+1} = ['offsetRateFrac = ' num2str(paramSpk.offsetFrac)];
+msg{end+1} = ['absolute refractory period = ' num2str(paramSpk.t_ref)];
+msg{end+1} = ['relative refractory period = ' num2str(paramSpk.t_ref_rel)];
+msg{end+1} = ['recovery steepness = ' num2str(paramSpk.rec)];
 % msg{end+1} = ['strf paramH.BW = ' num2str(paramH.BW)];
 % msg{end+1} = ['strf paramH.BTM = ' num2str(paramH.BTM)];
 % msg{end+1} = ['strf paramH.t0 = ' num2str(paramH.t0)];
@@ -103,7 +107,8 @@ msg{end+1} = ['strf paramH.N1 = ' num2str(paramH.N1)];
 msg{end+1} = ['strf paramH.N2 = ' num2str(paramH.N2)];
 msg{end+1} = ['strf paramH.SC1 = ' num2str(paramH.SC1)];
 msg{end+1} = ['strf paramH.SC2 = ' num2str(paramH.SC2)];
-msg{end+1} = ['strf paramG.BW= ' num2str(paramG.BW)];
+msg{end+1} = ['strf paramG.BW = ' num2str(paramG.BW)];
+
 % =============== end log file ===================
 
 %% Run simulation script
@@ -129,10 +134,10 @@ for songloc = songLocs
     close all
     maskerloc=0;
     
-    InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,offsetFrac);
-    InputGaussianSTRF_v4(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,offsetFrac);
+    InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,paramSpk);
+    InputGaussianSTRF_v4(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,paramSpk);
     for maskerloc = maskerLocs
-        InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,offsetFrac);
+        InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,paramSpk);
     end
     
 %     param.sigma = sigma;
@@ -153,7 +158,7 @@ fid = fopen(fullfile(saveParam.fileLoc, 'notes.txt'), 'a');
 if fid == -1
   error('Cannot open log file.');
 end
-for k=1:length(msg), fprintf(fid, '%s: %s/n', datestr(now, 0), msg{k}); end
+for k=1:length(msg), fprintf(fid, '%s: %s \n ', datestr(now, 0), msg{k}); end
 fclose(fid);
 %% Grids for each neuron
 % need to fix:

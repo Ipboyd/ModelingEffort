@@ -12,6 +12,7 @@ fF = 0              % degree of synaptic facilitation ([0 1])
 fP = 0              % degree of synaptic depression ([0 1])
 tauF = 180          % facilitation decay time [ms]
 tauP = 60           % depression decay time [ms]
+maxF = 5            % maximum facilitation strength
 
 %%%%%%%% network parameters %%%%%%%%%%
 netcon = eye(N_pre,N_post)
@@ -35,7 +36,7 @@ dtnew/dt = 0
 % syn is in units [nA = uS*mV] and scaled such that max value 
 % before multiplication by (X - ESYN) is gSYN regardless of dynamics
 
-if(any(t == tspike_pre+delay,1))(tnew = t-dt,factor = F.*P,F = F + fF*(10-F), P = P*(1 - fP))
+if(any(t == tspike_pre+delay,1))(tnew = t,factor = F.*P,F = F + fF*(maxF-F), P = P*(1 - fP))
 
 @isyn += syn(V_post,t)
 
