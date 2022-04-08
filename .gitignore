@@ -157,3 +157,7 @@ mechs/IC_input.mech
 mechs/IF.pop
 mechs/iH_d.mech
 mechs/iH_V2.mech
+*.fig
+ICSimStim/temp/preprocessed_stim_1.mat
+ICSimStim/preprocessed_stims.mat
+ICSimStim/temp/preprocessed_stim_1.mat
