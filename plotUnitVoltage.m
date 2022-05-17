@@ -28,7 +28,7 @@ for s = 1:length(inputNames)
             (strcmp(inputNames{s}(1),'S') && strcmp(pop(1),'R')) || strcmp(pop(1),'S'), labels{s} = 'P'; flag = 1; end
     
     if flag
-        taus(s) = params.([pop '_' inputNames{s} '_iPSC_LTP_tau' labels{s}]);
+        taus(s) = params.([pop '_' inputNames{s} '_iPSC_V2_tau' labels{s}]);
         flag = 0;
     end
     
@@ -76,7 +76,7 @@ for ch = 1:nCells % go through each channel
         
         if strcmp(inputNames{s},pop), continue, end
         
-        if any(params.([pop '_' inputNames{s} '_iPSC_LTP_gSYN']))
+        if any(params.([pop '_' inputNames{s} '_iPSC_V2_gSYN']))
             for nc = 1:nInputCells % input channels
                 if netcon(nc,ch) % if the input synapses onto pop
                     ct = ct + 1;

@@ -13,9 +13,9 @@ addpath('genlib'); addpath('plotting'); addpath(genpath(dynasimPath));
 addpath('cSPIKE'); InitializecSPIKE;
 addpath('plotting');
 
-expName = '04-04-2022 PV inhibition grid search';
+expName = '05-16-2022 PSC as ODE';
 
-model = struct; model.type = 'On';
+model = struct; model.type = '';
 model.interaction = 0;
 
 % debug_flag = 1; save_flag = 0;
@@ -47,96 +47,37 @@ dt = 0.1; %ms
 nSims = 1;
 trialInds = repmat(1:20,nSims,1);
 % % % DO NOT CHANGE THIS % % %
-varies(1).conxn = 'On->On';
+varies(1).conxn = 'IC->IC';
 varies(1).param = 'trial';
 varies(1).range = trialInds(:)';
-% varies(1).range = 1:20;
 % % % DO NOT CHANGE THIS % % %
+ 
+% within-channel inhibition connectivity
+varies(end+1).conxn = '(S1->R1,S2->R2)';
+varies(end).param = '(tauP,fP,gSYN)';
+varies(end).range = [ 140 ; 0.5 ; 0.03 ]; % FIX THESE PARAMETERS
+% BEST: 140ms, 0.5, 0.03 nS
 
-% % recurrent excitation of S cells
-% varies(end+1).conxn = '(R1On->S1On,R2On->S2On)';
-% varies(end).param = 'gSYN';
-% varies(end).range = [ 0 : 0.005 : 0.04 ];
-% 
-% within-channel inhibition
-varies(end+1).conxn = '(S1On->R1On,S2On->R2On,S2On->C)';
-varies(end).param = 'fP';
-varies(end).range = [ 0 : 0.2 : 1 ];
+% recurrent excitation
+varies(end+1).conxn = '(R1->S1,R2->S2)';
+varies(end).param = '(tauP,fP,gSYN)';
+varies(end).range = [ 100 ; 0.2 ; 0.04 ] ; % FIX THESE PARAMETERS
+% BEST: 140ms, 0.5, 0.03 nS
 
-varies(end+1).conxn = '(S1On->R1On,S2On->R2On,S2On->C)';
-varies(end).param = 'tauP';
-varies(end).range = [ 1 , 40 : 40 : 200 ];
-
-% % cross-column excitation of S cells
-% varies(end+1).conxn = '(R1On->S1Off,R2On->S2Off,R1Off->S1On,R2Off->S2On)';
-% varies(end).param = 'gSYN';
-% varies(end).range = [ 0.02 ];
-
-
-% % feedforward inhibition from S cells
-% varies(end+1).conxn = '(S1On->R1On,S2On->R2On,S1Off->R1Off,S2Off->R2Off)';
-% varies(end).param = 'gSYN';
-% varies(end).range = [ 0.02 ];
-% 
-% % cross-column inhibition from S cells
-% varies(end+1).conxn = '(S1On->R1Off,S2On->R2Off,S1Off->R1On,S2Off->R2On)';
-% varies(end).param = 'gSYN';
-% varies(end).range = [ 0.02 ];
-
-
-% % inputs to S cells
-% varies(end+1).conxn = '(On->S1On,R1On->S1On,R1On->S2On,R2On->S2On)';
-% varies(end).param = 'tauP';
-% varies(end).range = [ 40 : 40 : 200 ];
-
-% % inhibition to R cells from same layer
-% varies(end+1).conxn = '(S1On->R1On,S2On->R2On,S1Off->R1Off,S2Off->R2Off,S1On->R1Off,S2On->R2Off,S1Off->R1On,S2Off->R2On)';
-% varies(end).param = 'tauP';
-% varies(end).range = [ 1 , 40 : 40 : 240 ];
-
-% % all synapses with depression
-% varies(end+1).conxn = '(On->S1On,R1On->S2On,Off->S1Off,R1Off->S2Off,R1On->S1On,R2On->S2On,R1Off->S1Off,R2Off->S2Off,R1On->S1Off,R2On->S2Off,R1Off->S1On,R2Off->S2On,S1On->R1On,S2On->R2On,S1Off->R1Off,S2Off->R2Off,S1On->R1Off,S2On->R2Off,S1Off->R1On,S2Off->R2On)';
-% varies(end).param = 'fP';
-% varies(end).range = [ 0 : 0.1 : 1 ];
-
-% % inputs to X cells
-% varies(end+1).conxn = '(R1On->X1On,R2On->X2On,R1Off->X1Off,R2Off->X2Off)';
-% varies(end).param = '(gSYN)';
-% varies(end).range = [ 0 0.0035 ];
-
-% % cross-channel inhibition to R cells
-% varies(end+1).conxn = '(X1On->R1On,X2On->R2On,X1Off->R1Off,X2Off->R2Off)';
-% varies(end).param = 'gSYN';
-% varies(end).range = [ 0.0035 ];
-
-
-% % inhibitory convergence to output cell
-% varies(end+1).conxn = '(R2On->C,R2Off->C)';
-% varies(end).param = 'gSYN';
-% varies(end).range = [ 0.008 ];
-
-% % inhibitory convergence to output cell
-% varies(end+1).conxn = 'S2On->C';
-% varies(end).param = 'gSYN';
-% varies(end).range = 0.01;
-
-% % inhibitory convergence to output cell
-% varies(end+1).conxn = 'S2On->C';
-% varies(end).param = 'tauP';
-% varies(end).range = [1 40:40:160];
-
-% varies(end+1).conxn = 'S2Off->C';
-% varies(end).param = 'gSYN';
-% varies(end).range = [ 0 : 0.005 : 0.02 ];
+% within-channel inhibition depression strength
+varies(end+1).conxn = '(IC->S1,R1->S2)';
+varies(end).param = '(tauP,fP,gSYN)';
+varies(end).range = [ 100 ; 0.2 ; 0.02 ]; % FIX THESE PARAMETERS
+% BEST: 140ms, 0.5, 0.03 nS
 
 % control and opto conditions
-varies(end+1).conxn = 'S1On';
+varies(end+1).conxn = '(S1,S2)';
 varies(end).param = 'Itonic';
-varies(end).range = [ 0 ];
+varies(end).range = [ 0 ]; % -0.05
 
-varies(end+1).conxn = 'R2On->R2On';
+varies(end+1).conxn = 'R2->R2';
 varies(end).param = '(FR,sigma)';
-varies(end).range = [8 ; 6];
+varies(end).range = [ 8 ; 6 ]; % 8 12 ; 6 6
 
 % display parameters
 network_params = [{varies.conxn}' {varies.param}' {varies.range}'];
@@ -170,7 +111,8 @@ numVaried = length(varies(varied_param).range);
 trialStartTimes = zeros(1,length(subz)); %ms
 padToTime = 3500; %ms
 label = {'On','Off'};
-for ICtype = [0] % only E no I
+
+for ICtype = 0 % only E no I
     % divide all times by dt to upsample the time axis
     spks = [];
     for z = 1:length(subz)
@@ -244,8 +186,8 @@ options.parfor_flag = 0;
 %% post-process
 
 % figure; 
-% plotsimPSTH('On',snn_out); plotsimPSTH('R1On',snn_out); plotsimPSTH('R2On',snn_out);
-% legend('On','R1On','R2On');
+% plotsimPSTH('',snn_out); plotsimPSTH('R1',snn_out); plotsimPSTH('R2',snn_out);
+% legend('','R1','R2');
 
 % if numVaried <= 5
 %     for n = 1:numVaried
@@ -291,7 +233,6 @@ end
 results(1).model = snn_out(1).model;
 save([simDataDir filesep 'C_results.mat'],'results');
 
-[pc,fr] = plotParamvsPerf_1D(results,numVaried);
 
 % if length(snn_out)/20 == numVaried
 tic
@@ -310,40 +251,45 @@ else
     end
 end
 toc
-close all;
-% end
+% close all;
+ 
 
+if nSims == 5
+[pc,fr]= plotParamvsPerf_1D(results,numVaried);
 
-% trialInds = struct2cell(pc);
-% 
-% ctrl_mean = cellfun(@(x) mean(x(:,1)),trialInds);
-% laser_mean = cellfun(@(x) mean(x(:,2)),trialInds);
-% 
-% ctrl_se = cellfun(@(x) std(x(:,1))/sqrt(numel(x(:,1))),trialInds);
-% laser_se = cellfun(@(x) std(x(:,2))/sqrt(numel(x(:,2))),trialInds);
-% 
-% figure('unit','inches','position',[5 5 3 3]);
-% bar((1:4)-.2,ctrl_mean,0.4,'facecolor','none','linewidth',2); hold on;
-% bar((1:4)+.2,laser_mean,0.4,'facecolor','k','linewidth',2);
-% xlim([0.4 4.6]);
-% 
-% errorbar((1:4)-.2,ctrl_mean,ctrl_se,'color','k','linestyle','none','linewidth',1); hold on;
-% errorbar((1:4)+.2,laser_mean,laser_se,'color','k','linestyle','none','linewidth',1);
-% 
-% ylim([50 100]);
-% set(gca,'xticklabels',{'SPIKE','ISI','RI-SPIKE','Spike count'},'xtick',[1:4],'fontsize',8);
-% ytickformat('percentage');
-% ylabel('Performance'); legend('Control','Laser');
+trialInds = struct2cell(pc);
 
+ctrl_mean = cellfun(@(x) mean(x(:,1)),trialInds);
+laser_mean = cellfun(@(x) mean(x(:,2)),trialInds);
+
+ctrl_se = cellfun(@(x) std(x(:,1))/sqrt(numel(x(:,1))),trialInds);
+laser_se = cellfun(@(x) std(x(:,2))/sqrt(numel(x(:,2))),trialInds);
+
+figure('unit','inches','position',[5 5 3 3]);
+bar((1:4)-.2,ctrl_mean,0.4,'facecolor','none','linewidth',2); hold on;
+bar((1:4)+.2,laser_mean,0.4,'facecolor','k','linewidth',2);
+xlim([0.4 4.6]);
+
+errorbar((1:4)-.2,ctrl_mean,ctrl_se,'color','k','linestyle','none','linewidth',1); hold on;
+errorbar((1:4)+.2,laser_mean,laser_se,'color','k','linestyle','none','linewidth',1);
+
+ylim([50 100]);
+set(gca,'xticklabels',{'SPIKE','ISI','RI-SPIKE','Spike count'},'xtick',[1:4],'fontsize',8);
+ytickformat('percentage');
+ylabel('Performance'); legend('Control','Laser');
+saveas(gcf,[simDataDir filesep 'opto_performance_results.fig']);
+end
 
 % grid search plots
+if numVaried >= 10
     names = {s.populations.name};
-    dontPlot = {'On','Off'};
+    dontPlot = {''};
     names(matches(names,dontPlot)) = [];
     
     for p = 1:length(names)
         plotPerfvsParams(names{p},data,varies,simDataDir)
     end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -351,7 +297,7 @@ close all;
 
 % close all
 % 
-% figure; vizNetwork(s,0,'C','On')
+% figure; vizNetwork(s,0,'C','')
 % saveas(figure(1),fullfile('simData',expName,'netcons.png'));
 % saveas(figure(2),fullfile('simData',expName,'network.png'));
 % close all;

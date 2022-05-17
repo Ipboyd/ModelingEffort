@@ -27,7 +27,7 @@ g_inc = 0;         % spike-rate adaptation increment [uS]
 %%%%%% action potential voltages %%%%%
 V_thresh = -47;     % spike threshold [mV]
 V_reset = -52;      % reset voltage, originally -50mV. [mV]
-V_init = E_L;    % initial voltage
+V_init = E_L;       % initial voltage
 
 % voltage dynamic, spiking, refractory period
 g_ad(0) = 0
@@ -38,5 +38,5 @@ dg_ad/dt = -g_ad / tau_ad
 if(any(V >= V_thresh,1))(V = V_reset, g_ad = g_ad + g_inc)
 if(any(t<=tspike+t_ref,1))(V = V_reset) % implement refractory period
 
-% keep track of the last 5 spike times for iPSC_LTP
-monitor V.spikes(V_thresh,5)
+% keep track of the last 100 spike times for iPSC_V2
+monitor V.spikes(V_thresh,10)

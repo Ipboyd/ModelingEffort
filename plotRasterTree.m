@@ -21,11 +21,8 @@ popNames = {s.populations.name};
 nPops = numel(popNames); 
 fieldNames = strcat(popNames,'_V_spikes');
 
-if ~strcmp(model.type,'Both')
-    nChans = size(snn_out(1).([model.type '_V']),2);
-else
-    nChans = size(snn_out(1).On_V,2);
-end
+nChans = size(snn_out(1).IC_V,2);
+
 
 % visualize spikes for specified populations
 if ~isfield(options,'subPops'), options.subPops = popNames; end

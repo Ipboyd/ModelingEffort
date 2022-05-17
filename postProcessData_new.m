@@ -68,7 +68,7 @@ for vv = 1:jump % for each varied parameter
             
             figName = sprintf('%s_%s%.03f_%s_channel%i_%s',configName,options.variedField,variedParamVal,popNames{currentPop},channelNum,num2str(vv));
             
-            if (strcmp(popNames{currentPop},'On') || strcmp(popNames{currentPop},'Off')) && vv > 1
+            if strcmp(popNames{currentPop},'IC')  && vv > 1
                 plot_rasters_final = 0;
             elseif ismember(channelNum,chansToPlot)
                 plot_rasters_final = plot_rasters;

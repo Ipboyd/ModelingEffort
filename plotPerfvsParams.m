@@ -20,24 +20,25 @@ for ch = 1:nCells
     perf = reshape(data.perf.(pop).(['channel' num2str(ch)]),[numel(y) numel(x)]);
     
     figure('unit','inches','position',[4 4 11 4.5]);
-    subplot(1,2,1);
+    ax1=subplot(1,2,1);
     imagesc(x,y,perf);
-    xlabel(['FF inhibition_{' paramNames{1} '}']);
-    ylabel(['FF inhibition_{' paramNames{2} '}']);
+    xlabel(['E->PV_{' paramNames{1} '}']);
+    ylabel(['E->PV_{' paramNames{2} '}']);
     set(gca,'ydir','normal','xtick',x,'ytick',y,'fontsize',10);
     title(['Performance vs. ' paramNames{1}]);
     cc = colorbar; cc.Label.String = 'Performance';
+    caxis(
     
     FR = reshape(data.fr.(pop).channel1,[numel(y) numel(x)]);
     
-    subplot(1,2,2);
+    ax2=subplot(1,2,2);
     imagesc(x,y,FR);
-    xlabel(['FF inhibition_{' paramNames{1} '}']);
-    ylabel(['FF inhibition_{' paramNames{2} '}']);
+    xlabel(['E->PV_{' paramNames{1} '}']);
+    ylabel(['E->PV_{' paramNames{2} '}']);
     set(gca,'ydir','normal','xtick',x,'ytick',y,'fontsize',10);
     title(['FR vs. ' paramNames{1}]);
     cc = colorbar; cc.Label.String = 'Firing rate (Hz)';
-    
+    colormap(ax2,'gray');
     titleStr = [pop ', CH' num2str(ch)];
     sgtitle(titleStr);
     
