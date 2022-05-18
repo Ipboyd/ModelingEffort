@@ -116,7 +116,7 @@ XE_rise = 10;  XE_fall = 50;
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list={'IC'};
-s.connections(1).parameters={'g_postIC',0.265,'trial',1,'locNum',options.locNum};
+s.connections(1).parameters={'g_postIC',0.265,'trial',1,'locNum',options.locNum,'netcon',eye(nCells,nCells)};
 
 % % % L4 % % %
 

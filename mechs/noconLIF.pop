@@ -32,10 +32,10 @@ V_reset = -52;      % reset voltage, originally -50mV. [mV]
 g_ad(0) = zeros(1,N_pop)
 V(0) = E_L*ones(1,N_pop)
 
-dV/dt = ( (E_L-V) - R*g_ad.*(V-E_k) - R*@isyn + R*Itonic.*Imask + R*noise*randn(1,N_pop) ) / tau
+dV/dt = ( (E_L-V) - R*g_ad.*(V-E_k) - R*@isyn + R*Itonic.*Imask + R*noise.*randn(1,N_pop) ) / tau
 dg_ad/dt = -g_ad / tau_ad
 
-if(any(V >= V_thresh,1))(V = V_reset, g_ad = g_ad + g_inc)
+if(any(V > V_thresh,1))(V = V_reset, g_ad = g_ad + g_inc)
 if(any(t<=tspike+t_ref,1))(V = V_reset) % implement refractory period
 
 % keep track of the last 5 spike times for iPSC_V2

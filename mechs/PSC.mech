@@ -29,7 +29,7 @@ dx/dt = -x/tauD
 dF/dt = (1 - F)/tauF
 dP/dt = (1 - P)/tauP
 
-syn(X,s) =  gSYN .* ( ( s .* F.*P ) * netcon ) .* (X - ESYN)
+syn(X,s) =  gSYN .* (( s.*F.*P ) * netcon ) .* (X - ESYN)
 
 % syn is in units [nA = uS*mV] and scaled such that max value 
 % before multiplication by (X - ESYN) is gSYN regardless of dynamics

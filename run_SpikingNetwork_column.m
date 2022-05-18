@@ -110,19 +110,19 @@ numVaried = length(varies(varied_param).range);
 % concatenate spike-time matrices, save to study dir
 trialStartTimes = zeros(1,length(subz)); %ms
 padToTime = 3500; %ms
-label = {'On','Off'};
+label = {'On'};
 
 for ICtype = 0 % only E no I
     % divide all times by dt to upsample the time axis
     spks = [];
     for z = 1:length(subz)
         % disp(ICfiles(subz(z)+0).name); %read in E spikes only
-        load([ICdir filesep ICfiles(subz(z)).name],'t_spiketimes_on','t_spiketimes_off');
+        load([ICdir filesep ICfiles(subz(z)).name],'t_spiketimes_on');
         
         % convert spike times to spike trains. This method results in
         % dt = 1 ms
-        trialInds = cellfun(@max,t_spiketimes_on,'UniformOutput',false);
-        tmax = round(max([trialInds{:}])/dt);
+        temp = cellfun(@max,t_spiketimes_on,'UniformOutput',false);
+        tmax = round(max([temp{:}])/dt);
         singleConfigSpks = zeros(20,4,tmax); %I'm storing spikes in a slightly different way...
         for j = 1:size(t_spiketimes_on,1) %trials [1:10]
             for k = 1:size(t_spiketimes_on,2) %neurons [(1:4),(1:4)]
@@ -256,13 +256,13 @@ toc
 if nSims == 5
 [pc,fr]= plotParamvsPerf_1D(results,numVaried);
 
-trialInds = struct2cell(pc);
+pc_trials = struct2cell(pc);
 
-ctrl_mean = cellfun(@(x) mean(x(:,1)),trialInds);
-laser_mean = cellfun(@(x) mean(x(:,2)),trialInds);
+ctrl_mean = cellfun(@(x) mean(x(:,1)),pc_trials);
+laser_mean = cellfun(@(x) mean(x(:,2)),pc_trials);
 
-ctrl_se = cellfun(@(x) std(x(:,1))/sqrt(numel(x(:,1))),trialInds);
-laser_se = cellfun(@(x) std(x(:,2))/sqrt(numel(x(:,2))),trialInds);
+ctrl_se = cellfun(@(x) std(x(:,1))/sqrt(numel(x(:,1))),pc_trials);
+laser_se = cellfun(@(x) std(x(:,2))/sqrt(numel(x(:,2))),pc_trials);
 
 figure('unit','inches','position',[5 5 3 3]);
 bar((1:4)-.2,ctrl_mean,0.4,'facecolor','none','linewidth',2); hold on;
