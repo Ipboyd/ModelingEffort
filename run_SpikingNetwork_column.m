@@ -13,7 +13,7 @@ addpath('genlib'); addpath('plotting'); addpath(genpath(dynasimPath));
 addpath('cSPIKE'); InitializecSPIKE;
 addpath('plotting');
 
-expName = '05-16-2022 PSC as ODE';
+expName = '05-18-2022';
 
 model = struct; model.type = '';
 model.interaction = 0;
@@ -40,7 +40,7 @@ if ~exist(ICdir,'dir'), restructureICspks(ICdir); end
 clear varies
 
 options = struct;
-options.nCells = 2;
+model.nCells = 2;
 
 dt = 0.1; %ms
 
@@ -95,10 +95,10 @@ end
 % it needs to be put in a different struct
 
 netcons = struct; % row = source, column = target
-netcons.XRnetcon = zeros(options.nCells,options.nCells);
-if options.nCells == 2
+netcons.XRnetcon = zeros(model.nCells,model.nCells);
+if model.nCells == 2
     netcons.XRnetcon(2,1) = 1; % 0deg channel inhibits 90deg
-elseif options.nCells == 3
+elseif model.nCells == 3
     netcons.XRnetcon([2 2],[1 3]) = 1; % 0deg channel inhibits others
 end
 
@@ -152,9 +152,9 @@ for ICtype = 0 % only E no I
         end
         
         % for single channel, since column network only has one location
-        if options.nCells == 1, spks = cat(3,spks,singleConfigSpks(:,3,:));
-        elseif options.nCells == 2, spks = cat(3,spks,singleConfigSpks(:,[1 3],:));
-        elseif options.nCells == 3, spks = cat(3,spks,singleConfigSpks(:,[1 3 4],:));
+        if model.nCells == 1, spks = cat(3,spks,singleConfigSpks(:,3,:));
+        elseif model.nCells == 2, spks = cat(3,spks,singleConfigSpks(:,[1 3],:));
+        elseif model.nCells == 3, spks = cat(3,spks,singleConfigSpks(:,[1 3 4],:));
         end
         
     end
@@ -172,7 +172,7 @@ options.plotRasters = 0;
 
 options.time_end = padToTime;
 
-if options.nCells == 1, options.locNum = 15; % 15 = clean target at 0deg
+if model.nCells == 1, options.locNum = 15; % 15 = clean target at 0deg
 else, options.locNum = 16; % 16 = target at 0deg, masker at 90deg
 end
 % options.locNum = 18; % colocated at 0deg

@@ -12,7 +12,7 @@ tauD_N = 0.5        % decay time [ms]
 tauR_N = 3          % rise time [ms]
 E_exc = 0
 
-token = genPoissonTimes(N_pop,dt,FR,sigma,locNum)
+token=genPoissonTimes(N_pop,dt,FR,sigma,locNum);
 scale = (tauD_N/tauR_N)^(tauR_N/(tauD_N-tauR_N))
 
 sn(0) = 0

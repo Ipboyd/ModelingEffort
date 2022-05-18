@@ -6,15 +6,16 @@ trial = 1;
 locNum = [];
 
 %%%%%%%% network parameters %%%%%%%%%%
-g_postIC = 0.1
-E_exc = 0
-netcon = eye(N_pre,N_post)
+g_postIC=0.1
+E_exc=0
+netcon=eye(N_pre,N_post)
 
-%%%%%%%% network parameters %%%%%%%%%%
-ICinput = genICinput(trial,[],locNum);
-iIC(X,t) = g_postIC .* ICinput(k,:) * netcon .* (X - E_exc);
+% load input spikes
+input=genICSpks(trial,locNum);
+
+iIC(X) = g_postIC * input(k,:) * netcon .* (X - E_exc);
 
 % monitor functions
 monitor iIC
 
-@isyn += iIC(X,t)
+@isyn += iIC(X)

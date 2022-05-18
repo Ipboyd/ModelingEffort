@@ -48,7 +48,8 @@ time_end = options.time_end;
 %% neuron populations
 % tonic = bias = cells spontaneous firing
 
-nCells = options.nCells;
+nCells = model.nCells;
+
 s = struct();
 
 XRnetcon = netcons.XRnetcon;
@@ -100,7 +101,7 @@ s.populations(end).parameters = {'g_inc',0.0002,'tau_ad',60,'g_L',1/275,'t_ref',
 s.populations(end+1).name='C';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = 1;
-s.populations(end).parameters = {'g_inc',0.0004,'tau_ad',60,'t_ref',1.5};
+s.populations(end).parameters = {'g_inc',0.00035,'tau_ad',60,'t_ref',1.5};
 
 %% connections
 
@@ -115,7 +116,7 @@ XE_rise = 10;  XE_fall = 50;
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list={'IC'};
-s.connections(1).parameters={'g_postIC',0.265,'ICdir',options.ICdir,'locNum',options.locNum};
+s.connections(1).parameters={'g_postIC',0.265,'trial',1,'locNum',options.locNum};
 
 % % % L4 % % %
 
@@ -227,7 +228,7 @@ tic;
 simdata = dsSimulate(s,'tspan',[dt time_end], 'solver',solverType, 'dt',dt,...
   'downsample_factor',1, 'save_data_flag',0, 'save_results_flag',1,...
   'study_dir',study_dir, 'vary',vary, 'debug_flag', 0, 'verbose_flag',0,...
-  'parfor_flag',options.parfor_flag);
+  'parfor_flag',options.parfor_flag);%,'mex_flag',1,'one_solve_file_flag',1);
 
 toc;
 

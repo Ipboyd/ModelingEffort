@@ -1,4 +1,4 @@
-function sigIn = genICinput(trial,ICdir,locNum)
+function sigIn = genICSpks(trial,locNum)
 % input:
 %   tauR, tauD = rise and fall times of the EPSP waveform
 %   dt = sampling frequency of IC data
