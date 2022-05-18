@@ -115,7 +115,7 @@ XE_rise = 10;  XE_fall = 50;
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list={'IC'};
-s.connections(1).parameters={'g_postIC',0.265,'label','On','ICdir',options.ICdir,'locNum',options.locNum}; % 100 hz spiking
+s.connections(1).parameters={'g_postIC',0.265,'ICdir',options.ICdir,'locNum',options.locNum};
 
 % % % L4 % % %
 
@@ -181,8 +181,8 @@ s.connections(end).parameters={'gSYN',0.003,'tauR',XE_rise,'tauD',XE_fall,'fF',0
 % s.connections(end).parameters={'gSYN',0.0025,'tauR',XI_rise,'tauD',XI_fall,'fF',0.1,'tauF',180,'ESYN',-80,'netcon',XRnetcon}; 
 
 s.connections(end+1).direction='R2->R2';
-s.connections(end).mechanism_list={'iNoise_V2'};
-s.connections(end).parameters={'nSYN',0.02,'tauR_N',EE_rise, 'tauD_N',EE_fall,'locNum',options.locNum}; 
+s.connections(end).mechanism_list={'iNoise_V3'};
+s.connections(end).parameters={'nSYN',0.011,'tauR_N',EE_rise, 'tauD_N',EE_fall,'locNum',options.locNum}; 
 
 % convergence onto readout cell
 s.connections(end+1).direction='R2->C';

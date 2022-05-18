@@ -38,5 +38,5 @@ dg_ad/dt = -g_ad / tau_ad
 if(any(V >= V_thresh,1))(V = V_reset, g_ad = g_ad + g_inc)
 if(any(t<=tspike+t_ref,1))(V = V_reset) % implement refractory period
 
-% keep track of the last 100 spike times for iPSC_V2
-monitor V.spikes(V_thresh,10)
+% keep track of the last 5 spike times for iPSC_V2
+monitor V.spikes(V_thresh,5)

@@ -21,12 +21,29 @@ for i = 1:N_pop
     temp(spk_inds(find(ISIs < 1.5/dt)+1),i) = 0;
 end
 
+token = zeros(len+length(f)-1,N_pop);
+
 % convolve token with EPSC
 for i = 1:N_pop
-    token(:,i) = conv(f,temp(:,i));
+    token(:,i) = fakeConv(f,temp(:,i));
 end
 
 % token should have the same number of elements as simulation
 token((len+1):end,:) = [];
+
+end
+
+function token = fakeConv(kern,temp)
+
+temp = temp';
+
+token = zeros(1,length(kern)+length(temp)-1);
+kern_len = numel(kern);
+
+i = find(temp);
+
+for j = 1:length(i)
+    token(i(j):i(j)+kern_len-1) = temp(i(j):i(j)+kern_len-1) + kern;
+end
 
 end

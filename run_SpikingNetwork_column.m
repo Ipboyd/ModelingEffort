@@ -1,12 +1,12 @@
 % inputs: user specified, raw IC output
 % network structure: user specified
 
-cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid')
+cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid-simulation-code\MouseSpatialGrid')
 dynasimPath = '../DynaSim';
 
 % absolute refractory period of 1ms w/ relative refractory period of 1ms,
 % steepeness recovery factor of 2
-ICdir = 'U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid\ICSimStim\mouse\vary_recovery\alpha_0.010\STRFgain 0.10, 1.0ms tau_rel';
+ICdir = 'U:\eng_research_hrc_binauralhearinglab\noconjio\Grid-simulation-code\MouseSpatialGrid\ICSimStim\mouse\vary_recovery\alpha_0.010\STRFgain 0.10, 1.0ms tau_rel';
 
 addpath('mechs'); addpath('fixed-stimuli');
 addpath('genlib'); addpath('plotting'); addpath(genpath(dynasimPath));
@@ -158,7 +158,7 @@ for ICtype = 0 % only E no I
         end
         
     end
-    save(fullfile(study_dir, 'solve',sprintf('IC_spks_%s.mat',label{ICtype+1})),'spks');
+    save(fullfile(study_dir, 'solve','IC_spks.mat'),'spks');
 end
 
 %% run simulation
@@ -253,7 +253,6 @@ end
 toc
 % close all;
  
-
 if nSims == 5
 [pc,fr]= plotParamvsPerf_1D(results,numVaried);
 
