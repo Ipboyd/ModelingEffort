@@ -13,18 +13,19 @@ addpath('genlib'); addpath('plotting'); addpath(genpath(dynasimPath));
 addpath('cSPIKE'); InitializecSPIKE;
 addpath('plotting');
 
-expName = '05-18-2022';
+expName = '05-20-2022';
 
 model = struct; model.type = '';
 model.interaction = 0;
 
+options =struct;
+options.mex_flag = 1;
+
 % debug_flag = 1; save_flag = 0;
 
-% setup directory for current simulation
-datetime = datestr(now,'yyyymmdd-HHMMSS');
-study_dir = fullfile(pwd,'run',datetime);
-if exist(study_dir, 'dir'),rmdir(study_dir, 's'); end
-mkdir(fullfile(study_dir, 'solve'));
+study_dir = fullfile(pwd,'run',mex-test);
+% if exist(study_dir, 'dir'),rmdir(study_dir, 's'); end
+% mkdir(fullfile(study_dir, 'solve'));
 simDataDir = [pwd filesep 'simData' filesep expName];
 if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 
@@ -39,32 +40,31 @@ if ~exist(ICdir,'dir'), restructureICspks(ICdir); end
 %% define network parameters
 clear varies
 
-options = struct;
-model.nCells = 2;
-
+options.nCells = 2;
 dt = 0.1; %ms
 
 nSims = 1;
 trialInds = repmat(1:20,nSims,1);
+
 % % % DO NOT CHANGE THIS % % %
 varies(1).conxn = 'IC->IC';
 varies(1).param = 'trial';
 varies(1).range = trialInds(:)';
 % % % DO NOT CHANGE THIS % % %
  
-% within-channel inhibition connectivity
+% within-channel inhibition
 varies(end+1).conxn = '(S1->R1,S2->R2)';
 varies(end).param = '(tauP,fP,gSYN)';
 varies(end).range = [ 140 ; 0.5 ; 0.03 ]; % FIX THESE PARAMETERS
 % BEST: 140ms, 0.5, 0.03 nS
 
-% recurrent excitation
+% recurrent excitation of PV cells
 varies(end+1).conxn = '(R1->S1,R2->S2)';
 varies(end).param = '(tauP,fP,gSYN)';
 varies(end).range = [ 100 ; 0.2 ; 0.04 ] ; % FIX THESE PARAMETERS
 % BEST: 140ms, 0.5, 0.03 nS
 
-% within-channel inhibition depression strength
+% feed-forward excitation of PV cells 
 varies(end+1).conxn = '(IC->S1,R1->S2)';
 varies(end).param = '(tauP,fP,gSYN)';
 varies(end).range = [ 100 ; 0.2 ; 0.02 ]; % FIX THESE PARAMETERS
@@ -73,14 +73,11 @@ varies(end).range = [ 100 ; 0.2 ; 0.02 ]; % FIX THESE PARAMETERS
 % control and opto conditions
 varies(end+1).conxn = '(S1,S2)';
 varies(end).param = 'Itonic';
-varies(end).range = [ 0 ]; % -0.05
+varies(end).range =  0 ; % -0.05
 
 varies(end+1).conxn = 'R2->R2';
 varies(end).param = '(FR,sigma)';
 varies(end).range = [ 8 ; 6 ]; % 8 12 ; 6 6
-
-% display parameters
-network_params = [{varies.conxn}' {varies.param}' {varies.range}'];
 
 % find varied parameter, excluding trials
 varied_param = find( (cellfun(@length,{varies.range}) > 1 & ~cellfun(@iscolumn,{varies.range})));
@@ -95,10 +92,10 @@ end
 % it needs to be put in a different struct
 
 netcons = struct; % row = source, column = target
-netcons.XRnetcon = zeros(model.nCells,model.nCells);
-if model.nCells == 2
+netcons.XRnetcon = zeros(options.nCells,options.nCells);
+if options.nCells == 2
     netcons.XRnetcon(2,1) = 1; % 0deg channel inhibits 90deg
-elseif model.nCells == 3
+elseif options.nCells == 3
     netcons.XRnetcon([2 2],[1 3]) = 1; % 0deg channel inhibits others
 end
 
@@ -152,9 +149,9 @@ for ICtype = 0 % only E no I
         end
         
         % for single channel, since column network only has one location
-        if model.nCells == 1, spks = cat(3,spks,singleConfigSpks(:,3,:));
-        elseif model.nCells == 2, spks = cat(3,spks,singleConfigSpks(:,[1 3],:));
-        elseif model.nCells == 3, spks = cat(3,spks,singleConfigSpks(:,[1 3 4],:));
+        if options.nCells == 1, spks = cat(3,spks,singleConfigSpks(:,3,:));
+        elseif options.nCells == 2, spks = cat(3,spks,singleConfigSpks(:,[1 3],:));
+        elseif options.nCells == 3, spks = cat(3,spks,singleConfigSpks(:,[1 3 4],:));
         end
         
     end
@@ -166,13 +163,13 @@ options.ICdir = ICdir;
 options.STRFgain = extractBetween(ICdir,'gain','_202');
 options.plotRasters = 0;
 
-% all locations
+% % all locations
 % options.time_end = size(spks,3)*dt; %ms;
 % options.locNum = [];
 
 options.time_end = padToTime;
 
-if model.nCells == 1, options.locNum = 15; % 15 = clean target at 0deg
+if options.nCells == 1, options.locNum = 15; % 15 = clean target at 0deg
 else, options.locNum = 16; % 16 = target at 0deg, masker at 90deg
 end
 % options.locNum = 18; % colocated at 0deg
@@ -273,7 +270,7 @@ errorbar((1:4)-.2,ctrl_mean,ctrl_se,'color','k','linestyle','none','linewidth',1
 errorbar((1:4)+.2,laser_mean,laser_se,'color','k','linestyle','none','linewidth',1);
 
 ylim([50 100]);
-set(gca,'xticklabels',{'SPIKE','ISI','RI-SPIKE','Spike count'},'xtick',[1:4],'fontsize',8);
+set(gca,'xticklabels',{'SPIKE','ISI','RI-SPIKE','Spike count'},'xtick',1:4,'fontsize',8);
 ytickformat('percentage');
 ylabel('Performance'); legend('Control','Laser');
 saveas(gcf,[simDataDir filesep 'opto_performance_results.fig']);

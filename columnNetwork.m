@@ -11,7 +11,6 @@ function [simdata,s] = columnNetwork(study_dir,varies,options,netcons,model)
 %   varies(1).range = 1:20;
 %   *first set of parameters should always be "trial" for IC->IC cxn
 % plot_rasters: 1 or 0
-% data_spks: spikes from data we want to match 
 %
 % @Kenny F Chou, Boston Univ. 2019-06-20
 % 2019-08-04 - added sharpening neurons
@@ -48,7 +47,7 @@ time_end = options.time_end;
 %% neuron populations
 % tonic = bias = cells spontaneous firing
 
-nCells = model.nCells;
+nCells = options.nCells;
 
 s = struct();
 
@@ -227,8 +226,8 @@ tic;
 
 simdata = dsSimulate(s,'tspan',[dt time_end], 'solver',solverType, 'dt',dt,...
   'downsample_factor',1, 'save_data_flag',0, 'save_results_flag',1,...
-  'study_dir',study_dir, 'vary',vary, 'debug_flag', 0, 'verbose_flag',0,...
-  'parfor_flag',options.parfor_flag);%,'mex_flag',1,'one_solve_file_flag',1);
+  'study_dir',study_dir, 'vary',vary, 'debug_flag', 1, 'verbose_flag',0,...
+  'mex_flag',options.mex_flag);
 
 toc;
 
