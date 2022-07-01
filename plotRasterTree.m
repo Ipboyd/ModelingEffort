@@ -1,4 +1,4 @@
-function [perf,fr,spks] = plotRasterTree(snn_out,s,tstart,tend,configName,options,model)
+function [perf,fr,spks] = plotRasterTree(snn_out,s,tstart,tend,configName,options)
 % calculate performance and FR for *a single spot on the spatial grid*
 % input:
 %   data structure with length = #sims, containing voltage information of
@@ -15,27 +15,31 @@ fields = fieldnames(snn_out);
 ind = find(contains(fields,'_trial'),1);
 jump = length(find([snn_out.(fields{ind})]==1));
 numTrials = length(snn_out)/jump; % # total trials (20 for single parameter set)
+SpatAttention = options.SpatialAttention;
 
 % network properties
 popNames = {s.populations.name};
 nPops = numel(popNames); 
 fieldNames = strcat(popNames,'_V_spikes');
 
-nChans = size(snn_out(1).IC_V,2);
+nChans = size(snn_out(1).R1_V,2);
 
+if isempty(options.locNum), annotConfig = configName(end-7:end-4);
+else, annotConfig = configName(end-3:end);
+end
 
 % visualize spikes for specified populations
 if ~isfield(options,'subPops'), options.subPops = popNames; end
 
 % in same order as popNames
-if nPops == 15 % on and off columns
-    subplot_locs = [20 13 14 7 8 15 9 23 16 17 10 11 18 12 3.5];
-% elseif nPops > 6 % on and off columns, zero SOM neurons
-%     subplot_locs = [14,9,10,5,6,16,11,12,7,8];
-else % one column only with SOM neurons
-    subplot_locs = [20 13 14 7 8 15 9 3.5];
-    % subplot_locs = [14,9,10,5,6];
+if nPops == 8% no top down
+   subplot_locs = [11 7 8 4 5 9 6 2];
+elseif nPops == 9% no top down
+subplot_locs = [11 10 7 8 4 5 9 6 2];
+else
+subplot_locs = [14 10 11 7 8 12 9 1 2 5];%[14 13 10 11 7 8 12 9 1 2 5];
 end
+
 % locs = {'90','45','0','-90'};
 
 for vv = 1:jump % for each varied parameter
@@ -50,7 +54,7 @@ for vv = 1:jump % for each varied parameter
     
     for ch = 1:nChans
         
-        figure('unit','inches','position',[6 3 9.5 5]);
+        figure('unit','inches','position',[6 3 5.5 5]);
 
         
         for currentPop = 1:nPops
@@ -72,14 +76,14 @@ for vv = 1:jump % for each varied parameter
             [perf.(popNames{currentPop}).channel(vv),...
                 fr.(popNames{currentPop}).channel(vv)] = ...
                 calcPCandPlot(popSpks,time_end,1,numTrials,popNames{currentPop},...
-                subplot_locs(currentPop));
+                subplot_locs(currentPop),SpatAttention);
             
         end
         
         figName = sprintf('%s_CH%f_set%s',configName,ch,num2str(vv));
         
         annotation('textbox',[.1 .82 .1 .1], ...
-            'String',[configName(end-3:end), ', CH' num2str(ch) ],'EdgeColor','none','FontSize',20)
+            'String',[annotConfig, ', CH' num2str(ch) ],'EdgeColor','none','FontSize',20)
         
         saveas(gcf,[figName '.png']);
         savefig(gcf,[figName '.fig']);
@@ -90,7 +94,7 @@ end
 
 end
 
-function [pc,fr] = calcPCandPlot(raster,time_end,calcPC,numTrials,unit,subplot_loc)
+function [pc,fr] = calcPCandPlot(raster,time_end,calcPC,numTrials,unit,subplot_loc,SpatAttention)
 
 PCstr = '';
 
@@ -101,8 +105,8 @@ if calcPC
     spkTime = reshape(spkTime,numTrials/2,2);
     
     input = reshape(spkTime,1,numTrials);
-    STS = SpikeTrainSet(input,250*10,(250+2986)*10);
-    distMat = STS.SPIKEdistanceMatrix(250*10,(250+2986)*10);
+    STS = SpikeTrainSet(input,300*10,(300+3000)*10);
+    distMat = STS.SPIKEdistanceMatrix(300*10,(300+3000)*10);
     
     performance = calcpcStatic(distMat, numTrials/2, 2, 0);
     pc = mean(max(performance));
@@ -112,14 +116,22 @@ end
 fr = round(1000*mean(sum(raster(:,2500:32500),2))/3000);
 
 % ind2sub counts down per column first, 
-[c,r] = ind2sub([6 4],subplot_loc);
-r = 5-r;
+if SpatAttention
+    [c,r] = ind2sub([3 5],subplot_loc);
+    r = 6-r;
+        ypos = 0.06 + 0.2*(r-1);
+y = 0.10;
 
-
-xpos = 0.06 + 0.16*(c-1);
-ypos = 0.06 + 0.25*(r-1);
-x = 0.12;
+else
+    [c,r] = ind2sub([3 4],subplot_loc);
+    r = 5-r;
+    ypos = 0.06 + 0.25*(r-1);
 y = 0.12;
+
+end
+
+xpos = 0.06 + 0.33*(c-1);
+x = 0.23;
 
 subplot('position',[xpos ypos x y]);
 

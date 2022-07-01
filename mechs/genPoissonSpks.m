@@ -16,7 +16,7 @@ rng('shuffle');
 dt = T(2)-T(1); % ms
 N = length(spike_rate);
 
-n_refab = 6/dt;     % length of refractory period time in samples
+n_refab = 10/dt;     % length of refractory period time in samples
 tw = 0:n_refab;     % sample time vector for recovery rate
 
 t_abs_samp = t_abs/dt;

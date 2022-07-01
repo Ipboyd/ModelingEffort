@@ -17,7 +17,7 @@ popNamesM = strcat({s.populations.name},'M');
 numPops = numel(subPops);
 popSizes = [s.populations.size];
 % popSizes = [snn_out(1).model.specification.populations.size];
-popSizes = popSizes(contains(popNames,subPops));
+popSizes = popSizes(matches(popNames,subPops));
 onlyC = contains(subPops,'C') & length(subPops) == 1;
 
 % chanLabel = {'left sig','gauss','U','right sig'};
@@ -112,11 +112,11 @@ for vv = 1:numVars
             end
         end
     end
-    % simulation info
-    annotation('textbox',[xoffset+plotwidth*1.2 yoffset+plotheight*0.5 plotwidth plotheight],...
-           'string',annotStr,...
-           'FitBoxToText','on',...
-           'LineStyle','none')
+%     % simulation info
+%     annotation('textbox',[xoffset+plotwidth*1.2 yoffset+plotheight*0.5 plotwidth plotheight],...
+%            'string',annotStr,...
+%            'FitBoxToText','on',...
+%            'LineStyle','none')
        
     saveas(gcf,fullfile('simData',expName,['C_grid_vary' num2str(vv) '.png']));
 end

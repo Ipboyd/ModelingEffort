@@ -1,4 +1,4 @@
-function [t_spiketimes_on,t_spiketimes_off]=InputGaussianSTRF_v4...
+function [t_spiketimes_on]=InputGaussianSTRF_v4...
     (specs,songloc,maskerloc,tuning,saveParam,mean_rate,stimGain,maxWeight,paramSpk)
 % Inputs
 %   specs - spectrogram representation of stimuli, with fields
@@ -47,7 +47,7 @@ function [t_spiketimes_on,t_spiketimes_off]=InputGaussianSTRF_v4...
 
 % Plotting parameters
 colormap = parula;
-color1=colormap([1 18 36 54],:);
+color1=colormap([1 64 128 212],:);
 width=11.69;hwratio=.6;
 x0=.05;y0=.1;
 dx=.02;dy=.05;
@@ -76,10 +76,15 @@ tuningcurve=zeros(4,length(x));
 % tuningcurve(4,:) = sigmf(x,[-0.07 -50])/sigmf(-90,[-0.07 -50]); % at -90°, sigmoid == 1
 neuronNames = fliplr({'ipsi sigmoid','gaussian','U','contra sigmoid'});
 
-tuningcurve(1,:) = sigmf(x,[0.015 60])/sigmf(90,[0.015 60]); % = 1 at x = +90
-tuningcurve(2,:) = gaussmf(x,[sigma 45])*0.8 + 0.2;% 1.2 - gaussmf(x,[sigma 0])*0.8;
-tuningcurve(3,:) = gaussmf(x,[sigma 0])*0.8 + 0.2;
-tuningcurve(4,:) = sigmf(x,[-0.015 -60])/sigmf(-90,[-0.015 -60]); % at -90°, sigmoid == 1
+% tuningcurve(1,:) = sigmf(x,[0.1 45]);%/sigmf(90,[0.022 45]); % = 1 at x = +90
+% tuningcurve(2,:) = 1 - gaussmf(x,[sigma 0]); %gaussmf(x,[sigma 45])*0.8 + 0.2;%
+% tuningcurve(3,:) = gaussmf(x,[sigma 0]);
+% tuningcurve(4,:) = sigmf(x,[-0.1 -45]);%/sigmf(-90,[-0.022 -45]); % at -90°, sigmoid == 1
+
+tuningcurve(1,:) = 0.8*sigmf(x,[0.1 22.5])/sigmf(90,[0.1 22.5]) + 0.2; % = 1 at x = +90
+tuningcurve(2,:) = 0.8*sigmf(x,[0.07 7.5])/sigmf(90,[0.07 7.5]) + 0.2;
+tuningcurve(3,:) = 0.8*gaussmf(x,[sigma 0]) + 0.2;
+tuningcurve(4,:) = 0.8*sigmf(x,[-0.1 -22.5])/sigmf(-90,[-0.1 -22.5]) + 0.2; % at -90°, sigmoid == 1
 
 for i=1:4
     plot(x,tuningcurve(i,:),'linewidth',2.5,'color',color1(i,:))
@@ -109,7 +114,7 @@ xlabel('t (sec)')
 title('STRF')
 
 %%
-t_spiketimes_on={}; t_spiketimes_off={};
+t_spiketimes_on={}; %t_spiketimes_off={};
 avgSpkRate=zeros(1,4);disc=zeros(1,4);
 for songn=1:2
     %convert sound pressure waveform to spectrogram representation
@@ -198,16 +203,12 @@ for songn=1:2
             end
 
             %% convolve STRF with spectrogram for onset and offset firing
-            [spkcnt_on,spkcnt_off,frate_on,frate_off,temp_on,temp_off] = ...
+            [spkcnt_on,frate_on,temp_on] = ...
                 STRFconvolve_V2(strf,currspec,mean_rate,1,songn,paramSpk.t_ref,paramSpk.t_ref_rel,paramSpk.offsetFrac,paramSpk.rec);
             
             avgSpkRate_on(i)=spkcnt_on/max(t);
             fr_on{trial,i+4*(songn-1)} = frate_on;
             t_spiketimes_on{trial,i+4*(songn-1)} = temp_on; %sec
-            
-            avgSpkRate_off(i)=spkcnt_off/max(t);
-            fr_off{trial,i+4*(songn-1)} = frate_off;
-            t_spiketimes_off{trial,i+4*(songn-1)} = temp_off; %sec
             
         end
 
@@ -248,8 +249,8 @@ for songn=1:2
 
     if saveParam.flag
         saveas(gca,[savedir '/s' num2str(songloc) 'm' num2str(maskerloc) '.tiff'])
-        save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes_on','t_spiketimes_off','songloc','maskerloc',...
-            'sigma','mean_rate','disc','avgSpkRate_on','avgSpkRate_off','fr_on','fr_off')
+        save([savedir '/s' num2str(songloc) 'm' num2str(maskerloc)],'t_spiketimes_on','songloc','maskerloc',...
+            'sigma','mean_rate','disc','avgSpkRate_on','fr_on')
     end
 end
 clf

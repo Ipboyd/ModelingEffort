@@ -1,5 +1,8 @@
-function [spkcnt_on,spkcnt_off,onset_rate,offset_rate,spktimes_on,spktimes_off]=...
-    STRFconvolve_V2(strf,stim_spec,mean_rate,trialn,songn,t_ref,t_ref_rel,offsetFrac,rec)
+function [spkcnt_on,onset_rate,spktimes_on]=...
+    STRFconvolve_V2(strf,stim_spec,mean_rate,trialn,songn,t_ref,t_ref_rel,rec)
+
+% [spkcnt_on,spkcnt_off,onset_rate,offset_rate,spktimes_on,spktimes_off]=...
+%     STRFconvolve_V2(strf,stim_spec,mean_rate,trialn,songn,t_ref,t_ref_rel,offsetFrac,rec)
 %
 %% Inputs
 % strf
@@ -30,17 +33,21 @@ strfData(stim_spec, zeros(size(stim_spec)));
 [~, frate] = strfFwd_Junzi(strf);
 % frate=abs(frate);
 frate=frate*mean_rate;
+frate(isnan(frate)) = 0;
 % frate(find(frate<0))=zeros(size(find(frate<0))); % half-wave rec
 
-% offset rate
-offset_rate = -frate + max(frate)*offsetFrac; %-frate + max(frate)*0.6;
-firstneg = find(offset_rate <= 0,1,'first');
-offset_rate(1251:firstneg-1) = 0;
-offset_rate(offset_rate < 0) = 0;
+% % offset rate
+% offset_rate = -frate + max(frate)*offsetFrac; %-frate + max(frate)*0.6;
+% firstneg = find(offset_rate <= 0,1,'first');
+% offset_rate(1251:firstneg-1) = 0;
+% offset_rate(offset_rate < 0) = 0;
 
 % onset rate
 onset_rate = frate;
 onset_rate(onset_rate < 0) = 0;
+
+% cosine ramp to onset
+% onset_rate(2501:4500) = onset_rate(2501:4500).*cos(pi/4000 .* (0:1999) - pi/2)';
 
 % frate=abs(frate); % full-wav rec
 % m=mean(power.^(frate(isfinite(frate(:, 1)), :)));
@@ -55,8 +62,8 @@ onset_rate(onset_rate < 0) = 0;
 spktimes_on=cell(trialn,1);
 spkcnt_on=0;
 
-spktimes_off=cell(trialn,1);
-spkcnt_off=0;
+% spktimes_off=cell(trialn,1);
+% spkcnt_off=0;
 
 % use rand seed
 % load('rand_seed142307.mat')
@@ -68,24 +75,24 @@ for i=1:trialn
         [~,temptspk_on]=spike_generator_seed_rr(onset_rate,t,rand_seed(:,i,songn),t_ref);
         spktimes_on{i,1}=temptspk_on*1000;
         
-        [~,temptspk_off]=spike_generator_seed_rr(offset_rate,t,rand_seed(:,i,songn),t_ref);
-        spktimes_off{i,1}=temptspk_off*1000;
+%         [~,temptspk_off]=spike_generator_seed_rr(offset_rate,t,rand_seed(:,i,songn),t_ref);
+%         spktimes_off{i,1}=temptspk_off*1000;
     else
         % disp('using novel random numbers')
         [~,temptspk_on]=spike_generator_rr(onset_rate,t,t_ref,t_ref_rel,rec);
         spktimes_on{i,1}=temptspk_on*1000;
         
-        [~,temptspk_off]=spike_generator_rr(offset_rate,t,t_ref,t_ref_rel,rec);
-        spktimes_off{i,1}=temptspk_off*1000;
+%         [~,temptspk_off]=spike_generator_rr(offset_rate,t,t_ref,t_ref_rel,rec);
+%         spktimes_off{i,1}=temptspk_off*1000;
     end
     spkcnt_on=spkcnt_on+length(temptspk_on);
-    spkcnt_off=spkcnt_off+length(temptspk_off);
+%     spkcnt_off=spkcnt_off+length(temptspk_off);
 end
 if trialn==1
     spktimes_on=cell2mat(spktimes_on);
-    spktimes_off=cell2mat(spktimes_off);
+%     spktimes_off=cell2mat(spktimes_off);
 end
 spkcnt_on=spkcnt_on/trialn;
-spkcnt_off=spkcnt_off/trialn;
+% spkcnt_off=spkcnt_off/trialn;
 
 

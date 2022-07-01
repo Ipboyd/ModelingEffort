@@ -1,4 +1,4 @@
-function [simdata,s] = columnNetwork(study_dir,varies,options,netcons,model)
+function [simdata,s] = columnNetwork(study_dir,varies,options,netcons)
 % network for bird IC parameters
 % works for mouse parameters as well. Maybe I should rename this to
 % "spiking network".
@@ -58,140 +58,173 @@ XRnetcon = netcons.XRnetcon;
 s.populations(1).name = 'IC';
 s.populations(1).equations = 'noconLIF';
 s.populations(1).size = nCells;
-s.populations(1).parameters = {'t_ref',0.2};
+s.populations(1).parameters = {'t_ref',1};
+
+% s.populations(end+1).name = 'ICI';
+% s.populations(end).equations = 'noconLIF';
+% s.populations(end).size = nCells;
+% s.populations(end).parameters = {'t_ref',1};
 
 s.populations(end+1).name='S1';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_L',1/100,'E_L',-56,'V_reset',-50,'t_ref',0.8};
+s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',0.5};
 
 s.populations(end+1).name='R1';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_inc',0.00035,'tau_ad',60,'t_ref',1.5};
+s.populations(end).parameters = {'g_inc',0.0003,'tau_ad',50,'t_ref',1};
 
 s.populations(end+1).name='S2';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_L',1/100,'E_L',-56,'V_reset',-50,'t_ref',0.8};
+s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',0.5};
 
 s.populations(end+1).name='R2';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_inc',0.00035,'tau_ad',60,'t_ref',1.5};
+s.populations(end).parameters = {'g_inc',0.0003,'tau_ad',50,'t_ref',1};
 
 s.populations(end+1).name='X1';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_inc',0.0002,'tau_ad',60,'g_L',1/275,'t_ref',1.5};
+s.populations(end).parameters = {'g_L',1/275,'t_ref',1,'V_reset',-56};
 
 s.populations(end+1).name='X2';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_inc',0.0002,'tau_ad',60,'g_L',1/275,'t_ref',1.5};
+s.populations(end).parameters = {'g_L',1/275,'t_ref',1,'V_reset',-56};
 
-% % VIP cells
-% s.populations(end+1).name='T';
-% s.populations(end).equations = 'noconLIF';
-% s.populations(end).size = nCells;
-% s.populations(end).parameters = {'t_ref',0,'V_reset',-65,'Itonic',9,'Imask',Imask};
+if options.SpatialAttention
+    % VIP cells
+    Imask = options.Imask;
+
+    s.populations(end+1).name='T';
+    s.populations(end).equations = 'noconLIF_currentOnly'; % this version doesn't have any linkers
+    s.populations(end).size = nCells;
+    s.populations(end).parameters = {'g_L',1/400,'t_ref',1,'V_reset',-65,'Itonic',0.055,'Imask',Imask};
+
+    % TD SOM neurons
+    s.populations(end+1).name='I';
+    s.populations(end).equations = 'noconLIF';
+    s.populations(end).size = nCells;
+    s.populations(end).parameters = {'g_inc',0.005,'g_L',1/275,'t_ref',1,'V_reset',-65,'Itonic',0.08};
+end
 
 % convergence
 s.populations(end+1).name='C';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = 1;
-s.populations(end).parameters = {'g_inc',0.00035,'tau_ad',60,'t_ref',1.5};
+s.populations(end).parameters = {'g_inc',0.0003,'tau_ad',50,'t_ref',1};
 
 %% connections
 
 % ms
-EE_rise = 0.5; EE_fall = 3;
-IE_rise = 1; IE_fall = 4;
-EI_rise = 0.1; EI_fall = 1;
-EX_rise = 1.5; EX_fall = 4;
-XE_rise = 10;  XE_fall = 50;
+EE_rise = 0.7; EE_fall = 2; % E->E
+IE_rise = 1.5; IE_fall = 4.5; % PV->E 1;4
+EI_rise = 0.1; EI_fall = 1; % E->PV
+EX_rise = 1;   EX_fall = 3.5; % E->X
+XE_rise = 6;   XE_fall = 40;  % X->E
+
 
 % % % % % % % % onset column % % % % % % % % 
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list={'IC'};
-s.connections(1).parameters={'g_postIC',0.265,'trial',1,'locNum',options.locNum,'netcon',eye(nCells,nCells)};
+s.connections(1).parameters={'g_postIC',0.265,'label','E','trial',1,'locNum',options.locNum,'netcon',eye(nCells,nCells)};
+
+% s.connections(end+1).direction='ICI->ICI';
+% s.connections(end).mechanism_list={'IC'};
+% s.connections(end).parameters={'g_postIC',0.265,'label','I','trial',1,'locNum',options.locNum,'netcon',eye(nCells,nCells)};
 
 % % % L4 % % %
 
 % excitatory inputs
 s.connections(end+1).direction='IC->R1';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.011,'tauR',EE_rise,'tauD',EE_fall};
+s.connections(end).parameters={'gSYN',0.015,'tauR',EE_rise,'tauD',EE_fall};
 
 s.connections(end+1).direction='IC->S1';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.02,'tauR',EI_rise,'tauD',EI_fall,'fP',0.2,'tauP',80};
+s.connections(end).parameters={'gSYN',0.03,'tauR',EI_rise,'tauD',EI_fall,'fP',0.2,'tauP',80};
 
 % SOM inhibition
 s.connections(end+1).direction='R1->X1';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.0025,'tauR',EX_rise,'tauD',EX_fall,'fF',0.1,'tauF',180};
+s.connections(end).parameters={'gSYN',0.002,'tauR',EX_rise,'tauD',EX_fall,'fF',0.1,'tauF',80};
 
 s.connections(end+1).direction='X1->R1';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.003,'tauR',XE_rise,'tauD',XE_fall,'fF',0.1,'tauF',180,'ESYN',-80,'netcon',XRnetcon}; 
+s.connections(end).parameters={'gSYN',0.002,'tauR',XE_rise,'tauD',XE_fall,'ESYN',-80,'netcon',XRnetcon}; 
 
 % feed-forward inhibition in L4
 s.connections(end+1).direction='S1->R1';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.02,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',80}; 
+s.connections(end).parameters={'gSYN',0.02,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
-% recurrent excitation
-s.connections(end+1).direction = 'R1->S1';
-s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.02,'tauR',EI_rise,'tauD',EI_fall,'fP',0.2,'tauP',80}; 
+% % recurrent excitation
+% s.connections(end+1).direction = 'R1->S1';
+% s.connections(end).mechanism_list={'PSC'};
+% s.connections(end).parameters={'gSYN',0.02,'tauR',EI_rise,'tauD',EI_fall,'fP',0.2,'tauP',80}; 
 
 % % %  L2/3  % % %
 
 s.connections(end+1).direction = 'R1->R2';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.011,'tauR',EE_rise,'tauD',EE_fall};
+s.connections(end).parameters={'gSYN',0.015,'tauR',EE_rise,'tauD',EE_fall};
 
 s.connections(end+1).direction = 'R1->S2';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.02,'tauR',EI_rise,'tauD',EI_fall,'fP',0.2,'tauP',80}; %gsyn = 0.025 for 1:1 spiking
+s.connections(end).parameters={'gSYN',0.03,'tauR',EI_rise,'tauD',EI_fall,'fP',0.2,'tauP',80}; %gsyn = 0.025 for 1:1 spiking
 
 % feed-forward inhibition in L2/3
 s.connections(end+1).direction = 'S2->R2';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.02,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',80}; 
+s.connections(end).parameters={'gSYN',0.02,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
-% recurrent excitation
-s.connections(end+1).direction = 'R2->S2';
-s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.02,'tauR',EI_rise,'tauD',EI_fall,'fP',0.2,'tauP',80}; 
+% % recurrent excitation
+% s.connections(end+1).direction = 'R2->S2';
+% s.connections(end).mechanism_list={'PSC'};
+% s.connections(end).parameters={'gSYN',0.02,'tauR',EI_rise,'tauD',EI_fall,'fP',0.2,'tauP',80}; 
 
 % SOM inhibition
 s.connections(end+1).direction='R2->X2';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.0025,'tauR',EX_rise,'tauD',EX_fall,'fF',0.1,'tauF',180};
+s.connections(end).parameters={'gSYN',0.002,'tauR',EX_rise,'tauD',EX_fall,'fF',0.1,'tauF',80};
 
 s.connections(end+1).direction='X2->R2';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.003,'tauR',XE_rise,'tauD',XE_fall,'fF',0.1,'tauF',180,'ESYN',-80,'netcon',XRnetcon}; 
+s.connections(end).parameters={'gSYN',0.002,'tauR',XE_rise,'tauD',XE_fall,'ESYN',-80,'netcon',XRnetcon}; 
 
-% s.connections(end+1).direction='X2->S2';
-% s.connections(end).mechanism_list={'PSC'};
-% s.connections(end).parameters={'gSYN',0.0025,'tauR',XI_rise,'tauD',XI_fall,'fF',0.1,'tauF',180,'ESYN',-80,'netcon',XRnetcon}; 
+if options.SpatialAttention
+    % top down inhibition (from I) and disinhibition (from T)
+    s.connections(end+1).direction='T->I';
+    s.connections(end).mechanism_list={'PSC'};
+    s.connections(end).parameters={'gSYN',0.002,'tauR',5,'tauD',25,'ESYN',-80};
 
-s.connections(end+1).direction='R2->R2';
-s.connections(end).mechanism_list={'iNoise_V3'};
-s.connections(end).parameters={'nSYN',0.011,'tauR_N',EE_rise, 'tauD_N',EE_fall,'locNum',options.locNum}; 
+    s.connections(end+1).direction='I->R2';
+    s.connections(end).mechanism_list={'PSC'};
+    s.connections(end).parameters={'gSYN',0.0015,'tauR',5,'tauD',25,'ESYN',-80};
+
+    s.connections(end+1).direction='I->S2';
+    s.connections(end).mechanism_list={'PSC'};
+    s.connections(end).parameters={'gSYN',0.0015,'tauR',5,'tauD',25,'ESYN',-80};
+end
+
+Cnetcon = ones(nCells,1); if nCells == 3, Cnetcon(3) = 0.5; end
 
 % convergence onto readout cell
 s.connections(end+1).direction='R2->C';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.011,'tauR',EE_rise,'tauD',EE_fall,'netcon',ones(nCells,1)};
+s.connections(end).parameters={'gSYN',0.015,'tauR',EE_rise,'tauD',EE_fall,'netcon',Cnetcon};
 
 s.connections(end+1).direction='S2->C';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.02,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.4,'tauP',120,'netcon',ones(nCells,1)}; 
+s.connections(end).parameters={'gSYN',0.02,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
+
+s.connections(end+1).direction='C->C';
+s.connections(end).mechanism_list={'iNoise_V3'};
+s.connections(end).parameters={'nSYN',0.015,'tauR_N',EE_rise,'tauD_N',EE_fall,'locNum',options.locNum}; 
 
 %% vary params
 vary = cell(length(varies),3);
@@ -203,7 +236,7 @@ end
 
 % do dsVary2Modifications here to save time and reduce # of opto
 % simulations
-I_ind = find(strcmp(vary(:,2),'Itonic')); FR_ind = find(strcmp(vary(:,2),'(FR,sigma)'));
+I_ind = find(strcmp(vary(:,2),'Itonic')); FR_ind = find(matches(vary(:,2),'FR'));
 
 if ~isempty(I_ind) && ~isempty(FR_ind)
 if numel(vary{I_ind,3}) > 1 && size(vary{FR_ind,3},2) > 1

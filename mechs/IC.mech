@@ -2,8 +2,9 @@
 % Jio Nocon, September 2021
 
 %%%%%%%% default parameters %%%%%%%%%%
-trial = 1;
-locNum = [];
+trial = 1
+locNum = []
+label = 'E'
 
 %%%%%%%% network parameters %%%%%%%%%%
 g_postIC=0.1
@@ -11,7 +12,7 @@ E_exc=0
 netcon=eye(N_pre,N_post)
 
 % load input spikes
-input=genICSpks(trial,locNum);
+input = genPoissonInputs(trial,locNum,label)
 
 iIC(X) = g_postIC * (input(k,:) * netcon) .* (X - E_exc);
 

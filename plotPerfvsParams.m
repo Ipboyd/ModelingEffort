@@ -9,6 +9,7 @@ variedParams = find( (cellfun(@length,{varies.range}) > 1 & ~cellfun(@iscolumn,{
 variedParams(variedParams == 1) = [];
 params = {varies(variedParams).range};
 paramNames = {varies(variedParams).param};
+paramConxns = {varies(variedParams).conxn};
 
 x = params{1};
 y = params{2};
@@ -22,23 +23,24 @@ for ch = 1:nCells
     figure('unit','inches','position',[4 4 11 4.5]);
     ax1=subplot(1,2,1);
     imagesc(x,y,perf);
-    xlabel(['E->PV_{' paramNames{1} '}']);
-    ylabel(['E->PV_{' paramNames{2} '}']);
+    xlabel([paramConxns{1}  '_{' paramNames{1} '}']);
+    ylabel([paramConxns{2}  '_{' paramNames{2} '}']);
     set(gca,'ydir','normal','xtick',x,'ytick',y,'fontsize',10);
     title(['Performance vs. ' paramNames{1}]);
     cc = colorbar; cc.Label.String = 'Performance';
-    caxis(
+    caxis([50 max(perf,[],'all')]);
     
     FR = reshape(data.fr.(pop).channel1,[numel(y) numel(x)]);
     
     ax2=subplot(1,2,2);
     imagesc(x,y,FR);
-    xlabel(['E->PV_{' paramNames{1} '}']);
-    ylabel(['E->PV_{' paramNames{2} '}']);
+    xlabel([paramConxns{1} '_{' paramNames{1} '}']);
+    ylabel([paramConxns{2} '_{' paramNames{2} '}']);
     set(gca,'ydir','normal','xtick',x,'ytick',y,'fontsize',10);
     title(['FR vs. ' paramNames{1}]);
     cc = colorbar; cc.Label.String = 'Firing rate (Hz)';
     colormap(ax2,'gray');
+    caxis([0 max(FR,[],'all')]);
     titleStr = [pop ', CH' num2str(ch)];
     sgtitle(titleStr);
     

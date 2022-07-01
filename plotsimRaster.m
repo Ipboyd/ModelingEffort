@@ -1,4 +1,13 @@
-function plotsimRaster(pop,snn_out,vary)
+function plotsimRaster(varargin)
+
+pop = varargin{1};
+snn_out = varargin{2};
+
+if nargin > 2
+    vary = varargin{3};
+else
+    vary = 1;
+end
 
 jump = length(snn_out)/20;
 trials = vary:jump:length(snn_out);
@@ -24,6 +33,8 @@ subplot(2,1,2);
 plotSpikeRasterFs(flipud(logical(raster)), 'PlotType','vertline');
 xlabel('Time (ms)'); title('Target 2'); xlim([0 35000]); ylim([0.5 10.5]);
 set(gca,'ytick',[ ],'fontsize',8);
+
+sgtitle([pop ' rasters']);
 
 end
 

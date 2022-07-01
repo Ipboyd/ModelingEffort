@@ -97,8 +97,8 @@ if calcPC
     spkTime = reshape(spkTime,numTrials/2,2);
     
     input = reshape(spkTime,1,numTrials);
-    STS = SpikeTrainSet(input,250*10,(250+2986)*10);
-    distMat = STS.SPIKEdistanceMatrix(250*10,(250+2986)*10);
+    STS = SpikeTrainSet(input,300*10,(300+3000)*10);
+    distMat = STS.SPIKEdistanceMatrix(300*10,(300+3000)*10);
     
     performance = calcpcStatic(distMat, numTrials/2, 2, 0);
     pc = mean(max(performance));

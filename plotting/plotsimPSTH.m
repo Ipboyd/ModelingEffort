@@ -1,4 +1,13 @@
-function plotsimPSTH(pop,snn_out,vary)
+function plotsimPSTH(varargin)
+
+pop = varargin{1};
+snn_out = varargin{2};
+
+if nargin == 3
+    vary = varargin{3};
+else
+    vary = 1;
+end
 
 jump = length(snn_out)/20;
 
@@ -19,9 +28,12 @@ end
 psth = histcounts(inds/10,t_vec);
 psth(end+1) = 0;
 
-figure; subplot(2,1,1);
-plot(t_vec,psth,'linewidth',1); hold on;
-xlabel('Time (ms)'); title('Target 1'); ylim([0 30]);
+Max = 30;
+
+subplot(2,1,1);
+bar(t_vec/1000-0.3,psth,'facecolor','k'); hold on;
+% plot(t_vec/1000-0.3,psth,'linewidth',1); hold on;
+xlabel('Time (ms)'); title('Target 1'); ylim([0 60]);
 
 temp = find([snn_out(t2).([pop '_V_spikes'])]);
 [inds,~] = ind2sub([35000 10],temp);
@@ -30,8 +42,9 @@ psth = histcounts(inds/10,t_vec);
 psth(end+1) = 0;
 
 subplot(2,1,2);
-plot(t_vec,psth,'linewidth',1); hold on;
-xlabel('Time (ms)'); title('Target 2'); ylim([0 30]);
+bar(t_vec/1000-0.3,psth,'facecolor','k'); hold on;
+% plot(t_vec/1000-0.3,psth,'linewidth',1); hold on;
+xlabel('Time (ms)'); title('Target 2'); ylim([0 60]);
 
 end
 

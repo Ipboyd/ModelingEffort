@@ -14,7 +14,6 @@ E_k=-80;         % spike-rate adaptation potential [mV]
 tau_ad=5;        % spike-rate adaptation time constant [ms]
 g_inc=0;         % spike-rate adaptation increment [uS]
 Imask = ones(1,N_pop) % targets specific neurons
-Itonic = 0
 
 % @isyn = synaptic current [nA]
 
@@ -25,15 +24,21 @@ Itonic = 0
 
 %%%%%% action potential voltages %%%%%
 V_thresh = -47;     % spike threshold [mV]
-V_reset = -54;      % reset voltage, originally -50mV. [mV]
+V_reset = -52;      % reset voltage, originally -50mV. [mV]
 
 %%%%%%% current injection %%%%%%%%%%%%
+
+%Itonic=0;        % injected current, [nA]
+%Imask=ones(1,N_pop); % current masker
+
+Itonic = 0;         % injected current, [nA]
+Icur = Itonic*buildTonicCurrent(T,N_pop)
 
 % voltage dynamic, spiking, refractory period
 g_ad(0) = zeros(1,N_pop)
 V(0) = E_L*ones(1,N_pop)
 
-dV/dt = ( (E_L-V) - R*g_ad.*(V-E_k) - R*@isyn + R*Itonic.*Imask + R*noise.*randn(1,N_pop) ) / tau     %mV/ms
+dV/dt = ( (E_L-V) - R*g_ad.*(V-E_k) + R*Icur(k,:).*Imask + R*noise.*randn(1,N_pop) ) / tau
 dg_ad/dt = -g_ad / tau_ad
 
 % DO NOT use the any condition for state variables

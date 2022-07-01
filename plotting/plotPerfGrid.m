@@ -41,5 +41,5 @@ for i= 1:numel(neuronPerf)
         t2(i).Color= 'w';
     end
 end
-caxis([50,100])
+caxis([50,90])
 set(gca,'fontsize',12)

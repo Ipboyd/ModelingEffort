@@ -5,7 +5,7 @@
 % note:
 % large bottleneck lies in r/w to network drive
 
-cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid simulation code (July 2021 - )\MouseSpatialGrid\ICSimStim');
+cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid-simulation-code\MouseSpatialGrid\ICSimStim');
 clearvars;clc;close all
 addpath(genpath('strflab_v1.45'))
 addpath('../genlib')
@@ -17,7 +17,7 @@ InitializecSPIKE;
 dataSaveLoc = pwd; %local save location
 
 % Spatial tuning curve parameters
-sigma = 38; %60 for bird but 38 for mouse
+sigma = 24; %60 for bird but 38 for mouse
 tuning = 'mouse'; %'bird' or 'mouse'
 stimGain = 0.5;
 targetlvl = 0.01;
@@ -28,38 +28,38 @@ tic;
 % load stimuli & calc spectrograms
 % load stimuli & calc spectrograms
 if strcmp(tuning,'mouse')
-%     [song1,~] = audioread('200k_target1.wav');
-%     [song2,~] = audioread('200k_target2.wav');
-    
-%     for trial = 1:10
-%         [masker,fs] = audioread(['200k_masker' num2str(trial) '.wav']);
-%         [spec,~,~] = STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
-%         masker_specs{trial} = spec;
-%     end
-    
-    paramH.alpha = 0.0097; % time constant of temporal kernel [s]
+    %     [song1,~] = audioread('200k_target1.wav');
+    %     [song2,~] = audioread('200k_target2.wav');
+
+    %     for trial = 1:10
+    %         [masker,fs] = audioread(['200k_masker' num2str(trial) '.wav']);
+    %         [spec,~,~] = STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
+    %         masker_specs{trial} = spec;
+    %     end
+
+    paramH.alpha = 0.0097; % time constant of temporal kernel [s] 0.0097
     paramH.N1 = 5;
     paramH.N2 = 7;
     paramH.SC1 = 1;
     paramH.SC2 = 0.88;  % increase -> more inhibition
-    
+
     paramG.BW = 2000;  % Hz
     paramG.BSM = 5.00E-05; % 1/Hz=s best spectral modulation
     paramG.f0 = 4300; % ~strf.f(30)
     strfGain = 0.10;
     load('preprocessed_stims.mat'); % don't need to run STRFspectrogram again
-    
+
 elseif strcmp(tuning,'bird')
     % stimuli
     load('stimuli_birdsongs.mat','stimuli','fs')
-%     minlen = min(cellfun(@length,stimuli));
-%     song1 = stimuli{1}(1:minlen);
-%     song2 = stimuli{2}(1:minlen);
-%     masker = stimuli{3}(1:minlen);
-%     [spec,~,~]=STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
-%     for trial = 1:10
-%         masker_specs{trial} = spec;
-%     end
+    %     minlen = min(cellfun(@length,stimuli));
+    %     song1 = stimuli{1}(1:minlen);
+    %     song2 = stimuli{2}(1:minlen);
+    %     masker = stimuli{3}(1:minlen);
+    %     [spec,~,~]=STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
+    %     for trial = 1:10
+    %         masker_specs{trial} = spec;
+    %     end
     % STRF parameters from Junzi's simulations
     load('bird_STRF_params.mat');
 end
@@ -83,12 +83,12 @@ strf.w1 = strf.w1*strfGain;
 %                 paramH.BW,paramH.phase/pi,sigma,strfGain,datestr(now,'YYYYmmdd-HHMMSS'));
 
 paramSpk.t_ref = 1;
-paramSpk.t_ref_rel = 4;
+paramSpk.t_ref_rel = 1;
 paramSpk.rec = 2;
 paramSpk.offsetFrac = 1;
 
-saveName = sprintf('vary_recovery//alpha_%0.3f//STRFgain %0.2f, %0.1fms tau_rel',...
-                paramH.alpha,strfGain,paramSpk.t_ref_rel);
+saveName = sprintf('best_curves_cosine_ramp//alpha_%0.3f//STRFgain-%0.2f-%0.1fms-tau_rel',...
+    paramH.alpha,strfGain,paramSpk.t_ref_rel);
 saveFlag = 0;
 
 msg{1} = ['capped tuning weight to ' num2str(maxWeight)];
@@ -123,32 +123,33 @@ tuningParam.strf = strf;
 tuningParam.type = tuning;
 tuningParam.sigma = sigma;
 
-% % use below 2 lines to quickly check conv of STRF and spectrogram 
+% % use below 2 lines to quickly check conv of STRF and spectrogram
 % strfData(song1_spec, zeros(size(song1_spec)));
 % [~,resp] = linFwd_Junzi(strf);
 
 % iterate over all location combinations
 % set(0, 'DefaultFigureVisible', 'off')
 figure;
+
 for songloc = songLocs
     close all
     maskerloc=0;
-    
+
     InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,paramSpk);
     InputGaussianSTRF_v4(specs,maskerloc,songloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,paramSpk);
     for maskerloc = maskerLocs
         InputGaussianSTRF_v4(specs,songloc,maskerloc,tuningParam,saveParam,mean_rate,stimGain,maxWeight,paramSpk);
     end
-    
-%     param.sigma = sigma;
-%     param.type = tuning;
-%     param.H = paramH;
-%     param.G = paramG;
-%     t_spiketimes=InputGaussianSTRF(songloc,maskerloc,param,saveParam,mean_rate,stimGain);
-%     t_spiketimes=InputGaussianSTRF(maskerloc,songloc,param,saveParam,mean_rate,stimGain);
-%     for maskerloc = maskerLocs
-%         t_spiketimes=InputGaussianSTRF(songloc,maskerloc,param,saveParam,mean_rate,stimGain);
-%     end
+
+    %     param.sigma = sigma;
+    %     param.type = tuning;
+    %     param.H = paramH;
+    %     param.G = paramG;
+    %     t_spiketimes=InputGaussianSTRF(songloc,maskerloc,param,saveParam,mean_rate,stimGain);
+    %     t_spiketimes=InputGaussianSTRF(maskerloc,songloc,param,saveParam,mean_rate,stimGain);
+    %     for maskerloc = maskerLocs
+    %         t_spiketimes=InputGaussianSTRF(songloc,maskerloc,param,saveParam,mean_rate,stimGain);
+    %     end
 end
 set(0, 'DefaultFigureVisible', 'on')
 
@@ -156,7 +157,7 @@ set(0, 'DefaultFigureVisible', 'on')
 msg{end+1} = ['elapsed time is ' num2str(toc) ' seconds'];
 fid = fopen(fullfile(saveParam.fileLoc, 'notes.txt'), 'a');
 if fid == -1
-  error('Cannot open log file.');
+    error('Cannot open log file.');
 end
 for k=1:length(msg), fprintf(fid, '%s: %s \n ', datestr(now, 0), msg{k}); end
 fclose(fid);

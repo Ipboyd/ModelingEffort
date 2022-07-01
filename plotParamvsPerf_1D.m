@@ -30,23 +30,20 @@ for ii = 1:numTrials, spkTime{ii} = find(raster(ii,:))/10000; end
 spkTime = reshape(spkTime,numTrials/2,2);
 
 input = reshape(spkTime,1,numTrials);
-STS = SpikeTrainSet(input,250/1000,(250+2986)/1000);
+STS = SpikeTrainSet(input,300/1000,(300+3000)/1000);
 
-distMat = STS.SPIKEdistanceMatrix(250/1000,(250+2986)/1000);
+distMat = STS.SPIKEdistanceMatrix(300/1000,(300+3000)/1000);
 pc_SPIKE = calcpcStatic(distMat, numTrials/2, 2, 0);
 
-distMat = STS.ISIdistanceMatrix(250/1000,(250+2986)/1000);
+distMat = STS.ISIdistanceMatrix(300/1000,(300+3000)/1000);
 pc_ISI = calcpcStatic(distMat, numTrials/2, 2, 0);
 
-distMat = STS.RateIndependentSPIKEdistanceMatrix(250/1000,(250+2986)/1000);
+distMat = STS.RateIndependentSPIKEdistanceMatrix(300/1000,(300+3000)/1000);
 pc_RISPIKE = calcpcStatic(distMat, numTrials/2, 2, 0);
 
-distMat = calcSpkCtDist(spkTime);
+distMat = calcSpkCtDist(spkTime,0.3,3.3);
 pc_spkct = calcpcStatic(distMat, numTrials/2, 2, 0);
 
-fr = mean(sum(raster(:,2500:32500),2))/3;
+fr = mean(sum(raster(:,3001:33000),2))/3;
 
 end
-
-
-
