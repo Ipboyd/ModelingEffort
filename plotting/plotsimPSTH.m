@@ -9,6 +9,12 @@ else
     vary = 1;
 end
 
+if nargin == 4
+    lineFlag = varargin{4};
+else
+    lineFlag = 0;
+end
+
 jump = length(snn_out)/20;
 
 trials = vary:jump:length(snn_out);
@@ -27,12 +33,15 @@ end
 
 psth = histcounts(inds/10,t_vec);
 psth(end+1) = 0;
-
-Max = 30;
+figure('unit','inches','position',[2 2 2.75 3]);
 
 subplot(2,1,1);
-bar(t_vec/1000-0.3,psth,'facecolor','k'); hold on;
-% plot(t_vec/1000-0.3,psth,'linewidth',1); hold on;
+if lineFlag
+plot(t_vec/1000-0.3,psth,'linewidth',1); hold on;
+else
+hold off; bar(t_vec/1000-0.3,psth,'facecolor','k');
+end
+
 xlabel('Time (ms)'); title('Target 1'); ylim([0 60]);
 
 temp = find([snn_out(t2).([pop '_V_spikes'])]);
@@ -42,8 +51,12 @@ psth = histcounts(inds/10,t_vec);
 psth(end+1) = 0;
 
 subplot(2,1,2);
-bar(t_vec/1000-0.3,psth,'facecolor','k'); hold on;
-% plot(t_vec/1000-0.3,psth,'linewidth',1); hold on;
+if lineFlag
+plot(t_vec/1000-0.3,psth,'linewidth',1); hold on;
+else
+hold off; bar(t_vec/1000-0.3,psth,'facecolor','k');
+end
+
 xlabel('Time (ms)'); title('Target 2'); ylim([0 60]);
 
 end

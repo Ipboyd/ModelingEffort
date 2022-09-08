@@ -1,7 +1,7 @@
-function s = genPoissonInputs(trial,locNum,label)
+function s = genPoissonInputs(trial,locNum,label,t_ref,t_ref_rel,rec)
 
 dt = 0.1;  % ms
-type = label(2);   % dynasim reads the apostrophes as literals
+type = label(2:end-1);   % dynasim reads the apostrophes as literals
 fileData = load(['IC_spks_' type '.mat'],'spks');
 
 temp = fileData.spks;
@@ -16,12 +16,12 @@ end
 s = zeros(size(rate));
 
 for n = 1:size(rate,2)
-    s(:,n) = spikeGenerator(rate(:,n),dt,1,1);
+    s(:,n) = spikeGenerator(rate(:,n),dt,t_ref,t_ref_rel,rec);
 end
 
 end
 
-function spike_train = spikeGenerator(rate,dt,t_ref,t_ref_rel)
+function spike_train = spikeGenerator(rate,dt,t_ref,t_ref_rel,rec)
 
 dt_sec = dt/1000; % from ms to s
 n = length(rate);
@@ -32,7 +32,6 @@ tw = 0:n_refab; % sample time vector for recovery rate
 t_ref_samp = t_ref/1000/dt_sec;
 t_rel_samp = t_ref_rel/1000/dt_sec;
 
-rec = 2;
 w = (tw - t_ref_samp).^rec ./ ((tw - t_ref_samp).^rec + (t_rel_samp).^rec); % recovery function (schaette et al 2005)
 w(tw < t_ref_samp) = 0;
 

@@ -68,7 +68,7 @@ s.populations(1).parameters = {'t_ref',1};
 s.populations(end+1).name='S1';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',0.5};
+s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',1};
 
 s.populations(end+1).name='R1';
 s.populations(end).equations = 'noconLIF';
@@ -78,7 +78,7 @@ s.populations(end).parameters = {'g_inc',0.0003,'tau_ad',50,'t_ref',1};
 s.populations(end+1).name='S2';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',0.5};
+s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',1};
 
 s.populations(end+1).name='R2';
 s.populations(end).equations = 'noconLIF';
@@ -131,7 +131,7 @@ XE_rise = 6;   XE_fall = 40;  % X->E
 
 s.connections(1).direction='IC->IC';
 s.connections(1).mechanism_list={'IC'};
-s.connections(1).parameters={'g_postIC',0.265,'label','E','trial',1,'locNum',options.locNum,'netcon',eye(nCells,nCells)};
+s.connections(1).parameters={'g_postIC',0.265,'label','E','trial',1,'locNum',options.locNum,'netcon',eye(nCells,nCells),'t_ref',1,'t_ref_rel',1,'rec',2};
 
 % s.connections(end+1).direction='ICI->ICI';
 % s.connections(end).mechanism_list={'IC'};

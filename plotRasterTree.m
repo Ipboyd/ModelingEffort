@@ -22,7 +22,7 @@ popNames = {s.populations.name};
 nPops = numel(popNames); 
 fieldNames = strcat(popNames,'_V_spikes');
 
-nChans = size(snn_out(1).R1_V,2);
+nChans = size(snn_out(1).R1On_V,2);
 
 if isempty(options.locNum), annotConfig = configName(end-7:end-4);
 else, annotConfig = configName(end-3:end);
@@ -33,11 +33,13 @@ if ~isfield(options,'subPops'), options.subPops = popNames; end
 
 % in same order as popNames
 if nPops == 8% no top down
-   subplot_locs = [11 7 8 4 5 9 6 2];
+    subplot_locs = [11 12 7 9 8 4 5 2]; %[11 7 8 4 5 9 6 2];
 elseif nPops == 9% no top down
-subplot_locs = [11 10 7 8 4 5 9 6 2];
+    subplot_locs = [11 10 7 8 4 5 9 6 2];
+elseif nPops == 10 % no C neuron
+    subplot_locs = [14 16 10 12 9 11 6 8 5 7 ];
 else
-subplot_locs = [14 10 11 7 8 12 9 1 2 5];%[14 13 10 11 7 8 12 9 1 2 5];
+    subplot_locs = [14 10 11 7 8 12 9 1 2 5];%[14 13 10 11 7 8 12 9 1 2 5];
 end
 
 % locs = {'90','45','0','-90'};
@@ -54,8 +56,7 @@ for vv = 1:jump % for each varied parameter
     
     for ch = 1:nChans
         
-        figure('unit','inches','position',[6 3 5.5 5]);
-
+        figure('unit','inches','position',[6 3 6 5]);
         
         for currentPop = 1:nPops
             
@@ -71,7 +72,7 @@ for vv = 1:jump % for each varied parameter
                 end
                 
             end
-            spks.(popNames{currentPop})(vv).channel = popSpks;
+            % spks.(popNames{currentPop})(vv).channel = popSpks;
             
             [perf.(popNames{currentPop}).channel(vv),...
                 fr.(popNames{currentPop}).channel(vv)] = ...
@@ -123,15 +124,15 @@ if SpatAttention
 y = 0.10;
 
 else
-    [c,r] = ind2sub([3 4],subplot_loc);
+    [c,r] = ind2sub([4 4],subplot_loc);
     r = 5-r;
     ypos = 0.06 + 0.25*(r-1);
 y = 0.12;
 
 end
 
-xpos = 0.06 + 0.33*(c-1);
-x = 0.23;
+xpos = 0.06 + 0.23*(c-1);
+x = 0.22;
 
 subplot('position',[xpos ypos x y]);
 

@@ -161,3 +161,6 @@ mechs/iH_V2.mech
 ICSimStim/temp/preprocessed_stim_1.mat
 ICSimStim/preprocessed_stims.mat
 ICSimStim/temp/preprocessed_stim_1.mat
+dontusethese.m
+*.mat
+*.tmp

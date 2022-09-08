@@ -1,5 +1,17 @@
 function plotUnitVoltage(varargin)
 
+[y1,fs] = audioread('200k_target1.wav');
+[y2] = audioread('200k_target2.wav');
+yt = (0:length(y1)-1)/fs;
+
+padToTime = 3.5;
+y1 = [zeros(round(fs*0.05),1);y1];
+y1 = [y1;zeros(fs*padToTime-length(y1),1)];
+
+y2 = [zeros(round(fs*0.05),1);y2];
+y2 = [y2;zeros(fs*padToTime-length(y2),1)];
+yt = (0:length(y1)-1)/fs;
+
 pop = varargin{1};
 snn_out = varargin{2};
 
@@ -18,7 +30,7 @@ V_rest = params.([pop '_E_L']);
 inputNames = {snn_out(varNum).model.specification.connections(strcmp({snn_out(varNum).model.specification.connections.target},pop)).source};
 % inputSpks = cellfun(@(x) [x '_V_spikes'],inputNames,'uniformoutput',false);
 
-if ~contains(pop,'IC')
+if ~strcmp(pop,'On') && ~strcmp(pop,'Off')
     inputSpks = cellfun(@(x) [pop '_' x '_PSC_syn'],inputNames,'uniformoutput',false);
 else
     inputSpks = cellfun(@(x) [pop '_' x '_IC'],inputNames,'uniformoutput',false);
@@ -53,19 +65,36 @@ targets = {snn_out(1).model.specification.connections.target};
 sources = {snn_out(1).model.specification.connections.source};
 
 % find index for input netcon
-if strcmp(pop(1),'R') %|| strcmp(pop(1),'S')
-    ind = find(strcmp(sources,['X' pop(2:end)]) & strcmp(targets,pop));
-    netParams = snn_out(1).model.specification.connections(ind).parameters;
-end
+% if strcmp(pop(1),'R') %|| strcmp(pop(1),'S')
+%     ind = find(strcmp(sources,['X' pop(2:end)]) & strcmp(targets,pop));
+%     netParams = snn_out(1).model.specification.connections(ind).parameters;
+% end
 
+y_target = 0.2;
 x0 = 0.09; y0 = 0.11;
 xl = 0.7; yl = 0.2;
-yvolt = 0.6;
+yvolt = 0.4;
 
 for ch = 1:nCells % go through each channel
     
     figure('unit','inches','position',[3 3 9 5]); clf; hold on; 
     
+    % plot target
+    subplot('position',[x0 y0+yl+yvolt xl y_target]);
+
+    if varNum < 11
+        y_stim = y1;
+    else
+        y_stim = y2;
+    end
+    plot(yt,y_stim,'k'); xlim([yt(1) yt(end)]); set(gca,'ytick',[],'xtick',[]);
+
+    if strcmp(pop,'C')
+        title([pop ' voltage with input spks']);
+    else
+        title([pop ' channel ' num2str(ch) ' voltage with input spks']);
+    end
+
     % add spikes to voltage trace
     V_trace = snn_out(varNum).([pop '_V'])(:,ch);
     V_trace(snn_out(varNum).([pop '_V_spikes'])(:,ch) == 1,ch) = -20;
@@ -75,12 +104,6 @@ for ch = 1:nCells % go through each channel
     plot(t_vec,V_trace); box off
     xlim([0 3500]/1000-0.3); ylabel('Voltage [mV]');
     set(gca,'xtick',[]);
-    
-    if strcmp(pop,'C')
-        title([pop ' voltage with input spks']);
-    else
-        title([pop ' channel ' num2str(ch) ' voltage with input spks']);
-    end
         
     i = []; ct = 0;
     

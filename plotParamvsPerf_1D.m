@@ -1,21 +1,35 @@
-function [pc,fr] = plotParamvsPerf_1D(results,nVaries)
+function [pc,fr] = plotParamvsPerf_1D(varargin)
+
+results = varargin{1};
+nVaries = varargin{2};
+
+if nargin == 3
+pop = varargin{3};
+else
+pop = 'R2On';
+end
 
 nSims = length(results)/nVaries/20;
 
 for ns = 1:nSims
     for n = 1:nVaries
-        
+
         subData = results( ((ns-1)*nVaries + n) : nVaries*nSims : end);
-        
-        raster = zeros(20,35000);
-        
-        for t = 1:20
-            raster(t,:) = subData(t).C_V_spikes;
+
+        nCh = size(subData(1).([pop '_V_spikes']),2);
+
+        for ch = 1:nCh
+
+            raster = zeros(20,35000);
+
+            for t = 1:20
+                raster(t,:) = subData(t).([pop '_V_spikes'])(:,ch);
+            end
+
+            [pc.SPIKE(ns,n,ch),pc.ISI(ns,n,ch),pc.RISPIKE(ns,n,ch),pc.spkct(ns,n),fr(ns,n,ch)] = calcPCandFR(raster,20);
+
         end
-        
-        [pc.SPIKE(ns,n),pc.ISI(ns,n),pc.RISPIKE(ns,n),pc.spkct(ns,n),fr(ns,n)] = calcPCandFR(raster,20);
-        
-        
+
     end
 end
 

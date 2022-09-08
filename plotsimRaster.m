@@ -23,15 +23,17 @@ end
 
 figure('unit','inches','position',[2 2 2.75 3]);
 subplot(2,1,1);
-plotSpikeRasterFs(flipud(logical(raster)), 'PlotType','vertline');
-xlabel('Time (ms)'); title('Target 1'); xlim([0 35000]); ylim([0.5 10.5]); 
+plotSpikeRasterFs(flipud(logical(raster)), 'PlotType','vertline','Fs',10000);
+xlabel('Time (ms)'); title('Target 1'); xlim([0 3500]);
+ylim([0.5 10.5]); 
 set(gca,'ytick',[ ],'fontsize',8);
 
 raster = horzcat(snn_out(t2).([pop '_V_spikes']))';
 
 subplot(2,1,2);
-plotSpikeRasterFs(flipud(logical(raster)), 'PlotType','vertline');
-xlabel('Time (ms)'); title('Target 2'); xlim([0 35000]); ylim([0.5 10.5]);
+plotSpikeRasterFs(flipud(logical(raster)), 'PlotType','vertline','Fs',10000);
+xlabel('Time (ms)'); title('Target 2'); xlim([0 3500]);
+ylim([0.5 10.5]);
 set(gca,'ytick',[ ],'fontsize',8);
 
 sgtitle([pop ' rasters']);

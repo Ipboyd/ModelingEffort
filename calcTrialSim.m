@@ -1,5 +1,8 @@
 function [TS,RMS] = calcTrialSim(spks)
 
+% input: spks - nTrials x nTarget cell matrix of trials, with spike times
+% in each cell
+
 T_vec = 0:0.025:3;
 
 % trial similarity
