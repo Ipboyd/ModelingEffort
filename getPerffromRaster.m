@@ -4,7 +4,7 @@ ax = findobj(gcf,'type','axes');
 
 distLabels = {'SPIKE','ISI','RateIndependentSPIKE'};
 
-pc = struct;
+pc = struct; fr = struct;
 
 for n = 1:length(ax)
     pc.(ax(n).Title.String{1}) = struct;
@@ -15,11 +15,11 @@ for n = 1:length(ax)
     raster = zeros(20,35000);
 
     for t = 1:20
-    raster(t,spk_inds(spk_trials == t)) = 1;
+        raster(t,spk_inds(spk_trials == t)) = 1;
     end
 
     for d = 1:3
-    [pc.(ax(n).Title.String{1}).(distLabels{d}),fr] = calcPCandFR(raster,20,distLabels{d});
+        [pc.(ax(n).Title.String{1}).(distLabels{d}),fr.(ax(n).Title.String{1})] = calcPCandFR(raster,20,distLabels{d});
     end
 end
 
@@ -36,9 +36,9 @@ spkTime = reshape(spkTime,numTrials/2,2);
 input = reshape(spkTime,1,numTrials);
 STS = SpikeTrainSet(input,300/1000,(300+3000)/1000);
 
-distMat = eval(['STS.' distLabel 'distanceMatrix(300/1000,(300+3000)/1000']);
+distMat = eval(['STS.' distLabel 'distanceMatrix(300/1000,(300+3000)/1000)']);
 pc = calcpcStatic(distMat, numTrials/2, 2, 0);
 
-fr = mean(cellfun(@(x) sum(x >= 0.3 & x < 3.3),spkTime));
+fr = mean(mean(cellfun(@(x) sum(x >= 0.3 & x < 3.3),spkTime))/3);
 
 end

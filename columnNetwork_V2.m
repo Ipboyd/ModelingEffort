@@ -195,6 +195,14 @@ s.connections(end+1).direction='R2On->R2On';
 s.connections(end).mechanism_list={'iNoise_V3'};
 s.connections(end).parameters={'nSYN',0.015,'tauR_N',EE_rise,'tauD_N',EE_fall,'locNum',options.locNum}; 
 
+s.connections(end+1).direction='S2On->S2On';
+s.connections(end).mechanism_list={'iNoise_V3'};
+s.connections(end).parameters={'nSYN',0.032,'tauR_N',EI_rise,'tauD_N',EI_fall,'locNum',options.locNum}; 
+
+s.connections(end+1).direction='S2Off->S2Off';
+s.connections(end).mechanism_list={'iNoise_V3'};
+s.connections(end).parameters={'nSYN',0.032,'tauR_N',EI_rise,'tauD_N',EI_fall,'locNum',options.locNum}; 
+
 %% vary params
 vary = cell(length(varies),3);
 for i = 1:length(varies)

@@ -6,7 +6,7 @@ addpath('genlib'); addpath('plotting'); addpath(genpath(dynasimPath));
 addpath('cSPIKE'); InitializecSPIKE;
 addpath('plotting');
 
-expName = '08-29-2022 varying one opto effect, PV only';
+expName = '09-20-2022 add network noise to output PVs';
 load('default_STRF_with_offset.mat');
 
 options = struct;
@@ -23,7 +23,7 @@ options.plotRasters = 0;
 options.locNum = 15;
 options.SpatialAttention = 0;
 
-study_dir = fullfile(pwd,'run','single-channel-offset');
+study_dir = fullfile(pwd,'run','single-channel-offset-PVnoise');
 
 % if exist(study_dir, 'dir'), msg = rmdir(study_dir, 's'); end
 % mkdir(fullfile(study_dir, 'solve'));
@@ -49,11 +49,6 @@ varies(end+1).conxn = '(On->R1On,R1On->R2On,Off->R1Off,R1Off->R2Off)';
 varies(end).param = 'gSYN';
 varies(end).range = [ 0.02 ];
 
-% % E->E connections
-% varies(end+1).conxn = '(On->R1On,R1On->R2On,Off->R1Off,R1Off->R2Off)';
-% varies(end).param = 'fP';
-% varies(end).range = [ 0 : 0.1 : 1 ];
-
 % onset pvs
 varies(end+1).conxn = '(S1On->R1On,S1On->R1Off,S2On->R2On,S2On->R2Off)';
 varies(end).param = 'gSYN';
@@ -77,12 +72,12 @@ if options.opto
     varies(end).range = [ 0 -0.03 ];
 end
 
-varies(end+1).conxn = 'R2On->R2On';
+varies(end+1).conxn = '(R2On->R2On,S2On->S2On,S2Off->S2Off)';
 varies(end).param = 'FR';
 varies(end).range = 8;
-% if options.opto
-%     varies(end).range = [ 8 12 ];
-% end
+if options.opto
+    varies(end).range = [ 8 12 ];
+end
 
 % find varied parameter, excluding trials
 varied_param = find( (cellfun(@length,{varies.range}) > 1 & ~cellfun(@iscolumn,{varies.range})));
