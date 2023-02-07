@@ -1,7 +1,7 @@
 function [pc,fr] = plotParamvsPerf_1D(varargin)
 
 results = varargin{1};
-nVaries = varargin{2};
+nVaries = varargin{2}; % how much parameter sets are there, excluding the trials and number of repeat trials for laser
 
 if nargin == 3
 pop = varargin{3};
@@ -14,6 +14,7 @@ nSims = length(results)/nVaries/20;
 for ns = 1:nSims
     for n = 1:nVaries
 
+        % fetch 20 trials to calculate performance at specific spot
         subData = results( ((ns-1)*nVaries + n) : nVaries*nSims : end);
 
         nCh = size(subData(1).([pop '_V_spikes']),2);

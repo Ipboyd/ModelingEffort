@@ -164,3 +164,8 @@ ICSimStim/temp/preprocessed_stim_1.mat
 dontusethese.m
 *.mat
 *.tmp
+sigstar-master/sigstar.m
+sigstar-master/README.md
+sigstar-master/LICENSE
+sigstar-master/demo_sigstar.m
+Ince et al.pdf

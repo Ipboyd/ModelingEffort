@@ -1,4 +1,4 @@
-function annotParams = createSimNotes(snn_out,expName,options)
+function annotParams = createSimNotes(snn_out,simDataDir,options)
 % create txt file with information on all simulations in experiment
 
 varied_params = snn_out(1).varied;
@@ -6,7 +6,7 @@ varied_params(1) = [];
 
 numVaries = length(snn_out)/20;
 
-fid = fopen(fullfile('simData',expName, 'notes.txt'), 'w');
+fid = fopen(fullfile(simDataDir, 'notes.txt'), 'w');
 if fid == -1
    error('Cannot open log file.'); 
 end
