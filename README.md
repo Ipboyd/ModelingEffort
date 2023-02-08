@@ -32,3 +32,16 @@ Here, the `varies` and `netcons` structure must be specified for the model to ru
 The `varies` structure specifies parameters of the synapses and neurons within the network, and `netcons` specifies the connections between populations of neurons. The script calls the `columnNetwork` function, which then calls Dynasim to build the model and run simulations.
 
 After the simulation, the post-processing step will calculate the firing rate and discrimination performance for each neuron in the network by calling `postProcessData_new`. `createSimNotes` writes a txtfile with the information on all varied parameters in the `varies` struct in the same folder as the cell rasters. Keep in mind that `createSimNotes` does not track the parameter values in the `columnNetwork` function. The results are then displayed by calling `plotPerformanceGrids_V3`.
+
+IMPORTANT CHANGES TO THIRD-PARTY TOOLBOXES
+
+## 1. strflab_v1.45/preprocessing/preprocSound.m
+
+Line 100-102: stimSampleRate is set to 10000 Hz instead of 1000 Hz
+
+## 2. strflab_v1.45/preprocessing/sound/timefreq.m
+
+Line 65-67: increment is set to fix(sampleRate/10000) instead of fix(0.001*sampleRate)
+
+These two changes result in spectrograms with a sampling frequency of 10000 Hz, which matches the Dynasim simulation dt of 0.1 ms
+If these changes aren't made, the spectrograms have a sampling frequency of 1000 Hz, which is too slow for the purposes of our simulations
