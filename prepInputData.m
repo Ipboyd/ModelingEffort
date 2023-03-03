@@ -23,7 +23,7 @@ tuningcurve(1,:) = 0.8*gaussmf(x,[24 0]) + 0.2;
 
 % only create spks file if not done yet
 
-if ~exist(fullfile(study_dir,'solve','IC_spks_on.mat'),'file') || options.regenSpks
+if ~exist(fullfile(study_dir,'solve','IC_spks_on.mat'),'file') %|| options.regenSpks
 
 labels = {'on','off'};
 

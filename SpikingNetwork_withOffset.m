@@ -24,7 +24,7 @@ study_dir = fullfile(pwd,'run','single-channel-offset-PVnoise');
 % mkdir(fullfile(study_dir, 'solve'));
 
 % expName: folder under 'simData' where results are saved
-expName = '02-07-2023, varying PV-E and E-PV dynamics';
+expName = '03-01-2023 noise only, fig 8';
 
 % for newStrfGain = strfGains
 % simDataDir = [pwd filesep 'simData' filesep expName ' ' num2str(newStrfGain)];
@@ -35,12 +35,14 @@ simDataDir = [pwd filesep 'simData' filesep expName];
 if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 
 %% Run .m file to generate options and varies structs for simulations
-addpath('params');
+%addpath('params');
+addpath('params_noiseonly');
 
-%params_MaskedPerf;
+% params_MaskedPerf;
 % params_Masked_varyOnsetPV;
 % params_Masked_varyOnsetNoise;
-params_DepressiveStr;
+% params_DepressiveStr;
+params_8;
 
 % for figures in paper
 
