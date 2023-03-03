@@ -1,10 +1,8 @@
 %% Initialize
 
-if ispc
-    cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid-simulation-code\MouseSpatialGrid')
-elseif ismac
-    cd('/Volumes/research/eng_research_hrc_binauralhearinglab/noconjio/Grid-simulation-code/MouseSpatialGrid')
-end
+mfileinfo = mfilename('fullpath');
+mfiledir = fileparts(mfileinfo);
+cd(mfiledir);
 
 dynasimPath = '../DynaSim';
 
@@ -20,8 +18,8 @@ dt = 0.1; %ms
 % study_dir: folder under 'run' where m files and input spikes for simulations are written and saved
 study_dir = fullfile(pwd,'run','single-channel-offset-PVnoise');
 
-% if exist(study_dir, 'dir'), msg = rmdir(study_dir, 's'); end
-% mkdir(fullfile(study_dir, 'solve'));
+if exist(study_dir, 'dir'), msg = rmdir(study_dir, 's'); end
+mkdir(fullfile(study_dir, 'solve'));
 
 % expName: folder under 'simData' where results are saved
 expName = '03-01-2023 noise only, fig 8';

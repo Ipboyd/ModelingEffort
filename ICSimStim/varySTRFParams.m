@@ -5,8 +5,11 @@
 % note:
 % large bottleneck lies in r/w to network drive
 
-cd('U:\eng_research_hrc_binauralhearinglab\noconjio\Grid-simulation-code\MouseSpatialGrid\ICSimStim');
-clearvars;clc;close all
+if ~contains(pwd,'ICSimStim'), cd('ICSimStim'); end
+clearvars
+clc
+close all
+
 addpath(genpath('strflab_v1.45'))
 addpath('../genlib')
 addpath('../fixed-stimuli')
@@ -22,17 +25,6 @@ stimGain = 0.5;
 targetlvl = 0.01;
 maskerlvl = 0.01; %default is 0.01
 maxWeight = 1; %maximum mixed tuning weight; capped at this level.
-
-% load stimuli & calc spectrograms
-
-% [song1,~] = audioread('200k_target1.wav');
-% [song2,~] = audioread('200k_target2.wav');
-
-% for trial = 1:10
-%     [masker,fs] = audioread(['200k_masker' num2str(trial) '.wav']);
-%     [spec,~,~] = STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
-%     masker_specs{trial} = spec;
-% end
 
 % alpha_var = 0.008 : 0.0004 : 0.012;
 % N1_var = 1 : 7
@@ -69,15 +61,30 @@ paramG.BW = 2000;  % Hz
 paramG.BSM = 5.00E-05; % 1/Hz=s best spectral modulation
 paramG.f0 = 4300; % ~strf.f(30)
 
-load('preprocessed_stims.mat'); % don't need to run STRFspectrogram again
-% [song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*targetlvl,fs);
-% [song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*targetlvl,fs);
-% specs.songs{1} = song1_spec;
-% specs.songs{2} = song2_spec;
-% specs.maskers = masker_specs;
-% specs.dims = size(song1_spec);
-% specs.t = t;
-% specs.f = f;
+if isfile('preprocessed_stims.mat')
+    load('preprocessed_stims.mat'); % don't need to run STRFspectrogram again
+else
+    % load stimuli & calc spectrograms
+
+    [song1,~] = audioread('200k_target1.wav');
+    [song2,~] = audioread('200k_target2.wav');
+
+    for trial = 1:10
+        [masker,fs] = audioread(['200k_masker' num2str(trial) '.wav']);
+        [spec,~,~] = STRFspectrogram(masker/rms(masker)*maskerlvl,fs);
+        masker_specs{trial} = spec;
+    end
+
+    [song1_spec,t,f]=STRFspectrogram(song1/rms(song1)*targetlvl,fs);
+    [song2_spec,~,~]=STRFspectrogram(song2/rms(song2)*targetlvl,fs);
+    specs.songs{1} = song1_spec;
+    specs.songs{2} = song2_spec;
+    specs.maskers = masker_specs;
+    specs.dims = size(song1_spec);
+    specs.t = t;
+    specs.f = f;
+    save('preprocessed_stim.mat','specs')
+end
 
 % make STRF
 strf = STRFgen_V2(paramH,paramG,specs.f,specs.t(2)-specs.t(1));
@@ -111,4 +118,4 @@ for m = 1:10
     [~,~,fr_masker{m}] = STRFconvolve_V2(strf,specs.maskers{m}*stimGain,mean_rate,1,[],paramSpk.t_ref,paramSpk.t_ref_rel,paramSpk.rec);
 end
 
-save('default_STRF_with_offset.mat','fr_target_on','fr_target_off','fr_masker','paramH','paramG','strfGain');
+%save('default_STRF_with_offset.mat','fr_target_on','fr_target_off','fr_masker','paramH','paramG','strfGain');
