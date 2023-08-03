@@ -6,23 +6,23 @@ cd(mfiledir);
 
 dynasimPath = '../DynaSim';
 
-addpath('mechs'); addpath('fixed-stimuli'); addpath(genpath('ICSimStim'));
+addpath('mechs'); addpath('resampled-stimuli'); addpath(genpath('ICSimStim'));
 addpath('genlib'); addpath('plotting'); addpath(genpath(dynasimPath));
 addpath('cSPIKE'); InitializecSPIKE;
 addpath('plotting');
 
-load('default_STRF_with_offset.mat');
+load('default_STRF_with_offset_200k.mat');
 
 dt = 0.1; %ms
 
 % study_dir: folder under 'run' where m files and input spikes for simulations are written and saved
-study_dir = fullfile(pwd,'run','single-channel-offset-PVnoise');
+study_dir = fullfile(pwd,'run','single-channel-offset');
 
 if exist(study_dir, 'dir'), msg = rmdir(study_dir, 's'); end
 mkdir(fullfile(study_dir, 'solve'));
 
 % expName: folder under 'simData' where results are saved
-expName = '03-01-2023 noise only, fig 8';
+expName = '07-31-23';
 
 % for newStrfGain = strfGains
 % simDataDir = [pwd filesep 'simData' filesep expName ' ' num2str(newStrfGain)];
@@ -33,14 +33,14 @@ simDataDir = [pwd filesep 'simData' filesep expName];
 if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 
 %% Run .m file to generate options and varies structs for simulations
-%addpath('params');
-addpath('params_noiseonly');
+addpath('params');
+% addpath('params_noiseonly');
 
 % params_MaskedPerf;
 % params_Masked_varyOnsetPV;
 % params_Masked_varyOnsetNoise;
 % params_DepressiveStr;
-params_8;
+params_ExpFig3;
 
 % for figures in paper
 
@@ -59,6 +59,8 @@ params_8;
 prepInputData;
 
 %% run simulation
+
+options.strfGain = newStrfGain;
 
 if isempty(options.locNum), options.time_end = size(spks,1)*dt; %ms;
 else, options.time_end = padToTime; end

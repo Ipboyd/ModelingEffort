@@ -114,7 +114,8 @@ if calcPC
     PCstr = ['PC = ' num2str(round(pc))];
 end
 
-fr = round(1000*mean(sum(raster(:,3000:33000),2))/3000);
+% fr = round(1000*mean(sum(raster(:,3000:33000),2))/3000);
+fr = round(1000*mean(sum(raster(:,3000:18000),2))/1500);
 
 % ind2sub counts down per column first, 
 if SpatAttention

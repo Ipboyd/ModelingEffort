@@ -12,7 +12,8 @@ close all
 
 addpath(genpath('strflab_v1.45'))
 addpath('../genlib')
-addpath('../fixed-stimuli')
+% addpath('../fixed-stimuli')
+addpath('../resampled-stimuli')
 addpath('../plotting')
 addpath('../cSPIKE')
 InitializecSPIKE;
@@ -61,9 +62,9 @@ paramG.BW = 2000;  % Hz
 paramG.BSM = 5.00E-05; % 1/Hz=s best spectral modulation
 paramG.f0 = 4300; % ~strf.f(30)
 
-if isfile('preprocessed_stims.mat')
-    load('preprocessed_stims.mat'); % don't need to run STRFspectrogram again
-else
+% if isfile('preprocessed_stims.mat')
+%     load('preprocessed_stims.mat'); % don't need to run STRFspectrogram again
+% else
     % load stimuli & calc spectrograms
 
     [song1,~] = audioread('200k_target1.wav');
@@ -83,8 +84,8 @@ else
     specs.dims = size(song1_spec);
     specs.t = t;
     specs.f = f;
-    save('preprocessed_stim.mat','specs')
-end
+    save('preprocessed_stim_200k.mat','specs')
+% end
 
 % make STRF
 strf = STRFgen_V2(paramH,paramG,specs.f,specs.t(2)-specs.t(1));
@@ -118,4 +119,4 @@ for m = 1:10
     [~,~,fr_masker{m}] = STRFconvolve_V2(strf,specs.maskers{m}*stimGain,mean_rate,1,[],paramSpk.t_ref,paramSpk.t_ref_rel,paramSpk.rec);
 end
 
-%save('default_STRF_with_offset.mat','fr_target_on','fr_target_off','fr_masker','paramH','paramG','strfGain');
+save('default_STRF_with_offset_200k.mat','fr_target_on','fr_target_off','fr_masker','paramH','paramG','strfGain');

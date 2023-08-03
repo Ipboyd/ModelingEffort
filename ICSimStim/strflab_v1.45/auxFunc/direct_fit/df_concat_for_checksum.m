@@ -8,11 +8,11 @@ while done == 0
         A = ver('MATLAB');
         A = A.Version;
         A = str2num(A(1));
-        if A > 6
-            to_eval = ['save ' tempfile ' varargin -V6'];
-        else
+%         if A > 6
+%             to_eval = ['save ' tempfile ' varargin -V6'];
+%         else
             to_eval = ['save ' tempfile ' varargin'];
-        end
+   %     end
         eval(to_eval);
         fid = fopen(tempfile);
         input = fread(fid,inf,'uint8');

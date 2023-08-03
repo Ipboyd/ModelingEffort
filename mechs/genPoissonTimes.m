@@ -1,12 +1,10 @@
-function token = genPoissonTimes(N_pop,dt,FR,std,locNum)
+function token = genPoissonTimes(N_pop,dt,FR,std,simlen)
 
-if ~isempty(locNum)
-    len = 35000;
-else
-    len = 35000*24;
+if isempty(simlen)
+    simlen = 35000;
 end
 
-temp = (rand(len,N_pop) < (FR + std*randn(len,N_pop))*dt/1000);
+temp = (rand(simlen,N_pop) < (FR + std*randn(simlen,N_pop))*dt/1000);
 
 refrac = 1;  % ms
 

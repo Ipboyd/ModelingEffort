@@ -149,11 +149,11 @@ s.connections(end).parameters={'gSYN',0.032,'tauR',EI_rise,'tauD',EI_fall,'fP',0
 
 s.connections(end+1).direction='S1Off->R1On';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.015,'tauR',IE_rise,'tauD',10,'ESYN',-80,'fP',0.5,'tauP',120}; 
+s.connections(end).parameters={'gSYN',0.015,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
 s.connections(end+1).direction='S1Off->R1Off';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.015,'tauR',IE_rise,'tauD',10,'ESYN',-80,'fP',0.5,'tauP',120}; 
+s.connections(end).parameters={'gSYN',0.015,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
 % % %  L2/3  % % %
 
@@ -185,23 +185,23 @@ s.connections(end).parameters={'gSYN',0.032,'tauR',EI_rise,'tauD',EI_fall,'fP',0
 
 s.connections(end+1).direction='S2Off->R2On';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.025,'tauR',IE_rise,'tauD',10,'ESYN',-80,'fP',0.5,'tauP',120}; 
+s.connections(end).parameters={'gSYN',0.025,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
 s.connections(end+1).direction='S2Off->R2Off';
 s.connections(end).mechanism_list={'PSC'};
-s.connections(end).parameters={'gSYN',0.01,'tauR',IE_rise,'tauD',10,'ESYN',-80,'fP',0.5,'tauP',120}; 
+s.connections(end).parameters={'gSYN',0.01,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
 s.connections(end+1).direction='R2On->R2On';
 s.connections(end).mechanism_list={'iNoise_V3'};
-s.connections(end).parameters={'nSYN',0.015,'tauR_N',EE_rise,'tauD_N',EE_fall,'locNum',options.locNum}; 
+s.connections(end).parameters={'nSYN',0.015,'tauR_N',EE_rise,'tauD_N',EE_fall,'simlen',options.time_end / dt}; 
 
 s.connections(end+1).direction='S2On->S2On';
 s.connections(end).mechanism_list={'iNoise_V3'};
-s.connections(end).parameters={'nSYN',0.032,'tauR_N',EI_rise,'tauD_N',EI_fall,'locNum',options.locNum}; 
+s.connections(end).parameters={'nSYN',0.032,'tauR_N',EI_rise,'tauD_N',EI_fall,'simlen',options.time_end / dt}; 
 
 s.connections(end+1).direction='S2Off->S2Off';
 s.connections(end).mechanism_list={'iNoise_V3'};
-s.connections(end).parameters={'nSYN',0.032,'tauR_N',EI_rise,'tauD_N',EI_fall,'locNum',options.locNum}; 
+s.connections(end).parameters={'nSYN',0.032,'tauR_N',EI_rise,'tauD_N',EI_fall,'simlen',options.time_end / dt}; 
 
 %% vary params
 vary = cell(length(varies),3);
