@@ -1,7 +1,11 @@
 ICSimStim/bird
 ICSimStim/mouse
 ICSimStim/STRF
+ripple-stimuli
 run/
+simData-ripple
+params-ripple
+solve/
 data_fitted/
 simData/
 SNN_optimization/data/
@@ -99,4 +103,8 @@ dontusethese.m
 *.mat
 *.tmp
 Ince et al.pdf
+simData-AM
+SpikingNetwork_Ripple.m
+postProcessRipple.m
 ICSimStim/temp/preprocessed_stim_1.mat
+ICSimStim/STRF_Ripple.m

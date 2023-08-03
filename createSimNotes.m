@@ -11,6 +11,8 @@ if fid == -1
    error('Cannot open log file.'); 
 end
 
+fprintf(fid, sprintf('STRF gain: %f \n\n',options.strfGain));
+
 % find the params that vary between simulations; don't show parameters that
 % stay the same on the grids
 if numVaries > 1

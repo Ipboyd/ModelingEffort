@@ -5,10 +5,11 @@ type = label(2:end-1);   % dynasim reads the apostrophes as literals
 fileData = load(['IC_spks_' type '.mat'],'spks');
 
 temp = fileData.spks;
+loc_size = size(fileData.spks,1)/24;
 trial_rate = squeeze(temp(:,:,trial)); % time x location x cells
 
 if ~isempty(locNum)
-    rate = trial_rate(35000*(locNum-1)+1:35000*locNum,:);
+    rate = trial_rate(loc_size*(locNum-1)+1:loc_size*locNum,:);
 else
     rate = trial_rate; 
 end
