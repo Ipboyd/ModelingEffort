@@ -145,3 +145,4 @@ for nV = 1:nVaries
     end
 end
 
+save([simDataDir filesep 'rate_modulation.mat'],'RM');
