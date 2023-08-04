@@ -45,7 +45,7 @@ switch soundinputtype
     case 'amp_dB'
         env = sound;
 end
-mpd = 1; % 1 ms - convert to env fs if not 1000
+mpd = 1000/soundfs; % 1 ms - convert to env fs if not 1000
 
 
 %% get landmarks in envelope

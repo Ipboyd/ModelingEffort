@@ -37,11 +37,11 @@ varies(end).range = 0.032;
 
 varies(end+1).conxn = '(S1Off->R1On,S1Off->R1Off,S2Off->R2On,S2Off->R2Off,S1On->R1On,S1On->R1Off,S2On->R2On,S2On->R2Off)';
 varies(end).param = 'fP';
-varies(end).range = [ 0.4 0.5 0.6 ];
+varies(end).range = [ 0.3 0.4 0.5 0.6 ];
 
 varies(end+1).conxn = '(S1Off->R1On,S1Off->R1Off,S2Off->R2On,S2Off->R2Off,S1On->R1On,S1On->R1Off,S2On->R2On,S2On->R2Off)';
 varies(end).param = 'tauP';
-varies(end).range = [ 80 100 120 ];
+varies(end).range = [ 60 80 100 120 ];
 
 % control and opto conditions 
 varies(end+1).conxn = '(S1On,S1Off,S2On,S2Off)';

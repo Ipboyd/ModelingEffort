@@ -16,14 +16,21 @@ options.variedField = strrep(expVar,'-','_');
 annotTable = createSimNotes(snn_out,simDataDir,options);
 
 % save C spikes and varied params to struct
-names = snn_out(1).varied; results = struct;
+names = snn_out(1).varied;
+
+pops = {snn_out(1).model.specification.populations.name};
+results = struct;
 for i = 1:length(snn_out)
-    results(i).R2On_V_spikes = snn_out(i).R2On_V_spikes;
+    % results(i).R2On_V_spikes = snn_out(i).R2On_V_spikes;
+    for p = 1:length(pops)
+    results(i).([pops{p} '_V_spikes']) = snn_out(i).([pops{p} '_V_spikes']);
+    end
     for t = 1:length(names)
         results(i).(names{t}) = snn_out(i).(names{t});
     end
 end
-results(1).model = snn_out(1).model; save([simDataDir filesep 'R2On_results.mat'],'results');
+results(1).model = snn_out(1).model;
+save([simDataDir filesep 'spikes.mat'],'results','-v7.3');
 
 %% convert peakDrv to samples (10000 Hz)
 close all;
@@ -119,5 +126,22 @@ for nV = 1:nVaries
     legend(pops);
     savefig(gcf,fullfile(simDataDir,filesep,sprintf('exc peakDrv responses, vary %i.fig',nV)));
     close all;
+
+
+end
+
+% calculate modulation depth for all variations and all frequencies
+
+pops = {'On','R1On','R2On'};
+
+RM = struct;
+for nV = 1:nVaries
+    for a = 1:5
+        trials = ((0:TrialsPerStim-1)*nVaries + nV) + ((a-1)*10*nVaries);
+        for p = 1:length(pops)
+            tempspks = horzcat(snn_out(trials).([pops{p} '_V_spikes']));
+            RM(nV,a).(pops{p}) = calcRateModulation(tempspks,t_stim);
+        end
+    end
 end
 

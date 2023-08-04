@@ -38,12 +38,12 @@ varies(1).range =  trialInds(:)';
 % onset pvs
 varies(end+1).conxn = '(S1On->R1On,S1On->R1Off,S2On->R2On,S2On->R2Off)';
 varies(end).param = '(gSYN,fP,tauP)';
-varies(end).range = [0.016;0.6;80];
+varies(end).range = [0.015;0.6;80];
 
 % offset pvs
 varies(end+1).conxn = '(S1Off->R1On,S1Off->R1Off,S2Off->R2On,S2Off->R2Off)';
 varies(end).param = '(gSYN,fP,tauP)';
-varies(end).range = [0.032;0.6;80];
+varies(end).range = [0.03;0.6;80];
 
 % control and opto conditions 
 varies(end+1).conxn = '(S1On,S1Off,S2On,S2Off)';
