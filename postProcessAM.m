@@ -70,7 +70,7 @@ for nV = 1:nVaries
         for d = 1:length(peakDrv{a})
             if peakDrv{a}(d) ~= 250
                 temp2 = temp*dt - peakDrv{a}(d);
-                peak_vec = -150 : 6 : 150;
+                peak_vec = -200 : 5 : 200;
                 peakAct = cat(1,peakAct,histcounts(temp2,peak_vec));
             end
         end
@@ -101,25 +101,33 @@ for nV = 1:nVaries
         for a = 1:nStim
             subplot(nStim,1,a);
 
-            temp = [];
+            temp = []; % contains indexes for all trials
             % get spiketime indexes for each trial
             for t = ((0:TrialsPerStim-1)*nVaries + nV) + ((a-1)*10*nVaries)
                 temp = [temp; find(snn_out(t).(spks))];
             end
 
-            % get activity within 150ms of each peakDrv event
-            % convert spiketime indices to ms
+            % get activity within 200ms of each peakDrv event
             peakAct = [];
             for d = 1:length(peakDrv{a})
                 if peakDrv{a}(d) ~= 250
+
+                    % convert spiketime indices to ms
                     temp2 = temp*dt - peakDrv{a}(d);
-                    peak_vec = -150 : 6 : 150;
+                    peak_vec = -200 : 5 : 200;
                     peakAct = cat(1,peakAct,histcounts(temp2,peak_vec));
                 end
             end
             plot(peak_vec(1:end-1),mean(peakAct)); hold on;
+ %           plot(peak_vec(1:end-1),mean(peakAct)+std(peakAct)/sqrt(d-1));
+ %           plot(peak_vec(1:end-1),mean(peakAct)-std(peakAct)/sqrt(d-1));
             if p == length(pops), plot([0 0],[0 10],'r'); end
             ylabel(sprintf('%i Hz',AM_freqs(a)));
+
+            % calculate rate modulation per peakAct event
+            meanAct = mean(peakAct);
+            minFR = min(meanAct); maxFR = max(meanAct);
+            RM(nV,a).(pops{p}) = (maxFR-minFR)/(minFR+maxFR);
         end
     end
     xlabel('Time (ms)');
@@ -127,22 +135,31 @@ for nV = 1:nVaries
     savefig(gcf,fullfile(simDataDir,filesep,sprintf('exc peakDrv responses, vary %i.fig',nV)));
     close all;
 
-
-end
-
-% calculate modulation depth for all variations and all frequencies
-
-pops = {'On','R1On','R2On'};
-
-RM = struct;
-for nV = 1:nVaries
-    for a = 1:5
-        trials = ((0:TrialsPerStim-1)*nVaries + nV) + ((a-1)*10*nVaries);
-        for p = 1:length(pops)
-            tempspks = horzcat(snn_out(trials).([pops{p} '_V_spikes']));
-            RM(nV,a).(pops{p}) = calcRateModulation(tempspks,t_stim);
-        end
-    end
 end
 
 save([simDataDir filesep 'rate_modulation.mat'],'RM');
+
+%% Plot rate modulation vs. varies
+
+pops = {'R2On'};
+if nVaries > 1
+
+    figure;
+    for nV = 1:16
+        tempRM = [];
+        for a = 1:5
+            tempRM(a) = RM(nV,a).R2On;
+        end
+        plot(1:5,tempRM); hold on
+    end
+    set(gca,'xtick',1:5,'xticklabel',[2 4 8 16 32]);
+    xlabel('AM frequency (Hz)');
+    ylim([0 1]);
+    ylabel('Rate modulation');
+
+end
+
+
+
+
+
