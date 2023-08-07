@@ -25,19 +25,10 @@ varies(1).param = 'trial';
 varies(1).range =  trialInds(:)';
 % % % DO NOT CHANGE THIS % % %
 
-varies(end+1).conxn = '(On,Off,R1On,R1Off,R2On,R2Off)';
-varies(end).param = 't_ref';
-varies(end).range = 1;
-
 % E->E connections
 varies(end+1).conxn = '(On->R1On,R1On->R2On,Off->R1Off,R1Off->R2Off)';
-varies(end).param = '(gSYN,fP)';
-varies(end).range = [0.016 ; 0.1];
-
-% % E->PV connections
-% varies(end+1).conxn = '(On->S1On,Off->S1Off,R1On->S2On,R1Off->S2Off)';
-% varies(end).param = '(gSYN,tauP)';
-% varies(end).range = [0.024 ; 60];
+varies(end).param = 'gSYN';
+varies(end).range = 0.018;
 
 % onset pvs
 varies(end+1).conxn = '(S1On->R1On,S1On->R1Off,S2On->R2On,S2On->R2Off)';

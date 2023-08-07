@@ -50,7 +50,6 @@ end
 %% Run .m file to generate options and varies structs for simulations
 
 params_AM_adjustPVDynamics;
-% params_AM_noPV;
 
 %% create input spikes from STRFs
 % concatenate spike-time matrices, save to study dir
