@@ -91,7 +91,7 @@ for nV = 1:nVaries
 
     %% Look at peakDrv response across excitatory layers
     % close all;
-    figure('unit','inches','position',[4 4 3 6])
+    figure('unit','inches','position',[4 4 1.4 3])
 
     t_bin = 20; %ms
     t_vec = 0:t_bin:(padToTime-1);
@@ -119,9 +119,8 @@ for nV = 1:nVaries
                 end
             end
             plot(peak_vec(1:end-1),mean(peakAct)); hold on;
- %           plot(peak_vec(1:end-1),mean(peakAct)+std(peakAct)/sqrt(d-1));
- %           plot(peak_vec(1:end-1),mean(peakAct)-std(peakAct)/sqrt(d-1));
-            if p == length(pops), plot([0 0],[0 10],'r'); end
+
+            if p == length(pops), plot([0 0],[0 15],'r'); end
             ylabel(sprintf('%i Hz',AM_freqs(a)));
 
             % calculate rate modulation per peakAct event

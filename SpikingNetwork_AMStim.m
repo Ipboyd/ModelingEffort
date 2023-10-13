@@ -25,7 +25,7 @@ load('peakDrv_AM.mat');
 load('AM_sigs.mat')
 
 % expName: folder under 'simData' where results are saved
-expName = '08-04-23 vary PV dynamics, save all spikes';
+expName = '08-30-23 fix dynamics, vary strength';
 
 % for newStrfGain = strfGains
 % simDataDir = [pwd filesep 'simData' filesep expName ' ' num2str(newStrfGain)];
@@ -49,12 +49,15 @@ end
 
 %% Run .m file to generate options and varies structs for simulations
 
-params_AM_adjustPVDynamics;
+% params_AM_adjustPVDynamics;
+% params_AM_noDep;
+% params_AM_noPV;
+params_AM_varyingStrengths;
 
 %% create input spikes from STRFs
 % concatenate spike-time matrices, save to study dir
 
-options.regenSpks = 1;
+options.regenSpks = 0;
 prepInputData_AMStim;
 
 %% run simulation
