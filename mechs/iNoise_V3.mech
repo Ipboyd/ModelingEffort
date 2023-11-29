@@ -6,13 +6,13 @@ sigma = 0;                     % spontaneous FR std [Hz]
 dt = 0.1;
 nSYN = 0.011;
 netcon = eye(N_pre,N_post);
-locNum = [];
+simlen = [];
 
 tauD_N = 0.5        % decay time [ms]
 tauR_N = 3          % rise time [ms]
 E_exc = 0
 
-token=genPoissonTimes(N_pop,dt,FR,sigma,locNum);
+token=genPoissonTimes(N_pop,dt,FR,sigma,simlen);
 scale = (tauD_N/tauR_N)^(tauR_N/(tauD_N-tauR_N))
 
 sn(0) = 0

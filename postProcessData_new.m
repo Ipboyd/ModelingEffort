@@ -105,7 +105,8 @@ if calcPC
     PCstr = ['PC = ' num2str(pc)];
 end
 
-fr = 1000*mean(sum(raster(:,[2500:32500]),2))/3000;
+% fr = 1000*mean(sum(raster(:,[2500:32500]),2))/3000;
+fr = 1000*mean(sum(raster(:,[2500:17500]),2))/1500;
 
 %plot
 x = 0.86;

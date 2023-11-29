@@ -1,4 +1,5 @@
-% bar plot for different hotspot types
+% bar plot for different hotspot types - Used in Figure 2 of modelling
+% paper
 
 load('singleunits_diffperfs.mat')
 load('singleunits.mat')
