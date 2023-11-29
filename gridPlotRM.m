@@ -1,4 +1,7 @@
 
+% need to run SpikingNetwork_AMStim with params_AM_varyingStrengths first
+% before creating the plots
+
 fp = [0.3 0.4 0.5 0.6];
 tau = [60 80 100 120];
 

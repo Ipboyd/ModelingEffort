@@ -167,6 +167,8 @@ if nVaries > 1
 
 end
 
+% if you ran params_AM_varyingStrengths, use gridPlotRM and estimateRM to
+% plot the last few subplots in Figure 8 in the network paper
 
 
 
