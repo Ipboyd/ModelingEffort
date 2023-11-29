@@ -32,6 +32,8 @@ for i = 1:numPops
     currentIdx = adjMtxIdx(i).end+1;
 end
 
+adjMtxInh = adjMtx;
+
 % populate adjacency matrix with netcons   
 for i = 1:numCons
     direction = s.connections(i).direction;
@@ -48,17 +50,28 @@ for i = 1:numCons
     userDefinedNetcon = ismember(s.connections(i).parameters(1:2:end),'netcon');
     if ~userDefinedNetcon
         % netcon matrix is ones(size_pre,size_post)
-        disp('use zeros')
+        % disp('use zeros')
         nPre = s.populations(popPreLabelIdx).size;
         nPost = s.populations(popPostLabelIdx).size;
         adjMtx(popPreStart:popPreEnd,popPostStart:popPostEnd) = eye(nPre,nPost);
+            
+    if any(strcmp(s.connections(i).parameters,'ESYN'))
+        adjMtxInh(popPreStart:popPreEnd,popPostStart:popPostEnd) = eye(nPre,nPost);
+    end
+    
     else
         % find netcon matrix within the parameters field
-        disp('use netcon')
+        % disp('use netcon')
         netConIdx = find(userDefinedNetcon)*2; %hacky; but works
         netCon = s.connections(i).parameters{netConIdx};
         adjMtx(popPreStart:popPreEnd,popPostStart:popPostEnd) = netCon;
+        
+    if any(strcmp(s.connections(i).parameters,'ESYN'))
+        adjMtxInh(popPreStart:popPreEnd,popPostStart:popPostEnd) = netCon;
     end
+    
+    end
+
 end
 
 % labels
@@ -110,8 +123,14 @@ sinkStart = adjMtxIdx(sinksIdx).start;
 sinkEnd = adjMtxIdx(sinksIdx).end;
 
 g = digraph(adjMtx,names);
-figure; p = plot(g,'layout','layered','Marker','o',...
-                   'MarkerSize',8,'NodeLabel',names);
-set(p,'ArrowSize',12)
+g2 = digraph(adjMtxInh,names);
+
+% remove extra nodes in g2
+figure;
+p = plot(g,'layout','layered','Marker','o',...
+    'MarkerSize',8,'NodeLabel',names,'NodeColor','k','EdgeColor','k','ArrowSize',12); hold on;
+highlight(p,g2.Edges.EndNodes(:,1),g2.Edges.EndNodes(:,2),'EdgeColor','r');
 layout(p,'layered','direction','down',...
-         'sources',[sourceStart:sourceEnd],'sinks',[sinkStart:sinkEnd]);
+         'sources',sourceStart:sourceEnd,'sinks',sinkStart:sinkEnd);
+
+     

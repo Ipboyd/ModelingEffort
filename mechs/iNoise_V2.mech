@@ -1,0 +1,23 @@
+% Poisson input
+
+% poisson parameters
+FR = 0;                     % spontaneous FR mean [Hz]
+sigma = 0;                     % spontaneous FR std [Hz]
+dt = 0.1;
+nSYN = 0.01;
+netcon = eye(N_pre,N_post);
+simlen = [];
+
+tauD_N = 0.5        % decay time [ms]
+tauR_N = 3          % rise time [ms]
+E_exc = 0
+
+token = genPoissonToken(N_pop,dt,FR,sigma,tauD_N,tauR_N,simlen)
+
+iP(X) = nSYN * token(ceil((t+dt*0.01)/dt),:) * netcon .* (X - E_exc);
+
+
+
+
+% linker
+@isyn += iP(X)

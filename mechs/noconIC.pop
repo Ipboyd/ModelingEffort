@@ -1,0 +1,42 @@
+% Leaky integrate and fire neurons
+% Jio Nocon, September 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+C = 0.1;              % membrane capacitance [nF]
+g_leak = 1/200;       % leak resistance [uS]
+R = 1/g_leak;         % membrane resistance [Mohm]
+tau = C*R;            % membrane time constant [ms]
+E_leak = -65;         % equilibrium potential/resting potential [mV]
+noise = 0;            % noise [nA]
+t_ref = 3;            % refractory period [ms]
+n = 1.5;               % order of gamma distribution
+avg = 4.5;              % mean of gamma distribution
+
+Itonic = 0;           % injected current, [nA]
+Imask = ones(1,N_pop); % current masker
+
+E_k = -80;            % spike-rate adaptation potential [mV]
+tau_ad = 5;           % spike-rate adaptation time constant [ms]
+g_ad_inc = 0;         % spike-rate adaptation increment [uS]
+
+% @isyn = synaptic current [nA]
+
+% Resting, threshold, and reset potentials from Li et al 2014, J Neuro
+
+%%%%%% action potential voltages %%%%%
+V_thresh = -47;     % spike threshold [mV]
+V_reset = -52;      % reset voltage, originally -50mV. [mV]
+V_init = E_leak;    % initial voltage
+
+% voltage dynamic, spiking, refractory period
+g_ad(0) = 0
+Vth(0) = V_thresh
+dV/dt = ( (E_leak-V) - R*g_ad.*(V - E_k) - R*@isyn + R*Itonic.*Imask + R*noise*randn(1,N_pop) ) / tau
+V(0) = E_leak
+dg_ad/dt = -g_ad / tau_ad
+dVth/dt = ( E_leak - Vth + gaminv(rand(1,N_pop),n,avg) ) / dt
+
+if(any(V >= V_thresh,1))(V = V_reset, V_thresh = Vth)
+
+% keep track of the last 5 spike times for iPSC_LTP
+monitor V.spikes(V_thresh,5)

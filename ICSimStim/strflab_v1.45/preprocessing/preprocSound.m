@@ -87,7 +87,7 @@ function [wholeStim, groupIndex, stimInfo, params] = preprocSound(audioWaveforms
     for k = 1:length(audioWaveforms)        
         if ischar(audioWaveforms{k})
 
-            [adata, sRate, depth] = wavread(audioWaveforms{k});            
+            [adata, sRate] = audioread(audioWaveforms{k});            
             audioWaveforms{k} = adata;
             params.rawSampleRate = sRate;
         end        
@@ -98,7 +98,9 @@ function [wholeStim, groupIndex, stimInfo, params] = preprocSound(audioWaveforms
     f = -1;
     totalStimLength = 0;
     numStimFeatures = -1;
-    stimSampleRate = 1000;
+    % stimSampleRate = 1000;
+    % stimSampleRate = 5000;
+    stimSampleRate = 10000; % match dynasim sampling rate
     stimStructs = cell(length(audioWaveforms), 1);
     maxPower = -1;
     for k = 1:length(audioWaveforms)    
