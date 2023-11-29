@@ -1,39 +1,16 @@
-
-nVaries = length(snn_out)/nTrials;
-
-% load ICfiles struct just for the names of the configs
-load('ICfiles.mat'); subz = 1:24;
-
-% calculate performance
-data = struct();
-options.time_end = padToTime; %ms
-PPtrialStartTimes = [1 cumsum(trialStartTimes)/dt+1]; %units of samples
-PPtrialEndTimes = PPtrialStartTimes(2:end)-(padToTime/dt-options.time_end/dt+1);
-configName = cellfun(@(x) strsplit(x,'_'),{ICfiles(subz).name}','UniformOutput',false);
-configName = vertcat(configName{:}); configName = configName(:,1);
-options.variedField = strrep(expVar,'-','_');
-
-annotTable = createSimNotes(snn_out,simDataDir,options);
-
-% save C spikes and varied params to struct
-names = snn_out(1).varied;
-
-pops = {snn_out(1).model.specification.populations.name};
-results = struct;
-for i = 1:length(snn_out)
-    % results(i).R2On_V_spikes = snn_out(i).R2On_V_spikes;
-    for p = 1:length(pops)
-        results(i).([pops{p} '_V_spikes']) = snn_out(i).([pops{p} '_V_spikes']);
-    end
-    for t = 1:length(names)
-        results(i).(names{t}) = snn_out(i).(names{t});
-    end
-end
-results(1).model = snn_out(1).model;
-save([simDataDir filesep 'spikes.mat'],'results','-v7.3');
-
-%% convert peakDrv to samples (10000 Hz)
 close all;
+
+TrialsPerStim = 20;
+nVaries = 1;
+nStim = 5;
+dt = 0.1;
+simDataDir = fullfile('simData-AM','no offset PV');
+mkdir(simDataDir);
+
+t_stim = 3;
+padToTime = (t_stim + 0.250 + 0.250) * 1000;
+
+clearvars RM
 
 for nV = 1:nVaries
 
@@ -46,13 +23,12 @@ for nV = 1:nVaries
     for a = 1:nStim
         figure(1);
         subplot(nStim,1,a);
-        % subplot(,1,a);
 
         % convert peakDrv to ms
         temp = [];
         % get spiketime indexes for each trial
         for t = ((0:TrialsPerStim-1)*nVaries + nV) + ((a-1)*10*nVaries) % (1:TrialsPerStim)+(a-1)*10
-            temp = [temp; find(snn_out(t).R2On_V_spikes)];
+            temp = [temp; find(results(t).R2On_V_spikes)];
         end
 
         % convert to PSTH
@@ -91,7 +67,7 @@ for nV = 1:nVaries
 
     %% Look at peakDrv response across excitatory layers
     % close all;
-    figure('unit','inches','position',[4 4 1.4 3])
+    figure('unit','inches','position',[4 4 1.3 3])
 
     t_bin = 20; %ms
     t_vec = 0:t_bin:(padToTime-1);
@@ -104,7 +80,7 @@ for nV = 1:nVaries
             temp = []; % contains indexes for all trials
             % get spiketime indexes for each trial
             for t = ((0:TrialsPerStim-1)*nVaries + nV) + ((a-1)*10*nVaries)
-                temp = [temp; find(snn_out(t).(spks))];
+                temp = [temp; find(results(t).(spks))];
             end
 
             % get activity within 200ms of each peakDrv event
@@ -144,30 +120,3 @@ for nV = 1:nVaries
     close all;
 
 end
-
-save([simDataDir filesep 'rate_modulation.mat'],'RM');
-
-%% Plot rate modulation vs. varies
-
-pops = {'R2On'};
-if nVaries > 1
-
-    figure;
-    for nV = 1:16
-        tempRM = [];
-        for a = 1:5
-            tempRM(a) = abs(RM(nV,a).R2On);
-        end
-        plot(1:5,tempRM); hold on
-    end
-    set(gca,'xtick',1:5,'xticklabel',[2 4 8 16 32]);
-    xlabel('AM frequency (Hz)');
-    ylim([0 1]);
-    ylabel('Rate modulation');
-
-end
-
-
-
-
-

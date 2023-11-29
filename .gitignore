@@ -58,7 +58,6 @@ mechs/iH_V2.mech
 *.fig
 ICSimStim/temp/preprocessed_stim_1.mat
 ICSimStim/preprocessed_stims.mat
-ICSimStim/temp/preprocessed_stim_1.mat
 dontusethese.m
 *.mat
 *.tmp
@@ -66,18 +65,13 @@ Ince et al.pdf
 simData-AM
 SpikingNetwork_Ripple.m
 postProcessRipple.m
-ICSimStim/temp/preprocessed_stim_1.mat
 ICSimStim/STRF_Ripple.m
-ICSimStim/temp/preprocessed_stim_1.mat
 useKristinaCode.m
-ICSimStim/temp/preprocessed_stim_1.mat
 postProcessAM.asv
 SpikingNetwork_AMStim.asv
-ICSimStim/temp/preprocessed_stim_1.mat
-ICSimStim/temp/preprocessed_stim_1.mat
-ICSimStim/temp/preprocessed_stim_1.mat
-ICSimStim/temp/preprocessed_stim_1.mat
 ICSimStim/Thumbs.db
 ICSimStim/full_grid_stims
 ICSimStim/old
 not used in paper/
+2D.eps
+2D.ai

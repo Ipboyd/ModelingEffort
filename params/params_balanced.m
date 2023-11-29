@@ -17,7 +17,7 @@ options.SpatialAttention = 0;
 %% define network parameters
 clear varies
 
-trialInds = repmat(1:nTrials,nSims,1);
+trialInds = repmat(1:20,nSims,1);
 
 % % % DO NOT CHANGE THIS % % %
 varies(1).conxn = '(On->On,Off->Off)';
@@ -25,32 +25,27 @@ varies(1).param = 'trial';
 varies(1).range =  trialInds(:)';
 % % % DO NOT CHANGE THIS % % %
 
-% % E->E connections
-% varies(end+1).conxn = '(On->R1On,R1On->R2On,Off->R1Off,R1Off->R2Off)';
-% varies(end).param = 'gSYN';
-% varies(end).range = 0.02;
-
-% % E->PV connections
-% varies(end+1).conxn = '(On->S1On,Off->S1Off,R1On->S2On,R1Off->S2Off)';
-% varies(end).param = '(gSYN,tauP)';
-% varies(end).range = [0.032;60];
+% E->E connections
+varies(end+1).conxn = '(On->R1On,R1On->R2On,Off->R1Off,R1Off->R2Off)';
+varies(end).param = 'gSYN';
+varies(end).range = 0.02;
 
 % onset pvs
 varies(end+1).conxn = '(S1On->R1On,S1On->R1Off,S2On->R2On,S2On->R2Off)';
-varies(end).param = '(gSYN,fP,tauP)';
-varies(end).range = [0.016;0.6;80];
+varies(end).param = 'gSYN';
+varies(end).range = 0.025;
 
 % offset pvs
 varies(end+1).conxn = '(S1Off->R1On,S1Off->R1Off,S2Off->R2On,S2Off->R2Off)';
-varies(end).param = '(gSYN,fP,tauP)';
-varies(end).range = [0.032;0.6;80];
+varies(end).param = 'gSYN';
+varies(end).range = 0.025;
 
 % control and opto conditions 
 varies(end+1).conxn = '(S1On,S1Off,S2On,S2Off)';
 varies(end).param = 'Itonic';
 varies(end).range = 0; 
 
-varies(end+1).conxn = 'R2On->R2On';
+varies(end+1).conxn = '(R2On->R2On,S2On->S2On,S2Off->S2Off)';
 varies(end).param = 'FR';
 varies(end).range = 8;
 

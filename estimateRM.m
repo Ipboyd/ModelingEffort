@@ -2,9 +2,6 @@
 fp = [0.3 0.4 0.5 0.6];
 tau = [60 80 100 120];
 
-fp = [0.01:0.005:0.03];
-tau = fp;
-
 [m,n] = meshgrid(fp,tau);
 z = [m(:),n(:)];
 
@@ -29,6 +26,7 @@ for nV = 1:(length(fp)*length(tau))
 end
 
 figure('unit','inches','position',[4 4 2.5 2.5]);
+
 surf(fp,tau,reshape(freq_RM,[length(fp) length(tau)]),'facecolor','b','facealpha',0.5);
 axis square; set(gca,'fontsize',8,'ydir','normal','xtick',fp,'ytick',tau); 
 xlabel('f_P'); ylabel('\tau_P (ms)');

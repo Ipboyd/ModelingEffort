@@ -2,7 +2,7 @@
 
 mfileinfo = mfilename('fullpath');
 mfiledir = fileparts(mfileinfo);
-cd(mfiledir);
+% cd(mfiledir);
 
 dynasimPath = '../DynaSim';
 
@@ -22,7 +22,7 @@ if exist(study_dir, 'dir'), msg = rmdir(study_dir, 's'); end
 mkdir(fullfile(study_dir, 'solve'));
 
 % expName: folder under 'simData' where results are saved
-expName = '07-31-23';
+expName = '08-28-23 fig 5 reduced strength';
 
 % for newStrfGain = strfGains
 % simDataDir = [pwd filesep 'simData' filesep expName ' ' num2str(newStrfGain)];
@@ -36,11 +36,13 @@ if ~exist(simDataDir,'dir'), mkdir(simDataDir); end
 addpath('params');
 % addpath('params_noiseonly');
 
+params_5_reduced;
+
 % params_MaskedPerf;
 % params_Masked_varyOnsetPV;
 % params_Masked_varyOnsetNoise;
 % params_DepressiveStr;
-params_ExpFig3;
+% params_ExpFig3;
 
 % for figures in paper
 

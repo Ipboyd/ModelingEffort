@@ -54,6 +54,7 @@ end
 % params_AM_noPV;
 params_AM_varyingStrengths;
 
+
 %% create input spikes from STRFs
 % concatenate spike-time matrices, save to study dir
 
