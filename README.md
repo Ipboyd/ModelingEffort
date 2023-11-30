@@ -1,8 +1,8 @@
 # MouseSpatialGrid
 
-This repo does two things
+This repo does two things:
 1. It generates simulated neural spikes in response to user-defined stimuli, based on STRFs and spatial tuning curves. This is the "input model." This is based on the work written by Junzi Dong, as described in her [2016 eNeuro paper](https://www.eneuro.org/content/3/1/ENEURO.0086-15.2015).
-2. It puts those neural spikes through a spiking neural network, based on the [Aim Network](https://www.biorxiv.org/content/10.1101/2020.12.10.419762v1), which runs on the [DynaSim](https://github.com/DynaSim/DynaSim) Framework.
+2. It puts those neural spikes through a spiking neural network [preprint here](https://www.biorxiv.org/content/10.1101/2022.09.22.509092v1), which runs on the [DynaSim](https://github.com/DynaSim/DynaSim) Framework.
 
 ## 1. The Input Model
 The model for generating inputs is found in `/ICSimStim`. To get started, open `main_STRF_target.m`.
@@ -57,13 +57,21 @@ After the simulations have finished, `SpikingNetwork_withOffset` will call the s
 
 The last part of the code `%% convert peakDrv to samples (10000 Hz)` is based on analysis from [Penikis and Sanes 2023](https://www.jneurosci.org/content/43/1/93/tab-e-letters). For grids and discriminability, we don't use this, but we've included these analyses in submissions to show how our model can explain the results in that paper.
 
-# Important changes to third-party toolboxes
+## 3. Next steps
 
-## 1. strflab_v1.45/preprocessing/preprocSound.m
+1) Add multiple spatially-tuned channels to the model. You will need to change `nCells` and add extra curves/rows within `tuningcurve`.
+2) Add a convergence 'output' cell similar to [Dong et al. 2016](https://www.eneuro.org/content/3/1/eneuro.0086-15.2015.abstract), which simulates spatial grids in bird data.
+3) Add frequency tuning to the model. This is less trivial, as the current input STRFs are broadband. We can create a 'library' of narrowband STRFs with different center frequencies and bandwidths, and then convolve those STRFs with the target stimuli.
+4) Adding top-down and cross-channel inhibition to model. Both are in Kenny's AIM network as `TD` and `X` respectively. We'll need to add that here as well.
+5) Adding interactions between different spatial/frequency channels via connection matrices (`netcons`). Currently, this model has 1 channel in both the spatial and frequency dimension. `netcons` will get more complicated when we start having multiple channels in both dimensions.
+
+## Important changes to third-party toolboxes
+
+### strflab_v1.45/preprocessing/preprocSound.m
 
 Line 100-102: stimSampleRate is set to 10000 Hz instead of 1000 Hz
 
-## 2. strflab_v1.45/preprocessing/sound/timefreq.m
+### strflab_v1.45/preprocessing/sound/timefreq.m
 
 Line 65-67: increment is set to fix(sampleRate/10000) instead of fix(0.001*sampleRate)
 
