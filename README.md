@@ -4,6 +4,9 @@ This repo does two things:
 1. It generates simulated neural spikes in response to user-defined stimuli, based on STRFs and spatial tuning curves. This is the "input model." This is based on the work written by Junzi Dong, as described in her [2016 eNeuro paper](https://www.eneuro.org/content/3/1/ENEURO.0086-15.2015).
 2. It puts those neural spikes through a spiking neural network [preprint here](https://www.biorxiv.org/content/10.1101/2022.09.22.509092v1), which runs on the [DynaSim](https://github.com/DynaSim/DynaSim) Framework.
 
+## 0. Before running the model
+Before running the model, you should run `cSPIKE/cSPIKEmex/MEX_compile` to re-compile the C++/mex files on your own machine. The repo does have 64-bit-compiled scripts, but I haven't checked if these scripts work for machines other than my lab desktop and my Macbook.
+
 ## 1. The Input Model
 The model for generating inputs is found in `/ICSimStim`. To get started, open `main_STRF_target.m`.
 
