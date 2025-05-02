@@ -1,4 +1,4 @@
-    % Simulate spike times based on a model neuron with a (1) STRF and a (2)
+% Simulate spike times based on a model neuron with a (1) STRF and a (2)
 % spatial tuning curve. I.e. this neuron has both spatial and
 % spectral-temporal tuning.
 
@@ -15,7 +15,7 @@ close all
 delete('default_STRF_with_offset_200k.mat')
 
 
-
+%Updated Paths to be compatable with new orginaization on github 5/2/2025
 
 addpath(genpath('strflab_v1.45'))
 addpath('../genlib')
