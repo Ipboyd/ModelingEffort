@@ -1,0 +1,180 @@
+figure(202);
+
+%gridNums = pc(15).fr;
+
+score = [];
+
+for i = 1:36
+    if pc(15).perf.SPIKE(i)<pc(15).perf.ISI(i)
+        score = [score,0];
+    elseif pc(15).perf.RISPIKE(i)<pc(15).perf.ISI(i)
+        score = [score,0];
+    else
+        score = [score, (pc(15).perf.SPIKE(i)./pc(15).perf.ISI(i) -1) + (pc(15).perf.RISPIKE(i)./pc(15).perf.ISI(i) -1)];
+    end
+end
+
+
+%score = (pc(15).perf.SPIKE./pc(15).perf.ISI -1) + (pc(15).perf.RISPIKE./pc(15).perf.ISI -1);
+
+score_tracker = score
+
+
+gridNums1 = flipud(reshape(score,[12,12]));
+
+
+% Define your input matrix
+input_matrix = gridNums1; % Example random input matrix of size 10x12
+
+% Define your average kernel
+kernel_size = 3; % Define the size of the kernel (e.g., 3x3)
+average_kernel = ones(kernel_size) / (kernel_size^2); % Define the average kernel
+
+% Perform 2D convolution
+gridNums1 = conv2(input_matrix, average_kernel, 'same');
+
+
+
+%gridNums1(:,10) = [];
+
+imagesc(gridNums1)
+
+cbh=colorbar('v');
+set(cbh,'XTick',[-0.5:0.1:0.5]);
+
+xticklabels = [0.08,0.09,0.1,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19];
+xticks = linspace(1, 12, numel(xticklabels));
+set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
+
+yticklabels = flip([0,0.005,0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.055]);
+yticks = linspace(1, 12, numel(yticklabels));
+set(gca, 'YTick', yticks, 'YTickLabel', yticklabels);
+
+title('SCORE')
+
+
+
+figure(201);
+
+gridNums = pc(15).fr;
+
+gridNums1 = flipud(reshape(gridNums,[12,12]));
+%gridNums1(:,10) = [];
+
+imagesc(gridNums1)
+
+cbh=colorbar('v');
+set(cbh,'XTick',[-0.5:0.1:0.5]);
+
+xticklabels = [0.08,0.09,0.1,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19];
+xticks = linspace(1, 12, numel(xticklabels));
+set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
+
+yticklabels = flip([0,0.005,0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.055]);
+yticks = linspace(1, 12, numel(yticklabels));
+set(gca, 'YTick', yticks, 'YTickLabel', yticklabels);
+
+title('Firing Rate')
+
+figure(203);
+
+gridNums = max([pc(15).perf.SPIKE;pc(15).perf.ISI;pc(15).perf.RISPIKE]);
+
+gridNums1 = flipud(reshape(gridNums,[12,12]));
+%gridNums1(:,10) = [];
+
+imagesc(gridNums1)
+
+cbh=colorbar('v');
+set(cbh,'XTick',[-0.5:0.1:0.5]);
+
+xticklabels = [0.08,0.09,0.1,0.11,0.12,0.13,0.14,0.15,0.16,0.17,0.18,0.19];
+xticks = linspace(1, 12, numel(xticklabels));
+set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
+
+yticklabels = flip([0,0.005,0.01,0.015,0.02,0.025,0.03,0.035,0.04,0.045,0.05,0.055]);
+yticks = linspace(1, 12, numel(yticklabels));
+set(gca, 'YTick', yticks, 'YTickLabel', yticklabels);
+
+title('Max')
+
+
+% 
+% figure(2);
+% 
+% gridNums = approximates2;
+% 
+% gridNums2 = flipud(reshape(gridNums,6,5))
+% 
+% imagesc(gridNums2)
+% 
+% cbh=colorbar('v');
+% set(cbh,'XTick',[8:1:12]);
+% 
+% xticklabels = 0.6:0.1:1;
+% xticks = linspace(1, 6, numel(xticklabels));
+% set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
+% 
+% yticklabels = flip(0:20:100);
+% yticks = linspace(1, 6, numel(yticklabels));
+% set(gca, 'YTick', yticks, 'YTickLabel', yticklabels);
+% 
+% figure(3);
+% 
+% gridNums = approximates3;
+% 
+% gridNums3 = flipud(reshape(gridNums,5,5))
+% 
+% imagesc(gridNums3)
+% 
+% cbh=colorbar('v');
+% set(cbh,'XTick',[8:1:12]);
+% 
+% xticklabels = 0.6:0.1:1;
+% xticks = linspace(1, 6, numel(xticklabels));
+% set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
+% 
+% yticklabels = flip(120:20:200);
+% yticks = linspace(1, 6, numel(yticklabels));
+% set(gca, 'YTick', yticks, 'YTickLabel', yticklabels);
+% 
+% figure(4);
+% 
+% gridNums = approximates4;
+% 
+% gridNums4 = flipud(reshape(gridNums,5,6))
+% 
+% imagesc(gridNums4)
+% 
+% cbh=colorbar('v');
+% set(cbh,'XTick',[8:1:12]);
+% 
+% xticklabels = 0:0.1:0.5;
+% xticks = linspace(1, 6, numel(xticklabels));
+% set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
+% 
+% yticklabels = flip(120:20:200);
+% yticks = linspace(1, 6, numel(yticklabels));
+% set(gca, 'YTick', yticks, 'YTickLabel', yticklabels);
+% 
+% 
+% figure(200);
+% 
+% gridNums = approximates;
+% 
+% 
+% imagesc(gridNums)
+% 
+% cbh=colorbar('v');
+% set(cbh,'XTick',[3:1:15]);
+% 
+% xticklabels = 0:0.1:1;
+% xticks = linspace(1, 11, numel(xticklabels));
+% set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
+% 
+% yticklabels = flip(0:20:200);
+% yticks = linspace(1, 11, numel(yticklabels));
+% set(gca, 'YTick', yticks, 'YTickLabel', yticklabels);
+% 
+% 
+% % 

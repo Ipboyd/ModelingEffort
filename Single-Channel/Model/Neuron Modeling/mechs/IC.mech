@@ -1,0 +1,25 @@
+% IC Input
+% Jio Nocon, September 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+trial = 1
+locNum = []
+label = 'E'
+t_ref = 0
+t_ref_rel = 1
+rec = 2
+
+%%%%%%%% network parameters %%%%%%%%%%
+g_postIC=0.1
+E_exc=0
+netcon=eye(N_pre,N_post)
+
+% load input spikes
+input = genPoissonInputs(trial,locNum,label,t_ref,t_ref_rel,rec)
+
+iIC(X) = g_postIC * (input(k,:) * netcon) .* (X - E_exc);
+
+% monitor functions
+monitor iIC
+
+@isyn += iIC(X)

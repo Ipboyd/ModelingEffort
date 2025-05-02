@@ -1,0 +1,46 @@
+% Hyperpolarization-activated T-type Ca current
+
+% T-type channels are de-inactivated when the cell is hyperpolarized; model this
+% by calculating a build-up in conductance
+
+% Build-up is modeled as a sigmoidal function from Wang et al. 1991
+
+% When the cell returns to resting membrane potential, release build-up and reset
+% Jio Nocon, October 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+ESYN = -40          % reversal potential [mV]
+tauD = 8            % decay time [ms]
+tauR = 30           % rise time [ms]
+gSYN = 1            % maximum conductance [uS]
+delay = 0           % delay time [ms]
+V_build = -65.4       % threshold voltage for release and hyperpolarization [mV]
+
+%%%%%%%% network parameters %%%%%%%%%%
+netcon = eye(N_pre,N_post)
+
+%%%%%%%% calculate post-synaptic current %%%%%%%%%%
+tau_rise = tauD*tauR/(tauD-tauR)                  
+b = ((tauR/tauD)^(tau_rise/tauD) - (tauR/tauD)^(tau_rise/tauR))^-1
+f(t) =  b * ( exp(-t/tauD) - exp(-t/tauR) ).*(t>=0)
+
+% sig calculates fraction of maximum condutance released
+sig(X) = 1 - (1 + exp(-3.761)) ./ (1 + exp(2.0143.*X - 3.761));
+
+build(0) = 0
+release(0) = 0
+chan_on(0) = 0
+
+syn(X,t) = gSYN .* sig(release) .* ( f(t - chan_on - delay) *  netcon ) .* (X - ESYN)
+dbuild/dt = (V_build - X)/200 .* (X < V_build)
+drelease/dt = 0
+dchan_on/dt = 0
+
+% syn is in units [nA = uS*mV] and scaled such that max value 
+% before multiplication by (X - ESYN) is gSYN regardless of dynamics
+
+if(X > V_build & build > 0)(release = build, chan_on = t, build = 0)
+
+@isyn += syn(V_post,t)
+
+monitor syn.functions

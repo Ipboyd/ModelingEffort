@@ -1,0 +1,25 @@
+fignum = 1;
+
+figlabels = {'E \rightarrow E$','$E \rightarrow PV$','$PV \rightarrow E$'};
+
+figure('Position',[300,300,300,300])
+
+subplot(2,1,1)
+
+plot(0:0.1:1,[data(15).perf.R2On.channel1(1,:)]); hold on
+plot(0:0.1:1,[data(15).perf.R2On.channel1(2,:)]); hold on 
+plot(0:0.1:1,[data(15).perf.R2On.channel1(3,:)]);
+
+ylim([35 100])
+ylabel('Performance')
+xticklabels('')
+
+subplot(2,1,2)
+plot(0:0.1:1,[data(15).fr.R2On.channel1],'k')
+xticks([0:0.2:1])
+xticklabels([0:0.2:1])
+xlabel(['$f_p   /' figlabels{fignum}], 'Interpreter', 'latex')
+ylabel('Firing Rate (Hz)')
+ylim([0 50])  
+
+

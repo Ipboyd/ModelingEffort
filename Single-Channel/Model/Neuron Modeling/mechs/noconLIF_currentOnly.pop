@@ -1,0 +1,48 @@
+% Leaky integrate and fire neurons
+% Jio Nocon, September 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+C=0.1;           % membrane capacitance [nF]
+g_L=1/200;       % leak resistance [uS]
+R=1/g_L;         % membrane resistance [Mohm]
+tau=C*R;         % membrane time constant [ms]
+E_L=-65;         % equilibrium potential/resting potential [mV]
+noise=0;         % noise [nA]
+t_ref=3;         % refractory period [ms]
+
+E_k=-80;         % spike-rate adaptation potential [mV]
+tau_ad=5;        % spike-rate adaptation time constant [ms]
+g_inc=0;         % spike-rate adaptation increment [uS]
+Imask = ones(1,N_pop) % targets specific neurons
+
+
+% Capacitance, leak resistance, resting voltage and threshold are from 
+% Liang et al 2018, Cerebral Cortex
+
+% Resting, threshold, and reset potentials from Li et al 2014, J Neuro
+
+%%%%%% action potential voltages %%%%%
+V_thresh = -47;     % spike threshold [mV]
+V_reset = -52;      % reset voltage, originally -50mV. [mV]
+
+%%%%%%% current injection %%%%%%%%%%%%
+
+Itonic = 0;         % injected current, [nA]
+numLocs = 1;        % # locations to simultae
+Icur = Itonic*buildTonicCurrent(T,N_pop,dt,numLocs)
+
+% voltage dynamic, spiking, refractory period
+g_ad(0) = zeros(1,N_pop)
+V(0) = E_L*ones(1,N_pop)
+
+dV/dt = ( (E_L-V) - R*g_ad.*(V-E_k) + R*Icur(k,:).*Imask + R*noise.*randn(1,N_pop) ) / tau
+dg_ad/dt = -g_ad / tau_ad
+
+% DO NOT use the any condition for state variables
+if(V > V_thresh)(V = V_reset, g_ad = g_ad + g_inc)
+
+% use the any condition when tspike is involved, since tspike has a variable size
+if(any(t<=tspike+t_ref,1))(V = V_reset) % implement refractory period
+
+% keep track of the last 5 spike times for PSC
+monitor V.spikes(V_thresh,5)
