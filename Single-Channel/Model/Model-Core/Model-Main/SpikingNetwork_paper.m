@@ -11,21 +11,26 @@ mfiledir = strsplit(mfileinfo,filesep);
 % cd(fullfile(mfiledir{1:end-1}));
 
 %dynasimPath = fullfile('..','DynaSim');
-dynasimPath = 'DynaSim-master';
+%dynasimPath = 'DynaSim-master';
 
 
 addpath('mechs');
 addpath('resampled-stimuli');
-addpath(genpath('ICSimStim'));
+addpath(genpath('../../PreCortical-Modeling'));
 addpath('genlib');
-addpath(genpath(dynasimPath));
-addpath('cSPIKE'); InitializecSPIKE;
+%addpath(genpath(dynasimPath));
+addpath('../../Peripherals/cSPIKE'); InitializecSPIKE;
 addpath('plotting');
 addpath('subfunctions');
+addpath('../Parameters')
+addpath('../Network-Architecture')
+addpath(genpath('../../../../DynaSim'))
+addpath('../../Neuron Modeling');
+
 
 %% Make ICfiles.mat if it's not in your directory
 
-if ~isfile('ICfiles.mat'), makeICfiles; end
+%if ~isfile('ICfiles.mat'), makeICfiles; end
 
 %% user inputs
 dt = 0.1; %ms, should be a multiple of 0.1 ms
@@ -101,12 +106,13 @@ netcons = struct;
 
 % PEnetcon: PV->E, model as Gaussians for now
 sigma = 30;
-netcons.PEnetcon = makePENetcon(bestLocs,sigma);
+%netcons.PEnetcon = makePENetcon(bestLocs,sigma);
+netcons.PEnetcon = eye(1);
 netcons.XRnetcon = eye(1);
 netcons.RCnetcon = eye(1);
 
 %% load input stimuli (targets and maskers) from ICSimStim
-load('default_STRF_with_offset_200k.mat');
+load('../../PreCortical-Modeling/default_STRF_with_offset_200k.mat');
 
 % firing rates were generated with sampling rate of 10000 Hz to match old
 % simulation time step, downsample if dt's don't match

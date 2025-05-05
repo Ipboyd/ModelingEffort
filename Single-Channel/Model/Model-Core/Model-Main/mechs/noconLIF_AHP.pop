@@ -1,0 +1,42 @@
+% Leaky integrate and fire neurons
+% Jio Nocon, September 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+C=0.1;           % membrane capacitance [nF]
+g_L=1/200;       % leak resistance [uS]
+R=1/g_L;         % membrane resistance [Mohm]
+tau=C*R;         % membrane time constant [ms]
+E_L=-65;         % equilibrium potential/resting potential [mV]
+noise=0;         % noise [nA]
+t_ref=3;         % refractory period [ms]
+
+E_k=-80;         % spike-rate adaptation potential [mV]
+tau_ad=0.5;        % spike-rate adaptation time constant [ms]
+g_inc=1;         % spike-rate adaptation increment [uS]
+Imask = ones(1,N_pop) % targets specific neurons
+Itonic = 0
+
+% @isyn = synaptic current [nA]
+
+% Capacitance, leak resistance, resting voltage and threshold are from 
+% Liang et al 2018, Cerebral Cortex
+
+% Resting, threshold, and reset potentials from Li et al 2014, J Neuro
+
+%%%%%% action potential voltages %%%%%
+V_thresh = -47;     % spike threshold [mV]
+
+%%%%%%% current injection %%%%%%%%%%%%
+
+% voltage dynamic, spiking, refractory period
+g_ad(0) = zeros(1,N_pop)
+V(0) = E_L*ones(1,N_pop)
+
+dV/dt = ( (E_L-V) - R*g_ad.*(V-E_k) - R*@isyn + R*Itonic.*Imask + R*noise.*randn(1,N_pop) ) / tau     %mV/ms
+dg_ad/dt = -g_ad / tau_ad
+
+% DO NOT use the any condition for state variables
+if(V > V_thresh & any(t<=tspike+t_ref,1))(g_ad = g_ad + g_inc)
+
+% keep track of the last 5 spike times for PSC
+monitor V.spikes(V_thresh,5)

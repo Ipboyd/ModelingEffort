@@ -1,0 +1,34 @@
+% modelling H-current as an alternate double-exponential synaptic current
+% Jio Nocon, September 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+ESYN = 0            % reversal potential [mV]
+tauD = 7.5          % decay time [ms]
+tauR = 5          % rise time [ms]
+sf = 5
+E_half = -90
+delay = 0           % synaptic delay [ms]
+gSYN = 1            % synaptic connectivity [uS]
+
+%%%%%%%% network parameters %%%%%%%%%%
+netcon = eye(N_pre,N_post)
+
+%%%%%%%% calculate post-synaptic current %%%%%%%%%%
+tau_rise = tauD*tauR/(tauD-tauR)                  
+b = ((tauR/tauD)^(tau_rise/tauD) - (tauR/tauD)^(tau_rise/tauR))^-1
+f(t) =  b * ( exp(-t/tauD) - exp(-t/tauR) ).*(t>=0)
+act(X) = 1./(1 + exp((X - E_half)./sf)) .* (X < -67)
+
+tnew(0) = -1e6
+
+syn(X,t) = gSYN .* act(X) .* ( f(t - tnew) * ( netcon ) ) .* (X - ESYN)
+dtnew/dt = 0
+
+% syn is in units [nA = uS*mV] and scaled such that max value 
+% before multiplication by (X - ESYN) is gSYN regardless of dynamics
+
+if(any(t == tspike_pre+delay,1))(tnew = t-dt)
+
+@isyn += syn(V_post,t)
+
+monitor syn.functions

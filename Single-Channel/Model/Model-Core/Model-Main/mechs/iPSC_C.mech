@@ -1,0 +1,31 @@
+% double-exponential synaptic current for differently-weighted synapses
+% Jio Nocon, September 2021
+
+%%%%%%%% default parameters %%%%%%%%%%
+ESYN = 0            % reversal potential [mV]
+tauD = 1.5          % decay time [ms]
+tauR = 0.3          % rise time [ms]
+delay = 0           % synaptic delay [ms]
+
+gSYN1 = 0.015
+gSYN2 = 0.015
+gSYN3 = 0.015
+gSYN4 = 0.015
+gSYN = buildgSYN(N_pre,N_post,gSYN1,gSYN2,gSYN3,gSYN4)
+
+%%%%%%%% network parameters %%%%%%%%%%
+netcon = eye(N_pre,N_post)
+
+%%%%%%%% calculate post-synaptic current %%%%%%%%%%
+tau_rise = tauD*tauR/(tauD-tauR)                  
+b = ((tauR/tauD)^(tau_rise/tauD) - (tauR/tauD)^(tau_rise/tauR))^-1
+f(t) =  b * ( exp(-t/tauD) - exp(-t/tauR) ).*(t>=0)
+
+syn(X,t) = ( f(t - max(tspike_pre) - delay) * (netcon .* gSYN) ) .* (X - ESYN)
+
+% syn is in units [nA = uS*mV] and scaled such that max value 
+% before multiplication by (X - ESYN) is gSYN regardless of rise and decay
+
+@isyn += syn(V_post,t)
+
+% monitor syn.functions

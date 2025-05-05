@@ -1,0 +1,28 @@
+chouLIF:
+% Erik's Implementation
+% dV/dt = ( g_leak*(E_leak - V) + g_ad*(E_k - V) + @isyn + Itonic + noise*randn(1,N_pop)/dt )/C;
+
+g_ad = 0;
+E_k = -70; % adaptation channel
+
+% capacitance and leak resistance
+C = 1; % nF
+
+g_leak = 0; % uS = 1/R (1/Mohm)
+E_leak = -55; % mV, equilibrium potential
+
+V_thresh = -40; % spike threshold mV
+V_reset = -58
+
+Itonic = 0
+noise = 0
+
+V(0) = V_reset
+
+dV/dt = ( g_leak*(E_leak - V) + g_ad.*(E_k - V) - @isyn + Itonic + noise*randn(1,N_pop)/dt )/C
+
+t_ref = 1.5; % refractory period, t_ref/fs = [ms]
+if(V >= V_thresh)(V = V_reset)
+if(any(t<=tspike+t_ref,1))(V = V_reset) % implement refractory period
+
+monitor V.spikes(V_thresh,1)

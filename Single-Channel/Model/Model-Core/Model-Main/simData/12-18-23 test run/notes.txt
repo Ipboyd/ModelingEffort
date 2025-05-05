@@ -1,0 +1,34 @@
+STRF gain: 0.100000 
+
+Simulation #1
+Off_Off_trial =1
+On_On_g_postIC =0.17
+Off_Off_g_postIC =0.17
+On_R1On_fP =0.1
+R1On_R2On_fP =0.1
+Off_R1Off_fP =0.1
+R1Off_R2Off_fP =0.1
+On_R1On_gSYN =0.02
+R1On_R2On_gSYN =0.02
+Off_R1Off_gSYN =0.02
+R1Off_R2Off_gSYN =0.02
+S1OnOff_R1On_gSYN =0.025
+S1OnOff_R1Off_gSYN =0.025
+S2OnOff_R2On_gSYN =0.025
+S2OnOff_R2Off_gSYN =0.025
+S1OnOff_R1On_fP =0.5
+S1OnOff_R1Off_fP =0.5
+S2OnOff_R2On_fP =0.5
+S2OnOff_R2Off_fP =0.5
+On_S1OnOff_gSYN =0.085
+R1On_S2OnOff_gSYN =0.085
+Off_S1OnOff_gSYN =0.045
+R1Off_S2OnOff_gSYN =0.045
+On_S1OnOff_fP =0.2
+R1On_S2OnOff_fP =0.2
+Off_S1OnOff_fP =0
+R1Off_S2OnOff_fP =0
+S1OnOff_Itonic =0
+S2OnOff_Itonic =0
+R2On_R2On_FR =8
+
