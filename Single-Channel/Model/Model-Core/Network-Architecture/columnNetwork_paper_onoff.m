@@ -1,4 +1,4 @@
-function [simdata,s] = columnNetwork_paper(study_dir,varies,options,netcons,flag_raised_mex)
+function [simdata,s] = columnNetwork_paper(study_dir,varies,options,flag_raised_mex)
 
 % Generates and simulates a network featuring columns of excitatory cells 
 % that respond to onsets and offsets in auditory stimuli
@@ -221,6 +221,15 @@ if numel(vary{I_ind,3}) > 1 && size(vary{FR_ind,3},2) > 1
     vary(temp) = [];
 end
 end
+
+netcons = struct; 
+
+% PEnetcon: PV->E, model as Gaussians for now
+sigma = 30;
+%netcons.PEnetcon = makePENetcon(bestLocs,sigma);
+netcons.PEnetcon = eye(1);
+netcons.XRnetcon = eye(1);
+netcons.RCnetcon = eye(1);
 
 % % poolobj = parpool('local', 8);
 % if ~flag_raised_mex
