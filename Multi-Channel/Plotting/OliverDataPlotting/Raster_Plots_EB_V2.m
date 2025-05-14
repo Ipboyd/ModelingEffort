@@ -50,7 +50,7 @@ pre_onset = zeros(195312,1);
 %Pad the offset until recording offset at t=4
 post_stim = zeros(195312+3360,1); %Add a second plus a little bit since the stim is not exactly 3 seconds accroding to sampling rate.
 
-%Combine everything
+%Combine everything  
 target1_full = [pre_onset;target1;post_stim];
 
 subplot(3,1,3)
