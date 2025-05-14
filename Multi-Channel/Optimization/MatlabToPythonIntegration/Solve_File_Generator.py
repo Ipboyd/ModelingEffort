@@ -1,6 +1,9 @@
 import os
 import Parser
 import State_Parser
+import FormatODEs_Ns
+import State_variable_Identifier
+import Extract_Fixed_vars
 
 def build_ODE(parameters):
 
@@ -45,12 +48,17 @@ class LIF_ODE(nn.Module):
     learnable_block = ''
     nonlearnable_block = '\n        # Non-learnable Parameters\n'
 
+
+
     for name, value in parameters.items():
         if 'gsyn' in name.lower():
             learnable_block += f"        self.{name} = nn.Parameter(torch.tensor({value}, dtype=torch.float32))\n"
         else:
             nonlearnable_block += f"        self.{name} = torch.tensor({value}, dtype=torch.float32)\n"
     
+    
+
+
     #Here we build the ODES
     #A couple of things (which I will check)
     #The state variables should update automatcially we shouldn't have to include that update
@@ -63,9 +71,10 @@ class LIF_ODE(nn.Module):
                          "Single-Channel", "Model", "Model-Core", 
                          "Model-Main", "run", "1-channel-paper", "solve", "solve_ode_1_channel_paper.m") #This could be changed for TD and multichannel and what not.
 
-
+    #Add the calculable parameters
+    fixed_params = Extract_Fixed_vars.extract_fixed_variables_from_block(file_path)
     
-
+    print(fixed_params)
 
     #Put in forwards header
     forwards_declaration = """
@@ -94,8 +103,13 @@ class LIF_ODE(nn.Module):
     #Loop through and fill in the ODES
 
     #Need to come up with an effecient way of formating these ODEs in the format that pytorch will accept
+
+    #The following loop:
+    #1. Writes the ODes to matlab
+    #2. Goes through and remove all of the (n-1,:)
+    #3. Adds the self. to the state vars
     for k in range(len(pairs)):
-        ode_string += f"        {pairs[k][0]} = {pairs[k][1]}\n"
+        ode_string += f"        {pairs[k][0]} = {State_variable_Identifier.add_self_prefix(FormatODEs_Ns.remove_discrete_time_indexing(pairs[k][1]),parameters.keys())}\n"  
 
     # Combine full class
     generated_code = SurrogateSpiking_Class_declaration + main_class_declaration + learnable_block + nonlearnable_block + forwards_declaration + state_string + ode_string
@@ -106,7 +120,3 @@ class LIF_ODE(nn.Module):
     print("generated.py has been created.")
 
     return generated_code
-
-
-
-
