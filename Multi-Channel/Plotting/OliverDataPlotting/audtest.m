@@ -12,12 +12,30 @@
 % 
 % onsetTimes = onsets / fs;
 % offsetTimes = offsets / fs;
+cd(userpath);
+cd('../GitHub/ModelingEffort/Single-Channel/Model/PreCortical-Modeling/resampled-stimuli')
 
-afr = dsp.AudioFileReader('200k_target1.wav');
+
+% Load target 1
+[x, fs] = audioread('200k_target1.wav');
+
+% Load target 2
+[x2, fs2] = audioread('200k_target1.wav');
+
+
+% Concatenate warm-up and original audio
+padded_audio = [x2; x];
+
+% Save to new file
+audiowrite('200k_target1_with_warmup.wav', padded_audio, fs);
+
+
+
+afr = dsp.AudioFileReader('200k_target1_with_warmup.wav');
 fs = afr.SampleRate;
 
 frameSize = ceil(5e-3*fs);
-overlapSize = ceil(.*frameSize);
+overlapSize = ceil(0.8*frameSize);
 hopSize = frameSize - overlapSize;
 afr.SamplesPerFrame = hopSize;
 
@@ -37,6 +55,8 @@ player = audioDeviceWriter('SampleRate',fs);
 
 pHold = ones(hopSize,1);
 
+speechProbLog = []; 
+
 while ~isDone(afr)
     x = afr();
     n = write(inputBuffer,x);
@@ -51,4 +71,9 @@ while ~isDone(afr)
     player(x);
 
     pHold(:) = p;
+
+    speechProbLog = [speechProbLog; p];
 end
+
+t = (0:length(speechProbLog)-1) * hopSize/fs;
+plot(t, speechProbLog), xlabel('Time (s)'), ylabel('Speech Probability')
