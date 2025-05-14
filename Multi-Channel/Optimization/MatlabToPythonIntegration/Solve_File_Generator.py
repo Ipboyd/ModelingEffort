@@ -1,3 +1,7 @@
+import os
+import Parser
+import State_Parser
+
 def build_ODE(parameters):
 
     #Create spiking handler class
@@ -49,16 +53,60 @@ class LIF_ODE(nn.Module):
     
     #Here we build the ODES
     #A couple of things (which I will check)
-    #
+    #The state variables should update automatcially we shouldn't have to include that update
+    #The shunting should be covered by the above block (Might need to add the shunting cooldown and what not)
 
 
+    #1. Find the file path. Going to set to this to single channel model for now.
+    home_dir = os.path.expanduser("~")  # Gets the current user's home directory
+    file_path = os.path.join(home_dir, "Documents", "GitHub", "ModelingEffort", 
+                         "Single-Channel", "Model", "Model-Core", 
+                         "Model-Main", "run", "1-channel-paper", "solve", "solve_ode_1_channel_paper.m") #This could be changed for TD and multichannel and what not.
+
+
+    
+
+
+    #Put in forwards header
+    forwards_declaration = """
+
+    def forward(self,t,state):
+        
+        #State Variables
+        
+        
+"""
+    
+    #Add in the state variables
+    state_string = '        '
+    state_vars = State_Parser.extract_state_variables_from_block(file_path)
+    for k in range(len(state_vars)):
+        if  k == 0:
+            state_string += f"{state_vars[k]}"
+        else:
+            state_string += f", {state_vars[k]}"
+
+    state_string += " = state\n\n        #ODEs\n"
+
+    ode_string = ''
+    pairs = Parser.extract_rhs_lhs(file_path)
+
+    #Loop through and fill in the ODES
+
+    #Need to come up with an effecient way of formating these ODEs in the format that pytorch will accept
+    for k in range(len(pairs)):
+        ode_string += f"        {pairs[k][0]} = {pairs[k][1]}\n"
 
     # Combine full class
-    generated_code = SurrogateSpiking_Class_declaration + main_class_declaration + learnable_block + nonlearnable_block
+    generated_code = SurrogateSpiking_Class_declaration + main_class_declaration + learnable_block + nonlearnable_block + forwards_declaration + state_string + ode_string
+
+    with open("generated.py", "w") as f:
+        f.write(generated_code)
+
+    print("generated.py has been created.")
 
     return generated_code
 
-#with open("generated.py", "w") as f:
-#    f.write(generated_code)
 
-#print("generated.py has been created.")
+
+
