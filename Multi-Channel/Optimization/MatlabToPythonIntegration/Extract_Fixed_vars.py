@@ -5,10 +5,10 @@ def extract_fixed_variables_from_block(file_path):
         lines = file.readlines()
 
     in_update_block = False
-    state_vars = []
+    fixed_vars = []
 
-    # Pattern to extract LHS variable (e.g., On_V from On_V(n,:) = ...)
-    pattern = re.compile(r'^\s*(\w+)\s*=')
+    # Pattern to extract LHS and RHS (e.g., On_R = 1/On_g_L;)
+    pattern = re.compile(r'^\s*(\w+)\s*=\s*(.+?);')
 
     for line in lines:
         if '% Fixed variables:' in line:
@@ -19,8 +19,10 @@ def extract_fixed_variables_from_block(file_path):
         if in_update_block:
             match = pattern.match(line)
             if match:
-                var_name = match.group(1)
-                state_vars.append(var_name)
+                lhs = match.group(1)
+                rhs = match.group(2)
 
-    return state_vars
+                fixed_vars.append((lhs, rhs))
+
+    return fixed_vars
 

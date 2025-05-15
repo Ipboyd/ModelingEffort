@@ -89,9 +89,9 @@ for k = 1:length(speechProbLog)
         
     end
 
-    if count == 35
+    if count == 
         indexer = [indexer,0];
-        indexer(end - 35 + 1 : end) = 1; %This should replace instead of add
+        indexer(end - 20 + 1 : end) = 1; %This should replace instead of add
         flag = 1;
         count = 0;
     elseif flag == 1;

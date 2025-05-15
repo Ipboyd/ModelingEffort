@@ -71,10 +71,31 @@ class LIF_ODE(nn.Module):
                          "Single-Channel", "Model", "Model-Core", 
                          "Model-Main", "run", "1-channel-paper", "solve", "solve_ode_1_channel_paper.m") #This could be changed for TD and multichannel and what not.
 
+
+    fixed_param_declaration = '/n        # Fixed Params'
+
     #Add the calculable parameters
     fixed_params = Extract_Fixed_vars.extract_fixed_variables_from_block(file_path)
     
-    print(fixed_params)
+    #Get the left hadn and right hand side of these equations.
+    lhs_list, rhs_list = zip(*fixed_params)
+
+    #lhs_list_self = State_variable_Identifier.add_self_prefix(lhs_list,lhs_list)
+    rhs_list_self = State_variable_Identifier.add_self_prefix(rhs_list,lhs_list)
+    rhs_list_self = State_variable_Identifier.add_self_prefix(rhs_list,parameters.keys())
+
+    for k in range(len(lhs_list_self)):
+        fixed_param_declaration += f"        self.{lhs_list_self[k]} = {rhs_list_self[k]}\n"
+
+
+    #print(lhs_list) 
+    #print(rhs_list)
+
+    #lhs_fixed_params = fixed_params[0,:]
+
+    #print(lhs_fixed_params)
+
+    #print(fixed_params)
 
     #Put in forwards header
     forwards_declaration = """
@@ -100,6 +121,8 @@ class LIF_ODE(nn.Module):
     ode_string = ''
     pairs = Parser.extract_rhs_lhs(file_path)
 
+
+
     #Loop through and fill in the ODES
 
     #Need to come up with an effecient way of formating these ODEs in the format that pytorch will accept
@@ -112,7 +135,7 @@ class LIF_ODE(nn.Module):
         ode_string += f"        {pairs[k][0]} = {State_variable_Identifier.add_self_prefix(FormatODEs_Ns.remove_discrete_time_indexing(pairs[k][1]),parameters.keys())}\n"  
 
     # Combine full class
-    generated_code = SurrogateSpiking_Class_declaration + main_class_declaration + learnable_block + nonlearnable_block + forwards_declaration + state_string + ode_string
+    generated_code = SurrogateSpiking_Class_declaration + main_class_declaration + learnable_block + nonlearnable_block + fixed_param_declaration + forwards_declaration + state_string + ode_string
 
     with open("generated.py", "w") as f:
         f.write(generated_code)
