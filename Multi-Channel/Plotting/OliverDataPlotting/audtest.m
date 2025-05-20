@@ -76,7 +76,7 @@ while ~isDone(afr)
 end
 
 t = (0:length(speechProbLog)-1) * hopSize/fs;
-plot(t, speechProbLog), xlabel('Time (s)'), ylabel('Speech Probability')
+% plot(t, speechProbLog), xlabel('Time (s)'), ylabel('Speech Probability')
 
 count = 0;
 flag = 0;
@@ -111,9 +111,20 @@ for k = 1:length(speechProbLog)
 
 end
 
+%% 
+
+idx_nor = 10 .* indexer;
+ix = 4.6432e-04:4.6432e-04:3;
+
+op_idx = 10 - idx_nor;
+op_idx = abs(op_idx);
 
 figure;
  
-plot(indexer)
+%plot(ix,idx_nor)
+area(ix,idx_nor,'FaceColor',[0.9882 0.7804 0.7804],'EdgeColor',[0.9882 0.7804 0.7804]); hold on
+area(ix,op_idx,'FaceColor',[0.7804 0.8392 0.9882],'EdgeColor',[0.7804 0.8392 0.9882]); hold off
  
-ylim([-0.5 1.5])
+ylim([-0.5 10])
+
+
