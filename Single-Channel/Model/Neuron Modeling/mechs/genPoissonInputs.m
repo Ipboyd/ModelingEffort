@@ -123,6 +123,7 @@
 function s = genPoissonInputs(trial,locNum,label,t_ref,t_ref_rel,rec)
 
 dt = 0.1;  % ms
+%dt = 50;
 type = label(2:end-1);   % dynasim reads the apostrophes as literals
 fileData = load(['IC_spks_' type '.mat'],'spks');
 
@@ -142,6 +143,9 @@ s = zeros(size(rate));
 for n = 1:size(rate,2)
     s(:,n) = spikeGenerator(rate(:,n),dt,t_ref,t_ref_rel,rec);
 end
+
+%save('test_spike_train.mat','s')
+load('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Single-Channel\Model\Model-Core\Model-Main\test_spike_train.mat','s')
 
 end
 
@@ -171,5 +175,10 @@ for i=1:n   % sample
         spike_times=[spike_times; i];
     end
 end
+
+%Just for testing purposes to keep everything consistant
+
+%spike_train=ones(1,n);
+%spike_train(end-20:end) = zeros(1,21);
 
 end

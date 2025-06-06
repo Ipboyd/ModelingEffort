@@ -10,7 +10,8 @@ mfiledir = strsplit(mfileinfo,filesep);
 
 %Create paths to all peripheral scripts
 addpath('../../Neuron Modeling/mechs');                                             %LIF equations for neurons
-addpath(genpath('../../PreCortical-Modeling'));                                     %pre-cortical modeling                           
+addpath(genpath('../../PreCortical-Modeling'));                                     %pre-cortical modeling  
+addpath('../../Peripherals/cSPIKE');
 addpath('../../Peripherals/cSPIKE/cSPIKEmex'); InitializecSPIKE;                    %Spike Distance calculator
 addpath('../subfunctions');                                                         %assistive functions
 addpath('../Parameters')                                                            %neuron Parameters
@@ -39,3 +40,5 @@ setOptions;                                                                     
 
 % post-process for performance and firing results
 postProcessSims;                                                                    %\TODO Comment and clean
+
+

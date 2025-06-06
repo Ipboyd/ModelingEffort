@@ -40,7 +40,24 @@ def Find_Var(file_path):
             if 'R2On_V(n,:) =' in line:
                 break
 
-    print(count)
-    print(to_state)
+    #print(count)
+    #print(to_state)
 
     return count - to_state - 1 - 1 #Minus 1 for formatting and minus 1 for matlab to python indexing
+
+
+def replace_ones_zeros(expr: str) -> str:
+    # Replace torch.ones(...)  [1]
+    expr = re.sub(r"ones\s*\(.*?\)", "[1]", expr)
+    
+    # Replace torch.zeros(...)  [0]
+    expr = re.sub(r"zeros\s*\(.*?\)", "[0]", expr)
+    
+
+    #print(expr)
+
+    # Replace self.xxx * [1]  [self.xxx]
+    expr = re.sub(r"(\w+)\s*\*\s*\[\s*1\s*\]", r"[\1]", expr)
+    #print('here4')
+
+    return expr

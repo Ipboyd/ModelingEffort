@@ -14,12 +14,21 @@ mod = py.importlib.import_module('Clean_up');
 py.importlib.reload(mod);
 
 mod = py.importlib.import_module('State_Parser');
-py.importlib.reload(mod);
+py.importlib.reload(mod); 
 
 mod = py.importlib.import_module('State_variable_Identifier');
 py.importlib.reload(mod);
 
 mod = py.importlib.import_module('FormatODEs_Ns');
+py.importlib.reload(mod);
+
+mod = py.importlib.import_module('ConditionalActions');
+py.importlib.reload(mod);
+
+mod = py.importlib.import_module('genPoissonInputs');
+py.importlib.reload(mod);
+
+mod = py.importlib.import_module('genPoissonTimes');
 py.importlib.reload(mod);
 
 
@@ -32,5 +41,16 @@ p = params.p;
 
 ParamsReturned = py.Solve_File_Generator.build_ODE(p);
 
+mod = py.importlib.import_module('generated');
+py.importlib.reload(mod);
 
-%py.generated.main()
+%py.sys.path    
+tic
+% xs = [];
+% for k = 1:1
+%    xs = [xs;single(py.generated.main(py.int(k)))];
+% end
+x = py.generated.main(); %This is declared in python rn so the 1 isn't actually doing anything
+
+
+toc
