@@ -350,7 +350,8 @@ class LIF_ODE(nn.Module):
         T = len(torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float32))
         helper = torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float32)
 
-        print(helper)
+        print('hereT')
+        print(T)
         
 
 
@@ -512,7 +513,7 @@ class LIF_ODE(nn.Module):
             self.Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(num_trials_count,self.Off_Off_IC_locNum,self.Off_Off_IC_label,self.Off_Off_IC_t_ref,self.Off_Off_IC_t_ref_rel,self.Off_Off_IC_rec)
 
             for t in range(1,T):
-                #print('made it here2')
+                #print(t)
 
                 On_V_k1 = ( (self.On_E_L-On_V[-1]) - self.On_R*On_g_ad[-1]*(On_V[-1]-self.On_E_k) - self.On_R*((((self.On_On_IC_g_postIC*(self.On_On_IC_input[t]*self.On_On_IC_netcon)*(On_V[-1]-self.On_On_IC_E_exc))))) + self.On_R*self.On_Itonic*self.On_Imask  ) / self.On_tau
                 On_g_ad_k1 = -On_g_ad[-1] / self.On_tau_ad
@@ -925,13 +926,13 @@ def main():
     #spike_saver = []
 
     model = LIF_ODE()
-    #optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.0, 0.999))
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.0)
-    num_epochs = 10
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.0, 0.999))
+    #optimizer = torch.optim.SGD(model.parameters(), lr=0.00001, momentum=0.0)
+    num_epochs = 12
 
     losses = []
     
-    target_spikes = torch.tensor(100.0, dtype=torch.float32) #100/s
+    target_spikes = torch.tensor(50.0, dtype=torch.float32) #100/s
     
 
     for epoch in range(num_epochs):

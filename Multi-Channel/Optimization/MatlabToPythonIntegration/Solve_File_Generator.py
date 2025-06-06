@@ -32,7 +32,7 @@ class SurrogateSpike(torch.autograd.Function):
         ctx.save_for_backward(input)
         #if((input >= threshold) and (prev < threshold)):
         #print(((input >= threshold) and (prev < threshold)).float())
-        return int((input >= threshold) and (prev < threshold))
+        return ((input >= threshold) and (prev < threshold)).float()
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -79,11 +79,11 @@ class LIF_ODE(nn.Module):
             nonlearnable_block += f"        self.{name} = int({value})\n"
         else:
             if 'gsyn' in name.lower():
-                learnable_block += f"        self.{name} = nn.Parameter(torch.tensor({value}, dtype=torch.float16))\n"
+                learnable_block += f"        self.{name} = nn.Parameter(torch.tensor({value}, dtype=torch.float32))\n"
             elif 'label' in name.lower():
                 nonlearnable_block += f"        self.{name} = {value}\n"
             else:
-                nonlearnable_block += f"        self.{name} = torch.tensor({value}, dtype=torch.float16)\n"
+                nonlearnable_block += f"        self.{name} = torch.tensor({value}, dtype=torch.float32)\n"
         
     
 
@@ -101,7 +101,7 @@ class LIF_ODE(nn.Module):
                          "Model-Main", "run", "1-channel-paper", "solve", "solve_ode_1_channel_paper.m") #This could be changed for TD and multichannel and what not.
 
 
-    fixed_param_declaration = '\n        T = len(torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float16))\n        #print(trial_num)\n\n        # Fixed Params\n'
+    fixed_param_declaration = '\n        T = len(torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float32))\n        #print(trial_num)\n\n        # Fixed Params\n'
 
     #print('made it here')
 
@@ -126,10 +126,11 @@ class LIF_ODE(nn.Module):
         
         #State Variables
             
-        T = len(torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float16))
-        helper = torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float16)
+        T = len(torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float32))
+        helper = torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float32)
 
-        print(helper)
+        print('hereT')
+        print(T)
         
 """
     monitor_string = '\n\n        #Monitors\n\n'
@@ -150,7 +151,7 @@ class LIF_ODE(nn.Module):
 \n        #spike_holderOn = torch.full((T-1,),0.0)
 \n        #spike_holderOff = torch.full((T-1,),0.0)
 \n        #spike_holderR1On = torch.full((T-1,),0.0)
-\n        spike_holderR2On = torch.full((T-1,),0,dtype=int)
+\n        spike_holderR2On = torch.full((T-1,),0.0)
 \n        #spike_holderR2Off = torch.full((T-1,),0.0)
 \n        #spike_holderR1Off = torch.full((T-1,),0.0)
 \n        #spike_holderS2OnOff = torch.full((T-1,),0.0)
@@ -194,7 +195,7 @@ class LIF_ODE(nn.Module):
             self.On_On_IC_input = genPoissonInputs.gen_poisson_inputs(num_trials_count,self.On_On_IC_locNum,self.On_On_IC_label,self.On_On_IC_t_ref,self.On_On_IC_t_ref_rel,self.On_On_IC_rec)
             self.Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(num_trials_count,self.Off_Off_IC_locNum,self.Off_Off_IC_label,self.Off_Off_IC_t_ref,self.Off_Off_IC_t_ref_rel,self.Off_Off_IC_rec)
 \n            for t in range(1,T):
-                #print('made it here2')\n\n'''
+                #print(t)\n\n'''
     
 
     pairs = Parser.extract_rhs_lhs(file_path)
@@ -410,13 +411,13 @@ def main():
     #spike_saver = []
 
     model = LIF_ODE()
-    #optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.0, 0.999))
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.0)
-    num_epochs = 10
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.0, 0.999))
+    #optimizer = torch.optim.SGD(model.parameters(), lr=0.00001, momentum=0.0)
+    num_epochs = 12
 
     losses = []
     
-    target_spikes = torch.tensor(100.0, dtype=torch.float32) #100/s
+    target_spikes = torch.tensor(50.0, dtype=torch.float32) #100/s
     
 
     for epoch in range(num_epochs):
