@@ -21,6 +21,8 @@ import genPoissonTimes
 import genPoissonInputs
 import matplotlib.pyplot as plt
 import pdb
+from memory_profiler import profile
+import gc
 
 
 #torch.autograd.set_detect_anomaly(True)
@@ -121,7 +123,7 @@ class LIF_ODE(nn.Module):
 
     #Put in forwards header
     forwards_declaration = """
-
+    @profile
     def forward(self):
         
         #State Variables
@@ -156,7 +158,7 @@ class LIF_ODE(nn.Module):
 \n        #spike_holderR1Off = torch.full((T-1,),0.0)
 \n        #spike_holderS2OnOff = torch.full((T-1,),0.0)
 \n        #spike_holderS1OnOff = torch.full((T-1,),0.0)
-\n        for num_trials_count in range(10):
+\n        for num_trials_count in range(2):
 \n            #print('made it here')\n'''
     
     
@@ -195,7 +197,7 @@ class LIF_ODE(nn.Module):
             self.On_On_IC_input = genPoissonInputs.gen_poisson_inputs(num_trials_count,self.On_On_IC_locNum,self.On_On_IC_label,self.On_On_IC_t_ref,self.On_On_IC_t_ref_rel,self.On_On_IC_rec)
             self.Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(num_trials_count,self.Off_Off_IC_locNum,self.Off_Off_IC_label,self.Off_Off_IC_t_ref,self.Off_Off_IC_t_ref_rel,self.Off_Off_IC_rec)
 \n            for t in range(1,T):
-                #print(t)\n\n'''
+                #print('hello2')\n\n'''
     
 
     pairs = Parser.extract_rhs_lhs(file_path)
@@ -217,7 +219,7 @@ class LIF_ODE(nn.Module):
         ode_string += f"                {pairs[k][0]} = {rhs_ode_rpl}\n"
         #if not State_variable_Identifier.add_self_prefix(State_variable_Identifier.add_self_prefix(FormatODEs_Ns.reformat_input_time_indexing(FormatODEs_Ns.reformat_discrete_time_indexing(pairs[k][1])),parameters.keys()),lhs_list).strip().isdigit() and State_variable_Identifier.add_self_prefix(State_variable_Identifier.add_self_prefix(FormatODEs_Ns.reformat_input_time_indexing(FormatODEs_Ns.reformat_discrete_time_indexing(pairs[k][1])),parameters.keys()),lhs_list).strip() != "0":
         #    ode_string += f"                print({pairs[k][0]}.grad_fn)\n                print({pairs[k][0]}.requires_grad)\n"
-        #ode_string += f"            print(\'t\' + '{k}')\n"  
+        #ode_string += f"                 print('hello')\n"  
 
 
     update_eulers = '\n\n                #Update Eulers\n'
@@ -231,7 +233,9 @@ class LIF_ODE(nn.Module):
     for k in range(len(update_vars)):
 
         rep_val = update_vals[k].replace("[t-1]", "[-1]")
-        update_eulers += f"                {update_vars[k][:-3]}.append(({State_variable_Identifier.add_self_prefix(rep_val,parameters.keys())}).view(()))\n"
+        #update_eulers += f"                {update_vars[k][:-3]}.append(({State_variable_Identifier.add_self_prefix(rep_val,parameters.keys())}).view(()))\n"
+        update_eulers += f"                {update_vars[k][:-3]}[-2] = {update_vars[k][:-3]}[-1]\n"
+        update_eulers += f"                {update_vars[k][:-3]}[-1] = ({State_variable_Identifier.add_self_prefix(rep_val,parameters.keys())}).view(())\n"
 
     #Calculate spikes w/ surrogate function for forwards and backwards
 
@@ -259,7 +263,7 @@ class LIF_ODE(nn.Module):
 
             spiking_string += f"                {var_base}_spikes_holder.append(SurrogateSpike.apply({var_base}[-1], {var_prev}, {var_thresh}))\n"
             spiking_string += f"                {var_base}_test = SurrogateSpike.apply({var_base}[-1], {var_prev}, {var_thresh})\n"
-            #spiking_string += f"               print('test1')\n"
+            #spiking_string += f"                print('test1')\n"
             spiking_string += f"                if {var_base}_test:\n"
             #if var_base == "S2OnOff_V":
             #    spiking_string += f"                   pdb.set_trace()\n"
@@ -287,14 +291,20 @@ class LIF_ODE(nn.Module):
             #spiking_string += f"               print({var_base}_test2a)\n"
             #spiking_string += f"               print('test2a')\n"
             spiking_string += f"                if {var_base}_test2a:\n"
-            spiking_string += f"                    {var[:-3]}.append({var_reset})\n"
-            spiking_string += f"                    {var_adapt[:-3]}.append({var_adapt[:-3]}[-1] + {var_inc})\n"
+            #spiking_string += f"                    {var[:-3]}.append({var_reset})\n"
+            spiking_string += f"                    {var[:-3]}[-2] = {var[:-3]}[-1] \n"
+            spiking_string += f"                    {var[:-3]}[-1] = {var_reset} \n"
+            #spiking_string += f"                    {var_adapt[:-3]}.append({var_adapt[:-3]}[-1] + {var_inc})\n"
+            spiking_string += f"                    {var_adapt[:-3]}[-2] = {var_adapt[:-3]}[-1]\n"
+            spiking_string += f"                    {var_adapt[:-3]}[-1] = {var_adapt[:-3]}[-1] + {var_inc}\n"
             
             spiking_string += f"                {var_base}_test2b = torch.any(helper[t] <= {var_name}_tspike + self.{var_name}_t_ref)\n"
             #spiking_string += f"               print({var_base}_test2b)\n"
             #spiking_string += f"               print('test2b')\n" 
             spiking_string += f"                if {var_base}_test2b:\n"
-            spiking_string += f"                    {var[:-3]}.append({var_reset})\n"
+            #spiking_string += f"                    {var[:-3]}.append({var_reset})\n"
+            spiking_string += f"                    {var[:-3]}[-2] = {var[:-3]}[-1]\n"
+            spiking_string += f"                    {var[:-3]}[-1] = {var_reset}\n"
 
     #Test 3 (Update PSC vars) 
     #(Probably how we should do things in the future)
@@ -307,7 +317,7 @@ class LIF_ODE(nn.Module):
     spiking_string += '\n\n'
 
     #print(statement_pairs)
-    #print(yyy)
+    print('here5')
 
     for k in range(len(statement_pairs)):
 
@@ -325,10 +335,18 @@ class LIF_ODE(nn.Module):
         #spiking_string += f"               print({var_base}_test3)\n"
         #spiking_string += f"               print('test3')\n"
         spiking_string += f"                if {var_base}_test3:\n"  
-        spiking_string += f"                    {var_x}.append({var_x}[-1] + {var_q}[-1])\n"
-        spiking_string += f"                    {var_q}.append({var_F}[-1] * {var_P}[-1])\n"
-        spiking_string += f"                    {var_F}.append({var_F}[-1] + {var_fF}*({var_max}-{var_F}[-1]))\n"
-        spiking_string += f"                    {var_P}.append({var_P}[-1] * (1 - {var_fP}))\n"
+        #spiking_string += f"                    {var_x}.append({var_x}[-1] + {var_q}[-1])\n"
+        #spiking_string += f"                    {var_q}.append({var_F}[-1] * {var_P}[-1])\n"
+        #spiking_string += f"                    {var_F}.append({var_F}[-1] + {var_fF}*({var_max}-{var_F}[-1]))\n"
+        #spiking_string += f"                    {var_P}.append({var_P}[-1] * (1 - {var_fP}))\n"
+        spiking_string += f"                    {var_x}[-2] = {var_x}[-1]\n"
+        spiking_string += f"                    {var_q}[-2] = {var_F}[-1]\n"
+        spiking_string += f"                    {var_F}[-2] = {var_F}[-1]\n"
+        spiking_string += f"                    {var_P}[-2] = {var_P}[-1]\n"
+        spiking_string += f"                    {var_x}[-1] = {var_x}[-1] + {var_q}[-1]\n"
+        spiking_string += f"                    {var_q}[-1] = {var_F}[-1] * {var_P}[-1]\n"
+        spiking_string += f"                    {var_F}[-1] = {var_F}[-1] + {var_fF}*({var_max}-{var_F}[-1])\n"
+        spiking_string += f"                    {var_P}[-1] = {var_P}[-1] * (1 - {var_fP})\n"
 
 
     #This needs to be fixed. Spikes lists need to be redeclared before each iteration. (change holder variable name)
@@ -397,6 +415,7 @@ class LIF_ODE(nn.Module):
     #Testing with 2 trials instead of 10 just to see if the backprop works
 
     training_loop = """
+
 def main():
     
     #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -413,14 +432,18 @@ def main():
     model = LIF_ODE()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.0, 0.999))
     #optimizer = torch.optim.SGD(model.parameters(), lr=0.00001, momentum=0.0)
-    num_epochs = 12
+    num_epochs = 2
 
     losses = []
     
     target_spikes = torch.tensor(50.0, dtype=torch.float32) #100/s
     
+    spike_f = open("spikes.bin", "ab")
+
 
     for epoch in range(num_epochs):
+
+        print(epoch)
         optimizer.zero_grad()
 
         from torchviz import make_dot
@@ -459,9 +482,28 @@ def main():
         print(fr.requires_grad)              # This is what goes into loss
         print(fr.grad_fn)
 
-        loss.backward()
-        optimizer.step()
 
+        #spikes_u8 = torch.stack(output).to(torch.uint8)
+
+        #spikes_u8 = [thingy.detach().to(torch.uint8).cpu().numpy() for thingy in output]
+
+        #spike_f.write(spikes_u8) 
+
+        #spikes_bit.tofile("spikes.bin")
+
+        #for tensor_holders in output:
+        #    spike_f.write(tensor_holders.detach().to(torch.uint8).cpu().numpy())
+            
+        optimizer.zero_grad()
+
+        loss.backward()
+
+        del output 
+
+
+        optimizer.step()
+        gc.collect()
+        #tracemalloc.clear_traces()
         
         print(f"Epoch {epoch}: Loss = {loss.item()}") 
         
@@ -474,14 +516,20 @@ def main():
 
         #outputs.append(mid_ouputs)
 
-        output_np_list = [tensor.detach().cpu().numpy() for tensor in output]
 
         
-        outputs.append(output_np_list)
 
-        losses.append(loss)
+        #output_np_list = [tensor.detach().to(torch.uint8).cpu().numpy() for tensor in output]
 
-    return outputs, losses
+        
+        #outputs.append(output_np_list)
+
+        
+
+        losses.append(loss.item())
+
+    #return outputs, losses
+    #return losses
 
 if __name__ == "__main__":
     main()

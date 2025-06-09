@@ -48,16 +48,26 @@ def Find_Var(file_path):
 
 def replace_ones_zeros(expr: str) -> str:
     # Replace torch.ones(...)  [1]
-    expr = re.sub(r"ones\s*\(.*?\)", "[1]", expr)
+    expr = re.sub(r"ones\s*\(.*?\)", "[1,1]", expr)
     
     # Replace torch.zeros(...)  [0]
-    expr = re.sub(r"zeros\s*\(.*?\)", "[0]", expr)
+    expr = re.sub(r"zeros\s*\(.*?\)", "[0,0]", expr)
     
 
     #print(expr)
 
+    print(expr)
+
     # Replace self.xxx * [1]  [self.xxx]
-    expr = re.sub(r"(\w+)\s*\*\s*\[\s*1\s*\]", r"[\1]", expr)
+    #expr = re.sub(r"(\w+)\s*\*\s*\[\s*1\s*\]", r"[\1]", expr)
     #print('here4')
+
+    
+
+    expr = re.sub(
+    r"(\w+)\s*\*\s*\[\s*1\s*,\s*1\s*\]",   # capture “self.xxx”
+    r"[\1, \1]",                                 # duplicate it twice
+    expr,
+    )
 
     return expr
