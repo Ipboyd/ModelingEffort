@@ -56,7 +56,7 @@ def replace_ones_zeros(expr: str) -> str:
 
     #print(expr)
 
-    print(expr)
+    #print(expr)
 
     # Replace self.xxx * [1]  [self.xxx]
     #expr = re.sub(r"(\w+)\s*\*\s*\[\s*1\s*\]", r"[\1]", expr)

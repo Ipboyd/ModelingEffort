@@ -23,6 +23,8 @@ import matplotlib.pyplot as plt
 import pdb
 from memory_profiler import profile
 import gc
+from torch.cuda.amp import autocast
+import torch.profiler
 
 
 #torch.autograd.set_detect_anomaly(True)
@@ -131,8 +133,6 @@ class LIF_ODE(nn.Module):
         T = len(torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float32))
         helper = torch.arange(self.tspan[0],self.tspan[1],self.dt, dtype=torch.float32)
 
-        print('hereT')
-        print(T)
         
 """
     monitor_string = '\n\n        #Monitors\n\n'
@@ -150,14 +150,22 @@ class LIF_ODE(nn.Module):
         
 
     ode_string = f'''\n\n        #ODEs
-\n        #spike_holderOn = torch.full((T-1,),0.0)
-\n        #spike_holderOff = torch.full((T-1,),0.0)
-\n        #spike_holderR1On = torch.full((T-1,),0.0)
+\n        spike_holderOn = torch.full((T-1,),0.0)
+\n        spike_holderOff = torch.full((T-1,),0.0)
+\n        spike_holderR1On = torch.full((T-1,),0.0)
 \n        spike_holderR2On = torch.full((T-1,),0.0)
-\n        #spike_holderR2Off = torch.full((T-1,),0.0)
-\n        #spike_holderR1Off = torch.full((T-1,),0.0)
-\n        #spike_holderS2OnOff = torch.full((T-1,),0.0)
-\n        #spike_holderS1OnOff = torch.full((T-1,),0.0)
+\n        spike_holderR2Off = torch.full((T-1,),0.0)
+\n        spike_holderR1Off = torch.full((T-1,),0.0)
+\n        spike_holderS2OnOff = torch.full((T-1,),0.0)
+\n        spike_holderS1OnOff = torch.full((T-1,),0.0)
+\n        #On_V_spk_sum = torch.tensor(0.0)
+\n        #Off_V_spk_sum = torch.tensor(0.0)
+\n        #R1On_V_spk_sum = torch.tensor(0.0)
+\n        #R1Off_V_spk_sum = torch.tensor(0.0)
+\n        #R2On_V_spk_sum = torch.tensor(0.0)
+\n        #R2Off_V_spk_sum = torch.tensor(0.0)
+\n        #S1OnOff_V_spk_sum = torch.tensor(0.0)
+\n        #S2OnOff_V_spk_sum = torch.tensor(0.0)
 \n        for num_trials_count in range(2):
 \n            #print('made it here')\n'''
     
@@ -262,9 +270,10 @@ class LIF_ODE(nn.Module):
             
 
             spiking_string += f"                {var_base}_spikes_holder.append(SurrogateSpike.apply({var_base}[-1], {var_prev}, {var_thresh}))\n"
-            spiking_string += f"                {var_base}_test = SurrogateSpike.apply({var_base}[-1], {var_prev}, {var_thresh})\n"
+            #spiking_string += f"                {var_base}_spk_sum += SurrogateSpike.apply({var_base}[-1], {var_prev}, {var_thresh})\n"
+            #spiking_string += f"                {var_base}_test = SurrogateSpike.apply({var_base}[-1], {var_prev}, {var_thresh})\n"
             #spiking_string += f"                print('test1')\n"
-            spiking_string += f"                if {var_base}_test:\n"
+            spiking_string += f"                if {var_base}_spikes_holder[-1]:\n"
             #if var_base == "S2OnOff_V":
             #    spiking_string += f"                   pdb.set_trace()\n"
             #spiking_string += f"                    print('test1')\n"                                             
@@ -317,7 +326,7 @@ class LIF_ODE(nn.Module):
     spiking_string += '\n\n'
 
     #print(statement_pairs)
-    print('here5')
+    #print('here5')
 
     for k in range(len(statement_pairs)):
 
@@ -361,7 +370,7 @@ class LIF_ODE(nn.Module):
 
     return_statement = '''
     \n\n            #print(len(spike_holder))   
-    \n\n            print(len(On_V_spikes))  
+    \n\n            #print(len(On_V_spikes))  
     \n\n            #spike_holder = torch.cat((spike_holder, On_V_spikes), dim=0)
     \n\n            #spike_holder = spike_holder.view(-1)
     \n\n            #R2On_V_spikes = R2On_V_spikes.view(-1)
@@ -373,10 +382,11 @@ class LIF_ODE(nn.Module):
     \n\n            #spike_holderS1OnOff = torch.cat((spike_holderS1OnOff, S1OnOff_V_spikes), dim=0)
     \n\n            #spike_holderR2Off = torch.cat((spike_holderR2Off, R2Off_V_spikes), dim=0)
     \n\n            #spike_holderR1Off = torch.cat((spike_holderR1Off, R1Off_V_spikes), dim=0)
-    \n\n            print('made it here 5')
+    \n\n            #print('made it here 5')
     \n\n        #print(max(self.On_On_IC_input))
     \n\n        #print(max(self.Off_Off_IC_input))
     \n\n        #return [On_V_spikes,Off_V_spikes,R1On_V_spikes,R1Off_V_spikes,R2On_V_spikes,S1OnOff_V_spikes,S2OnOff_V_spikes]
+    \n\n        #return R2On_V_spk_sum
     \n\n        return spike_holderR2On
     \n\n        #return [spike_holderOn,spike_holderOff,spike_holderR1On,spike_holderR2On,spike_holderS2OnOff,spike_holderS1OnOff,spike_holderR2Off,spike_holderR1Off]\n\n'''
 
@@ -418,115 +428,61 @@ class LIF_ODE(nn.Module):
 
 def main():
     
-    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #device = torch.device("cpu")
-    #print(torch.__version__)
-    #print(torch.cuda.is_available())
-    #print(torch.cuda.device_count())
-    #print(torch.version.cuda)
-    outputs = []
-    #for k in range(10):
-
-    #spike_saver = []
-
     model = LIF_ODE()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01, betas=(0.0, 0.999))
     #optimizer = torch.optim.SGD(model.parameters(), lr=0.00001, momentum=0.0)
-    num_epochs = 2
+    num_epochs = 1
 
-    losses = []
+    #model = torch.compile(model, backend="inductor") 
     
     target_spikes = torch.tensor(50.0, dtype=torch.float32) #100/s
     
-    spike_f = open("spikes.bin", "ab")
 
 
     for epoch in range(num_epochs):
 
-        print(epoch)
         optimizer.zero_grad()
 
-        from torchviz import make_dot
+        #with autocast():
+        #    output = model()  # forward pass
 
-        output = model()  # forward pass
 
-        
+        with torch.profiler.profile(
+            schedule=torch.profiler.schedule(wait=1, warmup=1, active=3),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler("./logdir"),
+            record_shapes=True,
+            profile_memory=True,
+            with_stack=True
+        ) as prof:
+            for _ in range(5):
+                output = model()  # your forward pass
 
+        prof.export_chrome_trace("trace.json")  # view in Chrome
+
+  
         #print("Forward pass ran successfully. Num Spikes")
         print('Avg Firing Rate')
         print(output.sum()/10/3)
 
         fr = output.sum()/10/3  #total spikes/num_trials/num_seconds
+        #fr = output/10/3
 
         loss = (fr - target_spikes)**2
-
-        print('here')
-        
-        
-        #dot = make_dot(loss)          # builds .dot graph
-        #dot.render("lif_graph", format="pdf")  # opens in any PDF viewer
-
-        #print("Loss requires grad:", loss.requires_grad)
-        #print("Loss grad_fn:", loss.grad_fn)
-
-        #for name, param in model.named_parameters():
-        #    if param.requires_grad:
-        #        print(f"{name}: requires_grad={param.requires_grad}, grad_fn={param.grad_fn}")
-        
-        #pdb.set_trace()
 
         print(type(output))                   # Tensor? List?
         print(output.requires_grad)
         print(output.grad_fn)
 
-        print(fr.requires_grad)              # This is what goes into loss
-        print(fr.grad_fn)
-
-
-        #spikes_u8 = torch.stack(output).to(torch.uint8)
-
-        #spikes_u8 = [thingy.detach().to(torch.uint8).cpu().numpy() for thingy in output]
-
-        #spike_f.write(spikes_u8) 
-
-        #spikes_bit.tofile("spikes.bin")
-
-        #for tensor_holders in output:
-        #    spike_f.write(tensor_holders.detach().to(torch.uint8).cpu().numpy())
             
         optimizer.zero_grad()
 
-        loss.backward()
+        #loss.backward() 
 
-        del output 
-
-
-        optimizer.step()
+        #optimizer.step()
         gc.collect()
-        #tracemalloc.clear_traces()
+
+        print(f"Epoch {epoch}: Loss = {loss.item()}",flush=True) 
         
-        print(f"Epoch {epoch}: Loss = {loss.item()}") 
-        
-        mid_ouputs = []
-
-        #for k in range(len(output)):
-        #    output_np_list = [tensor.detach().cpu().numpy() for tensor in output[k]]
-        #    mid_ouputs.append(output_np_list)
-
-
-        #outputs.append(mid_ouputs)
-
-
-        
-
-        #output_np_list = [tensor.detach().to(torch.uint8).cpu().numpy() for tensor in output]
-
-        
-        #outputs.append(output_np_list)
-
-        
-
-        losses.append(loss.item())
 
     #return outputs, losses
     #return losses
