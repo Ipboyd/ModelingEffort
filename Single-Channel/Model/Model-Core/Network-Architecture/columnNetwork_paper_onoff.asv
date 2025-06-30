@@ -114,6 +114,11 @@ s.connections(end).parameters={'g_postIC',0.19,'label','off','trial',1,'locNum',
 
 %Looking at E->PV fp = 0
 
+
+        self.R2On_S2OnOff_PSC_gSYN = nn.Parameter(torch.tensor(0.025, dtype=torch.float32))
+        self.R2Off_S2OnOff_PSC_gSYN = nn.Parameter(torch.tensor(0.025, dtype=torch.float32))
+        self.R2Off_R1Off_PSC_gSYN = nn.Parameter(torch.tensor(0.02, dtype=torch.float32))
+
 % excitatory inputs
 s.connections(end+1).direction='On->R1On';
 s.connections(end).mechanism_list={'PSC'};
@@ -126,13 +131,11 @@ s.connections(end).parameters={'gSYN',0.03,'tauR',EI_rise,'tauD',EI_fall,'fP',0.
 s.connections(end+1).direction='S1OnOff->R1On';
 s.connections(end).mechanism_list={'PSC'};
 %s.connections(end).parameters={'gSYN',0.03,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
-%Pre Optimization
 s.connections(end).parameters={'gSYN',0.025,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
 s.connections(end+1).direction='S1OnOff->R1Off';
 s.connections(end).mechanism_list={'PSC'};
-%s.connections(end).parameters={'gSYN',0.03,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120};
-%Pre Optimization
+%s.connections(end).parameters={'gSYN',0.03,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 s.connections(end).parameters={'gSYN',0.025,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
 % offset channels
@@ -164,9 +167,7 @@ s.connections(end).parameters={'gSYN',0.025,'tauR',IE_rise,'tauD',IE_fall,'ESYN'
 
 s.connections(end+1).direction='S2OnOff->R2Off';
 s.connections(end).mechanism_list={'PSC'};
-%s.connections(end).parameters={'gSYN',0.01,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
-%Pre Optimization
-s.connections(end).parameters={'gSYN',0.025,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
+s.connections(end).parameters={'gSYN',0.01,'tauR',IE_rise,'tauD',IE_fall,'ESYN',-80,'fP',0.5,'tauP',120}; 
 
 % offset channels
 s.connections(end+1).direction='R1Off->R2Off';

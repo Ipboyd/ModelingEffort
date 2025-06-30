@@ -1,0 +1,36 @@
+aa = x{1}.detach().numpy();
+bb = double(aa);
+
+%output = reshape(bb,[11,34998])
+
+b = sum(bb);
+ 
+bin_size = 198;
+num_bins = floor(length(b) / bin_size);
+b_trunc = b(1:num_bins * bin_size);
+b_trunc_reshaped = reshape(b_trunc, bin_size, num_bins);  
+binned_counts = sum(b_trunc_reshaped, 1);   
+
+
+target_spikes = double(x{3}.detach.numpy());
+
+figure();
+plot(binned_counts,LineWidth=1.5); hold on
+plot(target_spikes,LineWidth=1.5); hold on
+legend({'best fit','target'})
+
+
+figure();
+plot(binned_counts(15:80),LineWidth=1.5); hold on
+plot(target_spikes(15:80),LineWidth=1.5); hold on
+legend({'best fit','target'})
+
+% print('binned_counts')
+% print(binned_counts)
+% print(len(binned_counts))
+
+
+
+%Add the GA approach as well
+%By starting with initial conditnos wecan also extract motifs or different
+%types of networks that will allow fr a family of operationso or solutions.

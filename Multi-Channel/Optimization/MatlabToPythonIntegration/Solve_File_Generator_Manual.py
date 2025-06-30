@@ -15,81 +15,29 @@ def build_ODE(parameters):
     #Create spiking handler class
 
     SurrogateSpiking_Class_declaration = """
-import torch
-import torch.nn as nn
 import genPoissonTimes
 import genPoissonInputs
 import matplotlib.pyplot as plt
-import pdb
-from memory_profiler import profile
+
+
 import gc
-from torch.cuda.amp import autocast
-import torch.profiler
+
 import scipy.io
 import numpy as np
 
-
-#torch.autograd.set_detect_anomaly(True)
-
-
-class SurrogateSpike(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, input, prev, threshold):
-        ctx.save_for_backward(input)
-        #if((input >= threshold) and (prev < threshold)):
-        #print(((input >= threshold) and (prev < threshold)).float())
-        return ((input >= threshold) and (prev < threshold)).float()
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        input, = ctx.saved_tensors
-        grad_input = grad_output * (1.0 / (1.0 + torch.abs(input)) ** 2)
-        return grad_input, None, None
-
-"""
-
-    # Header
-    main_class_declaration = """
-
-class LIF_ODE(nn.Module):
-    def __init__(self):
-        super().__init__()
-        
-        
-
-        #self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        #print(self.device)
-        #print(trial_num)
-
-        # Learnable Parameters
 
 """
 
     
 
-    #Need to separate out the learnable and non-learnable parameters
-    #Right now we are just leraning gsyns so separate those out
-    #There are several ways we could go about seperating things out
-    #1. just look for gsyn or for the name of the parameters
-    #2. accept an array of values that correspond to learnable/nonlearnable params that we take
-        #a. Going to try #1 for now
+    #For now, not going to set up the seperation between learnable and non-learnable parameters. At some point you might want to implement some way to select them.
+    #TODO/ IMPLEMENT selection method.
 
-    learnable_block = ''
-    nonlearnable_block = '\n        # Non-learnable Parameters\n'
-
-
+    parameters = ''
 
     for name, value in parameters.items():
-        
-        if 'npop' in name.lower():
-            nonlearnable_block += f"        self.{name} = int({value})\n"
-        else:
-            if 'gsyn' in name.lower():
-                learnable_block += f"        self.{name} = nn.Parameter(torch.tensor({value}, dtype=torch.float32))\n"
-            elif 'label' in name.lower():
-                nonlearnable_block += f"        self.{name} = {value}\n"
-            else:
-                nonlearnable_block += f"        self.{name} = torch.tensor({value}, dtype=torch.float32)\n"
+        parameters += f"        {name} = {value}\n"
+
         
     
 
@@ -591,10 +539,10 @@ if __name__ == "__main__":
 
     #print(generated_code)
 
-    with open("generated.py", "w") as f:
+    with open("generated2.py", "w") as f:
         f.write(generated_code)
 
-    print("generated.py has been created.")
+    print("generated2.py has been created.")
 
     return generated_code
 
@@ -616,5 +564,6 @@ if __name__ == "__main__":
 #Do state variables need to be in init?
 #Figure out genpoisson times/inputs
     #Just need to make sure we get access to the firing rate profiles when we actually try to run this
+
 
 

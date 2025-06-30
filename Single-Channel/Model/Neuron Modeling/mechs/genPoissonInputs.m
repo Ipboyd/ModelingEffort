@@ -145,7 +145,7 @@ for n = 1:size(rate,2)
 end
 
 %save('test_spike_train.mat','s')
-load('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Single-Channel\Model\Model-Core\Model-Main\test_spike_train.mat','s')
+%load('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Single-Channel\Model\Model-Core\Model-Main\test_spike_train.mat','s')
 
 end
 

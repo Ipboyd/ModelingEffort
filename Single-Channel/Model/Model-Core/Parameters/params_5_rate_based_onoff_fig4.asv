@@ -47,20 +47,14 @@ varies(end).range = 0.02;
 %varies(end+1).conxn = '(On->R1On,R1On->R2On,Off->R1Off,R1Off->R2Off)';
 varies(end+1).conxn = '(R1On->R2On)';
 varies(end).param = 'gSYN';
-varies(end).range = 0.011923282407224178;
+varies(end).range = 0.02;
 
 
 
 %PVs
-%varies(end+1).conxn = '(S1OnOff->R1On,S1OnOff->R1Off,S2OnOff->R2On,S2OnOff->R2Off)';
-varies(end+1).conxn = '(S1OnOff->R1On,S1OnOff->R1Off,S2OnOff->R2Off)';
+varies(end+1).conxn = '(S1OnOff->R1On,S1OnOff->R1Off,S2OnOff->R2On,S2OnOff->R2Off)';
 varies(end).param = 'gSYN';
 varies(end).range = 0.025;
-
-varies(end+1).conxn = '(S2OnOff->R2On)';
-varies(end).param = 'gSYN';
-varies(end).range = 0.032217398285865784;
-
 
 varies(end+1).conxn = '(S1OnOff->R1On,S1OnOff->R1Off,S2OnOff->R2On,S2OnOff->R2Off)';
 varies(end).param = 'fP';

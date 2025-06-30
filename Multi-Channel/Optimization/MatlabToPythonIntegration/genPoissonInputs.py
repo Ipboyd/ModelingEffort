@@ -125,13 +125,13 @@ def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec):
 
     #print(s)
 
-    filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Single-Channel/Model/Model-Core/Model-Main/test_spike_train.mat"
+    #filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Single-Channel/Model/Model-Core/Model-Main/test_spike_train.mat"
     
-    s = scipy.io.loadmat(filename)
+    #s = scipy.io.loadmat(filename)
     #print('here')
     #print(s['s'])
 
-    s = s['s']
+    #s = s['s']
 
     return s
 

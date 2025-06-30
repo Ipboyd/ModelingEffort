@@ -42,6 +42,7 @@ def gen_poisson_times(N_pop, dt, FR, std, simlen=35000):
             violate_inds = np.where(ISIs < refrac)[0] + 1
             temp[spk_inds[violate_inds], i] = 0
 
+    print('Ran Random R2')
     return torch.tensor(temp, dtype=torch.float32)
 
 
