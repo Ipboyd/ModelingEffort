@@ -1,5 +1,4 @@
 import numpy as np
-import torch
 
 def gen_poisson_times(N_pop, dt, FR, std, simlen=35000):
     """
@@ -21,14 +20,14 @@ def gen_poisson_times(N_pop, dt, FR, std, simlen=35000):
         token : torch.Tensor
             Binary spike train matrix of shape (simlen, N_pop)
     """
+    N_pop = int(N_pop)
+    simlen = int(simlen)
+    std = int(std) #set to 0.0 right now
+    FR = int(FR) # set to  8.0 right now
+
     # Generate Poisson spikes with added noise
 
     #Convert things from tensors so we can work with them
-    FR = FR.numpy().astype(int)
-    std = std.numpy().astype(int)
-    simlen = simlen.numpy().astype(int)
-    dt = dt.numpy().astype(int)
-
     rand_gauss = FR + std * np.random.randn(simlen, N_pop)
     rand_bin = np.random.rand(simlen, N_pop) < (rand_gauss * dt / 1000)
 
@@ -42,8 +41,7 @@ def gen_poisson_times(N_pop, dt, FR, std, simlen=35000):
             violate_inds = np.where(ISIs < refrac)[0] + 1
             temp[spk_inds[violate_inds], i] = 0
 
-    print('Ran Random R2')
-    return torch.tensor(temp, dtype=torch.float32)
+    return np.array(temp)
 
 
 '''import torch

@@ -13,8 +13,8 @@ def spike_generator(rate, dt, t_ref, t_ref_rel, rec):
     n_refab = int(15 / 1000 / dt_sec)  # number of samples for ref. period window
     tw = np.arange(n_refab + 1)
 
-    t_ref_samp = (t_ref / 1000 / dt_sec).numpy().astype(int)
-    t_rel_samp = (t_ref_rel / 1000 / dt_sec).numpy().astype(int)
+    t_ref_samp = int(t_ref / 1000 / dt_sec)
+    t_rel_samp = int(t_ref_rel / 1000 / dt_sec)
 
     
     #print(t_ref_samp)
@@ -89,13 +89,13 @@ def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec):
     trial_rate = temp[:, :, int(trial)]  # select trial
 
     trial_rate = np.reshape(trial_rate, (-1, trial_rate.shape[1]))
-    print(len(trial_rate))
+    #print(len(trial_rate))
 
     #print(np.shape(np.array(trial_rate)))
     
     #trial_rate = np.atleast_2d(temp[:, :, trial])
 
-    loc_num = loc_num.numpy().astype(int)
+    loc_num = int(loc_num)
 
     #print(loc_num)
     #Okay this will definitely need to be updated for the multichannel model

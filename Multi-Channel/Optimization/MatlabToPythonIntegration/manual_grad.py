@@ -32,6 +32,7 @@ def backwards(fr, target, V, T, thresh, c):
 
     for t in range(1, T):
         grad += ((6*np.exp(-6*(V[t] - thresh - 0.5)))/(1+np.exp(-6*(V[t] - thresh - 0.5)))**2)*c
+        print(grad)
 
     grad = grad*2*(fr-target)
 
