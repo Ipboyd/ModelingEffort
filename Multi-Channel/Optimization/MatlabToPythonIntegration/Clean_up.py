@@ -96,7 +96,7 @@ def Clean_gen_code(generated_code):
         if "datafile" in line:
             line = ""
 
-        if "R2On_R1On_PSC_gSYN =" in line:
+        if "R2On_R1On_PSC_gSYN =" in line and "dv_d" not in line:
             line = '    R2On_R1On_PSC_gSYN = p_Ron'
 
         #For the Npops make them ints

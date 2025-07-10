@@ -1,4 +1,4 @@
-epochs = 20;
+epochs = 150;
 
 %Extract Losses
 losses = [];

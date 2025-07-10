@@ -77,6 +77,11 @@ def build_ODE(parameters):
     for name, value in parameters.items():
         params += f"    {name} = {value}\n"
 
+    #TEMP
+    for name, value in parameters.items():
+        if "_gSYN" in name and "R2Off" not in name:
+            params += f"    dv_d{name}_tracker = []\n"
+
     #Bring in fixed params
     fixed_param_declaration = '\n    #Fixed Param Declaration\n'
     for k in range(len(lhs_list)):
@@ -84,7 +89,16 @@ def build_ODE(parameters):
             fixed_param_declaration += f"    {lhs_list[k]} = {rhs_list[k]}\n"
 
     #Bring in T, helper, and grad
-    T_and_Helper_declaration = '\n    T = len(np.arange(tspan[0],tspan[1],dt))\n    helper = np.arange(tspan[0],tspan[1],dt)\n    grad = 0'
+    T_and_Helper_declaration = '\n    T = len(np.arange(tspan[0],tspan[1],dt))\n    helper = np.arange(tspan[0],tspan[1],dt)\n'
+
+    #Add Gradients
+    for k in range(len(update_vars)):
+        if "Off_V" in update_vars[k] or "On_V" in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            var_name = var[:-5]
+            T_and_Helper_declaration += f'    grad_{var_base} = 0\n'
+
    
     #Bring in Spikes Holders
     spike_holder_string = '\n    #Spikes Holders\n'
@@ -128,6 +142,7 @@ def build_ODE(parameters):
         rhs_ode = FormatODEs_Ns.reformat_input_time_indexing(FormatODEs_Ns.reformat_discrete_time_indexing(pairs[k][1]))
         rhs_ode_rpl = rhs_ode.replace("[t-1]", "[-1]")
         ode_string += f"            {pairs[k][0]} = {rhs_ode_rpl}\n"
+        
    
     #Update Eulers
     update_eulers = '\n            #Update Eulers\n'
@@ -152,6 +167,7 @@ def build_ODE(parameters):
             test1_string += f"            if {var_base}_spikes_holder[-1]:\n"       
             test1_string += f"                {var_name}_tspike[int({var_name}_buffer_index)-1] = helper[t]\n"
             test1_string += f"                {var_name}_buffer_index = ({var_name}_buffer_index % 5) + 1\n"
+            
 
     #Test 2 (Voltage reset and adaptation) 
     test2_string = '\n                #Voltage reset and adaptation\n'
@@ -208,49 +224,40 @@ def build_ODE(parameters):
     #Going to try to build in gradient to forwards loop
     #Build out gradients
     grad_string = '\n            #Grad Calculations\n'
-    for k in range(len(update_vars)):
-        if "R2On_V[t]" in update_vars[k]:
-            var = update_vars[k]
-            var_base = var[:-3]
-            var_name = var[:-5]
-            
-            #Correct Implementation
-            #grad_string += f'            Alpha_vt = -((({var_base}_reset*-1)+{var_base}[-1]))/(1+np.exp(6*(helper[t]-max({var_name}_tspike + {var_name}_t_ref)))) + {var_base}[-1]\n'
-            
-            
-            #grad_string += f'            print(\'Alpha_vt\')\n'
-            #grad_string += f'            print(Alpha_vt)\n'
-            
-            #Will need to unroll this and make it generalizable at some point
-            #grad_string += f'            dvt1_dp = -dt*{var_name}_R*R2On_R1On_PSC_s[-1]*R2On_R1On_PSC_netcon*(((Alpha_vt+{var_base}_reset*-1)/(1+np.exp(6*(Alpha_vt+{var_base}_thresh*-1))))+{var_base}_reset-R2On_R1On_PSC_ESYN)/{var_name}_tau\n'
-            #grad_string += f'            dvt1_dp = -dt*{var_name}_R*R2On_R1On_PSC_netcon*(((Alpha_vt+{var_base}_reset*-1)/(1+np.exp(6*(Alpha_vt+{var_base}_thresh*-1))))+{var_base}_reset-R2On_R1On_PSC_ESYN)/{var_name}_tau\n'
-            
-            #PSCs might unroll into this being non-negative Not 100% sure, but if I am treating this like a voltage it should end up in the range I believe it to be around.
-            
-            #Correct Implementation
-            #grad_string += f'            dvt1_dp = dt*{var_name}_R*R2On_R1On_PSC_netcon*(((Alpha_vt+{var_base}_reset*-1)/(1+np.exp(6*(Alpha_vt+{var_base}_thresh*-1))))+{var_base}_reset-R2On_R1On_PSC_ESYN)/{var_name}_tau\n'
-            
-            #grad_string += f'            dvt2_dp = -dt*{var_name}_R*R2On_S2OnOff_PSC_s[-1]*R2On_S2OnOff_PSC_netcon*(((Alpha_vt+{var_base}_reset*-1)/(1+np.exp(6*(Alpha_vt+{var_base}_thresh*-1))))+{var_base}_reset-R2On_S2OnOff_PSC_ESYN)/{var_name}_tau'
-            #grad_string += f'            print(\'dvt1_dp\')\n'
-            #grad_string += f'            print(dvt1_dp)\n'
-            #grad_string += f'            print(-dt*{var_name}_R*R2On_R1On_PSC_netcon)\n'
-            #grad_string += f'            print((((Alpha_vt+{var_base}_reset*-1)/(1+np.exp(6*(Alpha_vt+{var_base}_thresh*-1))))+{var_base}_reset-R2On_R1On_PSC_ESYN))\n'
-            #grad_string += f'            print({var_name}_tau)\n'
 
-            #Might need to look into whether or not the <prev part matters in the thresh part of this. If voltage is reseting it might not matter.
-            #Reducing the sharpness to see if that helps propegate the gradient a little bit easier
+    #Search for all of the gsyns that we want to update
+    #Write all of the partials of the voltage w.r.t the parameters
+    for name, value in parameters.items():
+        if "_gSYN" in name and "R2Off" not in name:
             
-            #Correct Implementation 
+            post_cell = name.split('_', -1)[0]
+            pre_cell = name.split('_', -1)[1]
+
+            grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon[-1]*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
+            grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -(dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2))\n'
+            grad_string += f'            dv_d{post_cell}_{pre_cell}_PSC = -dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon[-1]*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
+            
+            
+            #grad_string += f'            dv_d{name}_cur_grad = dv_d{name}*d{post_cell}_{pre_cell}_PSC_dUk'
+
+            grad_string += f'            dv_d{name}_tracker.append(dv_d{post_cell}_{pre_cell}_PSC)\n'
+            
+            
+            
+            #var = update_vars[k]
+            #var_base = var[:-3]
+            #var_name = var[:-5]
+            
+            #Old Grads
+            #grad_string += f'            Alpha_vt = -((({var_base}_reset*-1)+{var_base}[-1]))/(1+np.exp(6*(helper[t]-max({var_name}_tspike + {var_name}_t_ref)))) + {var_base}[-1]\n' 
+            #grad_string += f'            dvt1_dp = dt*{var_name}_R*R2On_R1On_PSC_netcon*(((Alpha_vt+{var_base}_reset*-1)/(1+np.exp(6*(Alpha_vt+{var_base}_thresh*-1))))+{var_base}_reset-R2On_R1On_PSC_ESYN)/{var_name}_tau\n'
             #grad_string += f'            dudp = ((np.exp(-1*((dvt1_dp) - {var_base}_thresh)))/(1+np.exp(-1*((dvt1_dp) - {var_base}_thresh)))**2)\n'
             
 
             #Attempting to skip some gradients.
-            grad_string += f'            dudp = ((np.exp(-1*(({var_base}[-1]) - {var_base}_thresh)))/(1+np.exp(-1*(({var_base}[-1]) - {var_base}_thresh)))**2)\n'
-            
-            #grad_string += f'            print(\'dudp\')\n'
-            #grad_string += f'            print(dudp)\n'
+            #grad_string += f'            dudp_{var_base} = ((np.exp(-1*(({var_base}[-1]) - {var_base}_thresh)))/(1+np.exp(-1*(({var_base}[-1]) - {var_base}_thresh)))**2)\n'
 
-            grad_string += f'            grad += dudp\n'
+            #grad_string += f'            grad_{var_base} += dudp_{var_base}\n'
 
     generated_code = generated_code + grad_string
 
@@ -261,36 +268,58 @@ def build_ODE(parameters):
     append_spikes = '\n        #Append Spikes\n'
         
     for k in range(len(monitor_vars)):
-        if "R2On_V_spikes" in monitor_vars[k]:    
+        if "V_spikes" in monitor_vars[k]:    
             append_spikes += f'        {monitor_vars[k]}.append({monitor_vars[k]}_holder)\n'
+            #append_spikes += f'        print(max({monitor_vars[k]}_holder))\n'
+
+    for name, value in parameters.items():
+        if "_gSYN" in name and "R2Off" not in name:
+            append_spikes += f'        print(max(dv_d{name}_tracker))\n'
+            append_spikes += f'        print(min(dv_d{name}_tracker))\n'
+            
 
     generated_code = generated_code + append_spikes
 
     
     #----Return Statement
 
-    return_statement = "\n    return R2On_V_spikes, grad\n"
+    return_statement = "\n    return R2On_V_spikes"
 
-    generated_code = generated_code + return_statement
+    #Package gradients
+    for k in range(len(update_vars)):
+        if "Off_V" in update_vars[k] or "On_V" in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+
+            if k == 0:
+                return_statement += f', [grad_{var_base}'
+            if k == 7:
+                return_statement += f', grad_{var_base}]'
+            else:
+                return_statement += f', grad_{var_base}'
+
+    return_statement += '\n'
+
+    #generated_code = generated_code + return_statement
 
     #----Training Loop
 
-    training_loop = textwrap.dedent("""\
-    def main():
-        num_epochs = 20  
+    training_loop = textwrap.dedent(f"""\
+    \ndef main():
+        num_epochs = 1
 
-        p = 0.005   #Initial parameter value
+        p = ones((1,1))*0.005   #Initial parameter value
 
         #Adam
         m = 0
         v = 0
-        beta1, beta2 = 0.7, 0.997
-        eps = 1e-8
+        beta1, beta2 = 0.92, 0.9995
+        eps = 1e-6
         t = 0
-        lr = 3e-3
+        lr = 1e-3
 
         matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
-        filename = f"{matfile_path}/goalPSTH.mat"
+        filename = f"{{matfile_path}}/goalPSTH.mat"
         data = scipy.io.loadmat(filename)
 
 
@@ -302,11 +331,11 @@ def build_ODE(parameters):
 
         for epoch in range(num_epochs):
 
-            output, grad = forwards(p)  # forward pass
-
+            output, grads = forwards(p)  # forward pass
+            
             param_tracker.append(p)
 
-            print(f'parameter = {p}')
+            print(f'parameter = {{p}}')
 
             print(np.shape(output))
             output = np.reshape(output,(1,34998*10))
@@ -321,19 +350,16 @@ def build_ODE(parameters):
             loss = (target_spikes-fr)**2
 
 
-            out_grad = 2*(fr-target_spikes)*grad
+            out_grad = 2*(fr-target_spikes)*grads
 
             print('grad below')
             print(out_grad)
 
-            t += 1
-            m = beta1 * m + (1 - beta1) * out_grad
-            v = beta2 * v + (1 - beta2) * (out_grad ** 2)
+            p = Update_Grads.grads_update(grads,p)
 
-            m_hat = m / (1 - beta1 ** t)
-            v_hat = v / (1 - beta2 ** t)
-
-            p = p - lr * m_hat / (np.sqrt(v_hat) + eps)
+            
+                
+                
 
             print('p below')
             print(p)
@@ -342,7 +368,7 @@ def build_ODE(parameters):
             losses.append(loss)
             
 
-            print(f"Epoch {epoch}: Loss = {loss.item()}",flush=True) 
+            print(f"Epoch {{epoch}}: Loss = {{loss.item()}}",flush=True) 
 
         return losses, output, param_tracker
 
