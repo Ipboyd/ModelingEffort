@@ -78,9 +78,16 @@ def build_ODE(parameters):
         params += f"    {name} = {value}\n"
 
     #TEMP
-    for name, value in parameters.items():
-        if "_gSYN" in name and "R2Off" not in name:
-            params += f"    dv_d{name}_tracker = []\n"
+    #for name, value in parameters.items():
+    #    if "_gSYN" in name and "R2Off" not in name:
+    #        params += f"    dv_d{name}_tracker = []\n"
+
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]):
+            var = update_vars[k]
+            var_base = var[:-3]
+            params += f'    dv_d{var_base}_tracker = []\n' 
+    #        append_spikes += f'        print(min(dv_d{var_base}_tracker))\n'
 
     #Bring in fixed params
     fixed_param_declaration = '\n    #Fixed Param Declaration\n'
@@ -227,20 +234,21 @@ def build_ODE(parameters):
 
     #Search for all of the gsyns that we want to update
     #Write all of the partials of the voltage w.r.t the parameters
+    grad_string += '\n\n            #PSC & Parameter Related Derivates\n'
     for name, value in parameters.items():
         if "_gSYN" in name and "R2Off" not in name:
             
             post_cell = name.split('_', -1)[0]
             pre_cell = name.split('_', -1)[1]
 
-            grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon[-1]*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
+            grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
             grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -(dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2))\n'
-            grad_string += f'            dv_d{post_cell}_{pre_cell}_PSC = -dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon[-1]*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
+            grad_string += f'            dv_d{post_cell}_{pre_cell}_PSC = -dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
             
             
             #grad_string += f'            dv_d{name}_cur_grad = dv_d{name}*d{post_cell}_{pre_cell}_PSC_dUk'
 
-            grad_string += f'            dv_d{name}_tracker.append(dv_d{post_cell}_{pre_cell}_PSC)\n'
+            
             
             
             
@@ -259,6 +267,62 @@ def build_ODE(parameters):
 
             #grad_string += f'            grad_{var_base} += dudp_{var_base}\n'
 
+    #Grab all of the valid voltage update ones. This is the spiking deriavte wrt the voltage
+    grad_string += '\n\n            #Surrogate Spike Related Derivates\n'
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            grad_string += f'            dspike_d{var_base} = ((np.exp(-1*({var_base}[-1] - {var_base}_thresh)))/(1+np.exp(-1*({var_base}[-1] - {var_base}_thresh)))**2)\n' 
+            #grad_string += f'            dv_d{var_base}_tracker.append(dspike_d{var_base})\n'
+
+    #Put together Partials
+    #Eventually it might be nice to automate this, however it is somewhat convoluted.
+    #Just going to go ahead an automate it
+
+    #Need to find a way to just get a list of all the possible paths are are upstream of R2on
+    #Just going to write out nodes and edges and do that
+    nodes = ['R2On','R1On','On','Off','S2OnOff','S1OnOff','R1Off','R2Off']
+    edges = ['On->R1On','On->S1OnOff','Off->R1Off','Off->S1OnOff','S1OnOff->R1On','S1OnOff->R1Off','R1On->R2On','R1On->S2OnOff','R1Off->R2Off','R1Off->R2Off','S2OnOff->R2On','S2OnOff->R2Off']
+
+    all_paths = []
+
+    for k in edges:
+        path = ''
+        if "R2On" in k.split('->', -1)[0]:
+            end_cell = k.split('->', -1)[1]
+            before_cell = k.split('->', -1)[0]
+            path += f'{end_cell}->'
+            path += f'{before_cell}->'
+
+            gate = 0
+
+            while gate == 0:
+
+                for m in all_paths:
+                    if path[:-2] not in all_paths:
+                        all_paths.append(path[:-2])
+
+                    else:
+                        for k2 in edges:
+                            if before_cell in k2.split('->', -1)[1]:
+                                path += k2.split('->', -1)[0] + '->'
+                            else:
+                                gate = 1
+
+
+
+    grad_string += f'            #R1On->R2On\n'
+    grad_string += f'            dUKR2_dR2OnR1On += dspike_dR2On_V*dv_dR2On_R1On_PSC_gSYN\n'
+    grad_string += f'            #S2->R2On\n'
+    grad_string += f'            dUKR2_dROn2S2 += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC_gSYN\n'
+    grad_string += f'            #(R1Off->S2)->R2On\n'
+    grad_string += f'            dUKR2_dR2OnR1Off += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC_gSYN*dR2On_S2OnOff_PSC_dUk*dspike_dR1Off_V*dv_dS2OnOff_R1Off_PSC_gSYN\n'
+    grad_string += f'            #(R1On->S2)->R2On\n'
+    grad_string += f'            dUKR2_dR2OnR1Off += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC_gSYN*dR2On_S2OnOff_PSC_dUk*dspike_dR1On_V*dv_dS2OnOff_R1On_PSC_gSYN\n'
+    grad_string += f'            #(S1->R1Off)->S2->R2On\n'
+    grad_string += f'            dUKR2_dR2OnR1Off += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC_gSYN*dR2On_S2OnOff_PSC_dUk*dspike_dR1Off_V*dv_S2OnOff_R1Off_PSC_gSYN*dS2OnOff_R1Off_PSC_dUk*dspike_dS1OnOff_V*dv_dS2OnOff_R1On_PSC_gSYN\n'
+
     generated_code = generated_code + grad_string
 
 
@@ -272,10 +336,17 @@ def build_ODE(parameters):
             append_spikes += f'        {monitor_vars[k]}.append({monitor_vars[k]}_holder)\n'
             #append_spikes += f'        print(max({monitor_vars[k]}_holder))\n'
 
-    for name, value in parameters.items():
-        if "_gSYN" in name and "R2Off" not in name:
-            append_spikes += f'        print(max(dv_d{name}_tracker))\n'
-            append_spikes += f'        print(min(dv_d{name}_tracker))\n'
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            append_spikes += f'        print(max(dv_d{var_base}_tracker))\n' 
+            append_spikes += f'        print(min(dv_d{var_base}_tracker))\n'
+
+    #for name, value in parameters.items():
+    #    if "_gSYN" in name and "R2Off" not in name:
+    #        append_spikes += f'        print(max(dv_d{name}_tracker))\n'
+    #        append_spikes += f'        print(min(dv_d{name}_tracker))\n'
             
 
     generated_code = generated_code + append_spikes

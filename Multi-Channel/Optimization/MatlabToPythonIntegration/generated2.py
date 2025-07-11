@@ -260,16 +260,14 @@ def forwards(p_Ron):
     ROn_X_PSC3_netcon = 1.0
     ROn_SOnOff_PSC3_netcon = 1.0
     C_ROn_PSC3_netcon = 1.0
-    dv_dR1On_On_PSC_gSYN_tracker = []
-    dv_dS1OnOff_On_PSC_gSYN_tracker = []
-    dv_dR1On_S1OnOff_PSC_gSYN_tracker = []
-    dv_dR1Off_S1OnOff_PSC_gSYN_tracker = []
-    dv_dR1Off_Off_PSC_gSYN_tracker = []
-    dv_dS1OnOff_Off_PSC_gSYN_tracker = []
-    dv_dR2On_R1On_PSC_gSYN_tracker = []
-    dv_dS2OnOff_R1On_PSC_gSYN_tracker = []
-    dv_dR2On_S2OnOff_PSC_gSYN_tracker = []
-    dv_dS2OnOff_R1Off_PSC_gSYN_tracker = []
+    dv_dR1On_V_tracker = []
+    dv_dR1Off_V_tracker = []
+    dv_dS1OnOff_V_tracker = []
+    dv_dR2On_V_tracker = []
+    dv_dR2Off_V_tracker = []
+    dv_dS2OnOff_V_tracker = []
+    dv_dR2On_R2On_iNoise_V3_sn_tracker = []
+    dv_dR2On_R2On_iNoise_V3_xn_tracker = []
 
     #Fixed Param Declaration
     On_R = 1/On_g_L
@@ -952,46 +950,52 @@ def forwards(p_Ron):
                 S2OnOff_R1Off_PSC_P[-1] = S2OnOff_R1Off_PSC_P[-1] * (1 - S2OnOff_R1Off_PSC_fP)
 
             #Grad Calculations
+
+
+            #PSC & Parameter Related Derivates
             dv_dR1On_On_PSC_gSYN = -dt*R1On_R*R1On_On_PSC_s[-1]*R1On_On_PSC_netcon[-1]*(R1On_V[-1]-R1On_On_PSC_ESYN)/R1On_tau
             dR1On_On_PSC_dUk = -(dt*R1On_On_PSC_scale*2*(R1On_On_PSC_x[-1]+R1On_On_PSC_q[-1])/R1On_On_PSC_tauR)*helper[t]*sum(((On_tspike+R1On_On_PSC_delay)-helper[t])*np.exp(-1*((On_tspike+R1On_On_PSC_delay)-helper[t])**2))
             dv_dR1On_On_PSC = -dt*R1On_R*R1On_On_PSC_gSYN*R1On_On_PSC_netcon[-1]*(R1On_V[-1]-R1On_On_PSC_ESYN)/R1On_tau
-            dv_dR1On_On_PSC_gSYN_tracker.append(dv_dR1On_On_PSC)
             dv_dS1OnOff_On_PSC_gSYN = -dt*S1OnOff_R*S1OnOff_On_PSC_s[-1]*S1OnOff_On_PSC_netcon[-1]*(S1OnOff_V[-1]-S1OnOff_On_PSC_ESYN)/S1OnOff_tau
             dS1OnOff_On_PSC_dUk = -(dt*S1OnOff_On_PSC_scale*2*(S1OnOff_On_PSC_x[-1]+S1OnOff_On_PSC_q[-1])/S1OnOff_On_PSC_tauR)*helper[t]*sum(((On_tspike+S1OnOff_On_PSC_delay)-helper[t])*np.exp(-1*((On_tspike+S1OnOff_On_PSC_delay)-helper[t])**2))
             dv_dS1OnOff_On_PSC = -dt*S1OnOff_R*S1OnOff_On_PSC_gSYN*S1OnOff_On_PSC_netcon[-1]*(S1OnOff_V[-1]-S1OnOff_On_PSC_ESYN)/S1OnOff_tau
-            dv_dS1OnOff_On_PSC_gSYN_tracker.append(dv_dS1OnOff_On_PSC)
             dv_dR1On_S1OnOff_PSC_gSYN = -dt*R1On_R*R1On_S1OnOff_PSC_s[-1]*R1On_S1OnOff_PSC_netcon[-1]*(R1On_V[-1]-R1On_S1OnOff_PSC_ESYN)/R1On_tau
             dR1On_S1OnOff_PSC_dUk = -(dt*R1On_S1OnOff_PSC_scale*2*(R1On_S1OnOff_PSC_x[-1]+R1On_S1OnOff_PSC_q[-1])/R1On_S1OnOff_PSC_tauR)*helper[t]*sum(((S1OnOff_tspike+R1On_S1OnOff_PSC_delay)-helper[t])*np.exp(-1*((S1OnOff_tspike+R1On_S1OnOff_PSC_delay)-helper[t])**2))
             dv_dR1On_S1OnOff_PSC = -dt*R1On_R*R1On_S1OnOff_PSC_gSYN*R1On_S1OnOff_PSC_netcon[-1]*(R1On_V[-1]-R1On_S1OnOff_PSC_ESYN)/R1On_tau
-            dv_dR1On_S1OnOff_PSC_gSYN_tracker.append(dv_dR1On_S1OnOff_PSC)
             dv_dR1Off_S1OnOff_PSC_gSYN = -dt*R1Off_R*R1Off_S1OnOff_PSC_s[-1]*R1Off_S1OnOff_PSC_netcon[-1]*(R1Off_V[-1]-R1Off_S1OnOff_PSC_ESYN)/R1Off_tau
             dR1Off_S1OnOff_PSC_dUk = -(dt*R1Off_S1OnOff_PSC_scale*2*(R1Off_S1OnOff_PSC_x[-1]+R1Off_S1OnOff_PSC_q[-1])/R1Off_S1OnOff_PSC_tauR)*helper[t]*sum(((S1OnOff_tspike+R1Off_S1OnOff_PSC_delay)-helper[t])*np.exp(-1*((S1OnOff_tspike+R1Off_S1OnOff_PSC_delay)-helper[t])**2))
             dv_dR1Off_S1OnOff_PSC = -dt*R1Off_R*R1Off_S1OnOff_PSC_gSYN*R1Off_S1OnOff_PSC_netcon[-1]*(R1Off_V[-1]-R1Off_S1OnOff_PSC_ESYN)/R1Off_tau
-            dv_dR1Off_S1OnOff_PSC_gSYN_tracker.append(dv_dR1Off_S1OnOff_PSC)
             dv_dR1Off_Off_PSC_gSYN = -dt*R1Off_R*R1Off_Off_PSC_s[-1]*R1Off_Off_PSC_netcon[-1]*(R1Off_V[-1]-R1Off_Off_PSC_ESYN)/R1Off_tau
             dR1Off_Off_PSC_dUk = -(dt*R1Off_Off_PSC_scale*2*(R1Off_Off_PSC_x[-1]+R1Off_Off_PSC_q[-1])/R1Off_Off_PSC_tauR)*helper[t]*sum(((Off_tspike+R1Off_Off_PSC_delay)-helper[t])*np.exp(-1*((Off_tspike+R1Off_Off_PSC_delay)-helper[t])**2))
             dv_dR1Off_Off_PSC = -dt*R1Off_R*R1Off_Off_PSC_gSYN*R1Off_Off_PSC_netcon[-1]*(R1Off_V[-1]-R1Off_Off_PSC_ESYN)/R1Off_tau
-            dv_dR1Off_Off_PSC_gSYN_tracker.append(dv_dR1Off_Off_PSC)
             dv_dS1OnOff_Off_PSC_gSYN = -dt*S1OnOff_R*S1OnOff_Off_PSC_s[-1]*S1OnOff_Off_PSC_netcon[-1]*(S1OnOff_V[-1]-S1OnOff_Off_PSC_ESYN)/S1OnOff_tau
             dS1OnOff_Off_PSC_dUk = -(dt*S1OnOff_Off_PSC_scale*2*(S1OnOff_Off_PSC_x[-1]+S1OnOff_Off_PSC_q[-1])/S1OnOff_Off_PSC_tauR)*helper[t]*sum(((Off_tspike+S1OnOff_Off_PSC_delay)-helper[t])*np.exp(-1*((Off_tspike+S1OnOff_Off_PSC_delay)-helper[t])**2))
             dv_dS1OnOff_Off_PSC = -dt*S1OnOff_R*S1OnOff_Off_PSC_gSYN*S1OnOff_Off_PSC_netcon[-1]*(S1OnOff_V[-1]-S1OnOff_Off_PSC_ESYN)/S1OnOff_tau
-            dv_dS1OnOff_Off_PSC_gSYN_tracker.append(dv_dS1OnOff_Off_PSC)
             dv_dR2On_R1On_PSC_gSYN = -dt*R2On_R*R2On_R1On_PSC_s[-1]*R2On_R1On_PSC_netcon[-1]*(R2On_V[-1]-R2On_R1On_PSC_ESYN)/R2On_tau
             dR2On_R1On_PSC_dUk = -(dt*R2On_R1On_PSC_scale*2*(R2On_R1On_PSC_x[-1]+R2On_R1On_PSC_q[-1])/R2On_R1On_PSC_tauR)*helper[t]*sum(((R1On_tspike+R2On_R1On_PSC_delay)-helper[t])*np.exp(-1*((R1On_tspike+R2On_R1On_PSC_delay)-helper[t])**2))
             dv_dR2On_R1On_PSC = -dt*R2On_R*R2On_R1On_PSC_gSYN*R2On_R1On_PSC_netcon[-1]*(R2On_V[-1]-R2On_R1On_PSC_ESYN)/R2On_tau
-            dv_dR2On_R1On_PSC_gSYN_tracker.append(dv_dR2On_R1On_PSC)
             dv_dS2OnOff_R1On_PSC_gSYN = -dt*S2OnOff_R*S2OnOff_R1On_PSC_s[-1]*S2OnOff_R1On_PSC_netcon[-1]*(S2OnOff_V[-1]-S2OnOff_R1On_PSC_ESYN)/S2OnOff_tau
             dS2OnOff_R1On_PSC_dUk = -(dt*S2OnOff_R1On_PSC_scale*2*(S2OnOff_R1On_PSC_x[-1]+S2OnOff_R1On_PSC_q[-1])/S2OnOff_R1On_PSC_tauR)*helper[t]*sum(((R1On_tspike+S2OnOff_R1On_PSC_delay)-helper[t])*np.exp(-1*((R1On_tspike+S2OnOff_R1On_PSC_delay)-helper[t])**2))
             dv_dS2OnOff_R1On_PSC = -dt*S2OnOff_R*S2OnOff_R1On_PSC_gSYN*S2OnOff_R1On_PSC_netcon[-1]*(S2OnOff_V[-1]-S2OnOff_R1On_PSC_ESYN)/S2OnOff_tau
-            dv_dS2OnOff_R1On_PSC_gSYN_tracker.append(dv_dS2OnOff_R1On_PSC)
             dv_dR2On_S2OnOff_PSC_gSYN = -dt*R2On_R*R2On_S2OnOff_PSC_s[-1]*R2On_S2OnOff_PSC_netcon[-1]*(R2On_V[-1]-R2On_S2OnOff_PSC_ESYN)/R2On_tau
             dR2On_S2OnOff_PSC_dUk = -(dt*R2On_S2OnOff_PSC_scale*2*(R2On_S2OnOff_PSC_x[-1]+R2On_S2OnOff_PSC_q[-1])/R2On_S2OnOff_PSC_tauR)*helper[t]*sum(((S2OnOff_tspike+R2On_S2OnOff_PSC_delay)-helper[t])*np.exp(-1*((S2OnOff_tspike+R2On_S2OnOff_PSC_delay)-helper[t])**2))
             dv_dR2On_S2OnOff_PSC = -dt*R2On_R*R2On_S2OnOff_PSC_gSYN*R2On_S2OnOff_PSC_netcon[-1]*(R2On_V[-1]-R2On_S2OnOff_PSC_ESYN)/R2On_tau
-            dv_dR2On_S2OnOff_PSC_gSYN_tracker.append(dv_dR2On_S2OnOff_PSC)
             dv_dS2OnOff_R1Off_PSC_gSYN = -dt*S2OnOff_R*S2OnOff_R1Off_PSC_s[-1]*S2OnOff_R1Off_PSC_netcon[-1]*(S2OnOff_V[-1]-S2OnOff_R1Off_PSC_ESYN)/S2OnOff_tau
             dS2OnOff_R1Off_PSC_dUk = -(dt*S2OnOff_R1Off_PSC_scale*2*(S2OnOff_R1Off_PSC_x[-1]+S2OnOff_R1Off_PSC_q[-1])/S2OnOff_R1Off_PSC_tauR)*helper[t]*sum(((R1Off_tspike+S2OnOff_R1Off_PSC_delay)-helper[t])*np.exp(-1*((R1Off_tspike+S2OnOff_R1Off_PSC_delay)-helper[t])**2))
             dv_dS2OnOff_R1Off_PSC = -dt*S2OnOff_R*S2OnOff_R1Off_PSC_gSYN*S2OnOff_R1Off_PSC_netcon[-1]*(S2OnOff_V[-1]-S2OnOff_R1Off_PSC_ESYN)/S2OnOff_tau
-            dv_dS2OnOff_R1Off_PSC_gSYN_tracker.append(dv_dS2OnOff_R1Off_PSC)
+
+
+            #Surrogate Spike Related Derivates
+            dspike_dR1On_V = ((np.exp(-1*(R1On_V[-1] - R1On_V_thresh)))/(1+np.exp(-1*(R1On_V[-1] - R1On_V_thresh)))**2)
+            dv_dR1On_V_tracker.append(dspike_dR1On_V)
+            dspike_dR1Off_V = ((np.exp(-1*(R1Off_V[-1] - R1Off_V_thresh)))/(1+np.exp(-1*(R1Off_V[-1] - R1Off_V_thresh)))**2)
+            dv_dR1Off_V_tracker.append(dspike_dR1Off_V)
+            dspike_dS1OnOff_V = ((np.exp(-1*(S1OnOff_V[-1] - S1OnOff_V_thresh)))/(1+np.exp(-1*(S1OnOff_V[-1] - S1OnOff_V_thresh)))**2)
+            dv_dS1OnOff_V_tracker.append(dspike_dS1OnOff_V)
+            dspike_dR2On_V = ((np.exp(-1*(R2On_V[-1] - R2On_V_thresh)))/(1+np.exp(-1*(R2On_V[-1] - R2On_V_thresh)))**2)
+            dv_dR2On_V_tracker.append(dspike_dR2On_V)
+            dspike_dS2OnOff_V = ((np.exp(-1*(S2OnOff_V[-1] - S2OnOff_V_thresh)))/(1+np.exp(-1*(S2OnOff_V[-1] - S2OnOff_V_thresh)))**2)
+            dv_dS2OnOff_V_tracker.append(dspike_dS2OnOff_V)
 
         #Append Spikes
         On_V_spikes.append(On_V_spikes_holder)
@@ -1002,26 +1006,16 @@ def forwards(p_Ron):
         R2On_V_spikes.append(R2On_V_spikes_holder)
         R2Off_V_spikes.append(R2Off_V_spikes_holder)
         S2OnOff_V_spikes.append(S2OnOff_V_spikes_holder)
-        print(max(dv_dR1On_On_PSC_gSYN_tracker))
-        print(min(dv_dR1On_On_PSC_gSYN_tracker))
-        print(max(dv_dS1OnOff_On_PSC_gSYN_tracker))
-        print(min(dv_dS1OnOff_On_PSC_gSYN_tracker))
-        print(max(dv_dR1On_S1OnOff_PSC_gSYN_tracker))
-        print(min(dv_dR1On_S1OnOff_PSC_gSYN_tracker))
-        print(max(dv_dR1Off_S1OnOff_PSC_gSYN_tracker))
-        print(min(dv_dR1Off_S1OnOff_PSC_gSYN_tracker))
-        print(max(dv_dR1Off_Off_PSC_gSYN_tracker))
-        print(min(dv_dR1Off_Off_PSC_gSYN_tracker))
-        print(max(dv_dS1OnOff_Off_PSC_gSYN_tracker))
-        print(min(dv_dS1OnOff_Off_PSC_gSYN_tracker))
-        print(max(dv_dR2On_R1On_PSC_gSYN_tracker))
-        print(min(dv_dR2On_R1On_PSC_gSYN_tracker))
-        print(max(dv_dS2OnOff_R1On_PSC_gSYN_tracker))
-        print(min(dv_dS2OnOff_R1On_PSC_gSYN_tracker))
-        print(max(dv_dR2On_S2OnOff_PSC_gSYN_tracker))
-        print(min(dv_dR2On_S2OnOff_PSC_gSYN_tracker))
-        print(max(dv_dS2OnOff_R1Off_PSC_gSYN_tracker))
-        print(min(dv_dS2OnOff_R1Off_PSC_gSYN_tracker))
+        print(max(dv_dR1On_V_tracker))
+        print(min(dv_dR1On_V_tracker))
+        print(max(dv_dR1Off_V_tracker))
+        print(min(dv_dR1Off_V_tracker))
+        print(max(dv_dS1OnOff_V_tracker))
+        print(min(dv_dS1OnOff_V_tracker))
+        print(max(dv_dR2On_V_tracker))
+        print(min(dv_dR2On_V_tracker))
+        print(max(dv_dS2OnOff_V_tracker))
+        print(min(dv_dS2OnOff_V_tracker))
 
 def main():
         num_epochs = 1
