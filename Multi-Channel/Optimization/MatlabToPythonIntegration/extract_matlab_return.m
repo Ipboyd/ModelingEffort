@@ -1,4 +1,5 @@
-epochs = 150;
+epochs = 100;
+num_params = 10;
 
 %Extract Losses
 losses = [];
@@ -12,6 +13,9 @@ b = x{3};
 for k = 1:epochs
     parameter_vals = [parameter_vals, double(b{k})];
 end
+
+parameter_vals = reshape(parameter_vals, [num_params,epochs]);
+
 
 %Compensating for erroneous placement of p.append (fixed now)
 %parameter_vals = [0.005, parameter_vals(1:49)];

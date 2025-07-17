@@ -44,7 +44,16 @@ def Clean_gen_code(generated_code):
 
     # 5. Replace zeros(1,N) -> torch.zeros(1,N) or torch.zeros(2, N)
     #generated_code = re.sub(r'\bzeros\(([^,]+),([^)]+)\)', r'torch.zeros(\1, \2)', generated_code)
-    generated_code = re.sub(r'\bzeros\(([^,]+),([^)]+)\)', r'np.zeros((T, \2))', generated_code)
+    #generated_code = re.sub(r'\bzeros\(([^,]+),([^)]+)\)', r'np.zeros((T, \2))', generated_code)
+    pattern = re.compile(r'\bzeros\(([^,]+),\s*([^)]+)\)')
+    parts   = generated_code.split('def main():', 1)   # split at first occurrence
+
+    if len(parts) == 2:                # we found a “def main():”
+        before, after = parts
+        before = pattern.sub(r'np.zeros((T, \2))', before)
+        generated_code = 'def main():'.join([before, after])
+    else:                              # no “def main():” in the file
+        generated_code = pattern.sub(r'np.zeros((T, \2))', generated_code)
 
     # 5b. Go ahead an make everything T? This just preallocated larger arrays. Make sure this functions as intended.
     #generated_code = re.sub(
@@ -96,8 +105,8 @@ def Clean_gen_code(generated_code):
         if "datafile" in line:
             line = ""
 
-        if "R2On_R1On_PSC_gSYN =" in line and "dv_d" not in line:
-            line = '    R2On_R1On_PSC_gSYN = p_Ron'
+        #if "R2On_R1On_PSC_gSYN =" in line and "dv_d" not in line:
+        #    line = '    R2On_R1On_PSC_gSYN = p_Ron'
 
         #For the Npops make them ints
         line = re.sub(r'(\b\w*Npop\b)\s*=\s*([0-9]+)\.0\b', r'\1 = \2', line)

@@ -7,8 +7,23 @@ import Extract_Fixed_vars
 import Clean_up
 import ConditionalActions
 import add_device_to_tensors
+import Update_Grads
 import pdb
 import textwrap
+import numpy as np
+
+#Recursion definition for tracking gradient paths
+def recurse(cur_node, tracker,nodes,edges):
+
+  tracker.append(cur_node)
+
+  for k in edges:
+    if cur_node == k.split('->', -1)[1]:
+      recurse(k.split('->', -1)[0],tracker,nodes,edges)
+    
+
+  return tracker
+
 
 
 def build_ODE(parameters):
@@ -21,6 +36,7 @@ def build_ODE(parameters):
                          "Model-Main", "run", "1-channel-paper", "solve", "solve_ode_1_channel_paper.m") #This could be changed for TD and multichannel and what not.
 
     generated_code = ''
+
 
     #------------------------------------------------------         Parse File for Desired Variables        ---------------------------------------------------------------------#
 
@@ -69,25 +85,33 @@ def build_ODE(parameters):
 
     #----Declare forwards loop & Initialize variables
     forwards_loop_header = textwrap.dedent("""\
-        def forwards(p_Ron):
+        def forwards(ps):
     """)
 
     #Bring In params
     params = '\n    #Params\n'
+    count_ps = 0
     for name, value in parameters.items():
-        params += f"    {name} = {value}\n"
+        if "_gSYN" in name and "R2Off" not in name:
+            params += f"    {name} = ps[{count_ps}]\n"
+            #params += f"    {name} = ps[[0]]\n"
+            #params += f"    print(ps[0][{count_ps}])\n"
+            count_ps += 1
+        else:
+            params += f"    {name} = {value}\n"
 
-    #TEMP
-    #for name, value in parameters.items():
-    #    if "_gSYN" in name and "R2Off" not in name:
-    #        params += f"    dv_d{name}_tracker = []\n"
+    
+    #Initialize grads
+    for name, value in parameters.items():
+        if "_gSYN" in name and "R2Off" not in name:
+            
+            post_node = name.split('_',-1)[0]
+            pre_node = name.split('_',-1)[1]
 
-    for k in range(len(update_vars)):
-        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]):
-            var = update_vars[k]
-            var_base = var[:-3]
-            params += f'    dv_d{var_base}_tracker = []\n' 
-    #        append_spikes += f'        print(min(dv_d{var_base}_tracker))\n'
+            params += f'    dGSYN{post_node}_{pre_node} = 0\n'
+
+    params += f'    psc_derivative = []\n'
+    params += f'    voltage_derivative = []\n'
 
     #Bring in fixed params
     fixed_param_declaration = '\n    #Fixed Param Declaration\n'
@@ -232,6 +256,16 @@ def build_ODE(parameters):
     #Build out gradients
     grad_string = '\n            #Grad Calculations\n'
 
+
+    #Grab all of the valid voltage update ones. This is the spiking deriavte wrt the voltage
+    grad_string += '\n\n            #Surrogate Spike Related Derivates\n'
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            grad_string += f'            dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))**2))/500\n' 
+            #grad_string += f'            dv_d{var_base}_tracker.append(dspike_d{var_base})\n'
+
     #Search for all of the gsyns that we want to update
     #Write all of the partials of the voltage w.r.t the parameters
     grad_string += '\n\n            #PSC & Parameter Related Derivates\n'
@@ -241,40 +275,41 @@ def build_ODE(parameters):
             post_cell = name.split('_', -1)[0]
             pre_cell = name.split('_', -1)[1]
 
-            grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
-            grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -(dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2))\n'
-            grad_string += f'            dv_d{post_cell}_{pre_cell}_PSC = -dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
+            grad_string += f'            dv_d{name} = -(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/15\n'
+            #grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
             
-            
-            #grad_string += f'            dv_d{name}_cur_grad = dv_d{name}*d{post_cell}_{pre_cell}_PSC_dUk'
+            #if "R2On" in name and "R1On" in name:
 
             
+            #grad_string += f'            print(dv_d{name})\n'
             
+            grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -((dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2)))/2500\n'
+            #grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -(dt*{post_cell}_{pre_cell}_PSC_scale*2/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2))\n'
             
-            
-            #var = update_vars[k]
-            #var_base = var[:-3]
-            #var_name = var[:-5]
-            
-            #Old Grads
-            #grad_string += f'            Alpha_vt = -((({var_base}_reset*-1)+{var_base}[-1]))/(1+np.exp(6*(helper[t]-max({var_name}_tspike + {var_name}_t_ref)))) + {var_base}[-1]\n' 
-            #grad_string += f'            dvt1_dp = dt*{var_name}_R*R2On_R1On_PSC_netcon*(((Alpha_vt+{var_base}_reset*-1)/(1+np.exp(6*(Alpha_vt+{var_base}_thresh*-1))))+{var_base}_reset-R2On_R1On_PSC_ESYN)/{var_name}_tau\n'
-            #grad_string += f'            dudp = ((np.exp(-1*((dvt1_dp) - {var_base}_thresh)))/(1+np.exp(-1*((dvt1_dp) - {var_base}_thresh)))**2)\n'
-            
+            #grad_string += f'            print(d{post_cell}_{pre_cell}_PSC_dUk)\n'
+            grad_string += f'            dv_d{post_cell}_{pre_cell}_PSC = -(dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/10\n'
+            #grad_string += f'            print(dv_d{post_cell}_{pre_cell}_PSC)\n'
 
-            #Attempting to skip some gradients.
-            #grad_string += f'            dudp_{var_base} = ((np.exp(-1*(({var_base}[-1]) - {var_base}_thresh)))/(1+np.exp(-1*(({var_base}[-1]) - {var_base}_thresh)))**2)\n'
+            #print('cells')
+            #print(pre_cell)
+            #print(post_cell)
 
-            #grad_string += f'            grad_{var_base} += dudp_{var_base}\n'
+            #if "R1On_" in name and "_On" in name:
+            #    grad_string += f'            if dspike_dR2On_V != 0:\n                voltage_derivative.append(dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN)\n'
+            #    grad_string += f'            if d{post_cell}_{pre_cell}_PSC_dUk != 0:\n                psc_derivative.append(d{post_cell}_{pre_cell}_PSC_dUk)\n'
 
-    #Grab all of the valid voltage update ones. This is the spiking deriavte wrt the voltage
-    grad_string += '\n\n            #Surrogate Spike Related Derivates\n'
-    for k in range(len(update_vars)):
-        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
-            var = update_vars[k]
-            var_base = var[:-3]
-            grad_string += f'            dspike_d{var_base} = ((np.exp(-1*({var_base}[-1] - {var_base}_thresh)))/(1+np.exp(-1*({var_base}[-1] - {var_base}_thresh)))**2)\n' 
-            #grad_string += f'            dv_d{var_base}_tracker.append(dspike_d{var_base})\n'
+
+    # grad_string += '\n\n            #Chcks\n'
+    # for name, value in parameters.items():
+    #     if "_gSYN" in name and "R2Off" not in name:
+    #         post_cell = name.split('_', -1)[0]
+    #         pre_cell = name.split('_', -1)[1]
+    #         if "R2On_" in name and "_R1On" in name:
+    #             grad_string += f'            if dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN != 0:\n                voltage_derivative.append(dR2On_S2OnOff_PSC_dUk)\n'
+    #             grad_string += f'            if dspike_dR2On_V*dv_dR2On_R1On_PSC_gSYN != 0:\n                psc_derivative.append(dv_dR2On_R1On_PSC_gSYN)\n'  
+
+
+    
 
     #Put together Partials
     #Eventually it might be nice to automate this, however it is somewhat convoluted.
@@ -282,46 +317,147 @@ def build_ODE(parameters):
 
     #Need to find a way to just get a list of all the possible paths are are upstream of R2on
     #Just going to write out nodes and edges and do that
+   
     nodes = ['R2On','R1On','On','Off','S2OnOff','S1OnOff','R1Off','R2Off']
-    edges = ['On->R1On','On->S1OnOff','Off->R1Off','Off->S1OnOff','S1OnOff->R1On','S1OnOff->R1Off','R1On->R2On','R1On->S2OnOff','R1Off->R2Off','R1Off->R2Off','S2OnOff->R2On','S2OnOff->R2Off']
+    edges = ['On->R1On','On->S1OnOff','Off->R1Off','Off->S1OnOff','S1OnOff->R1On','S1OnOff->R1Off','R1On->R2On','R1On->S2OnOff','R1Off->R2Off','R1Off->S2OnOff','S2OnOff->R2On','S2OnOff->R2Off']
 
-    all_paths = []
+    #Preform depth first search to get a list of all paths
+    all_paths = recurse('R2On',[],nodes,edges)
+    print(all_paths)
 
-    for k in edges:
-        path = ''
-        if "R2On" in k.split('->', -1)[0]:
-            end_cell = k.split('->', -1)[1]
-            before_cell = k.split('->', -1)[0]
-            path += f'{end_cell}->'
-            path += f'{before_cell}->'
-
-            gate = 0
-
-            while gate == 0:
-
-                for m in all_paths:
-                    if path[:-2] not in all_paths:
-                        all_paths.append(path[:-2])
-
-                    else:
-                        for k2 in edges:
-                            if before_cell in k2.split('->', -1)[1]:
-                                path += k2.split('->', -1)[0] + '->'
-                            else:
-                                gate = 1
+    path_holder = []
+    path = ''
+    gate = 0
+    gate2 = 0
 
 
+    for k in range(len(all_paths)-1):
 
-    grad_string += f'            #R1On->R2On\n'
-    grad_string += f'            dUKR2_dR2OnR1On += dspike_dR2On_V*dv_dR2On_R1On_PSC_gSYN\n'
-    grad_string += f'            #S2->R2On\n'
-    grad_string += f'            dUKR2_dROn2S2 += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC_gSYN\n'
-    grad_string += f'            #(R1Off->S2)->R2On\n'
-    grad_string += f'            dUKR2_dR2OnR1Off += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC_gSYN*dR2On_S2OnOff_PSC_dUk*dspike_dR1Off_V*dv_dS2OnOff_R1Off_PSC_gSYN\n'
-    grad_string += f'            #(R1On->S2)->R2On\n'
-    grad_string += f'            dUKR2_dR2OnR1Off += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC_gSYN*dR2On_S2OnOff_PSC_dUk*dspike_dR1On_V*dv_dS2OnOff_R1On_PSC_gSYN\n'
-    grad_string += f'            #(S1->R1Off)->S2->R2On\n'
-    grad_string += f'            dUKR2_dR2OnR1Off += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC_gSYN*dR2On_S2OnOff_PSC_dUk*dspike_dR1Off_V*dv_S2OnOff_R1Off_PSC_gSYN*dS2OnOff_R1Off_PSC_dUk*dspike_dS1OnOff_V*dv_dS2OnOff_R1On_PSC_gSYN\n'
+        #Compare with the eddges
+        for m in range(len(edges)):
+            if edges[m].split('->', -1)[0] == all_paths[k+1] and edges[m].split('->', -1)[1] == all_paths[k]:
+                path = edges[m] + '->' + path
+                gate = 1    
+
+        #If you have gone through all of them and the gate does not get flipped then append
+        #print(gate)
+        if gate == 0:
+            path_holder.append(path[:-2])
+            for z in range(k):
+                for m in range(len(edges)):
+                    if edges[m].split('->', -1)[0] == all_paths[k+1] and edges[m].split('->', -1)[1] == all_paths[k-(z+1)]:
+
+                        #1. Search backwards to find the node that it connects to. Done
+                        #2. Search through the path and replace in place the new connection
+          
+                        path_segmented = path.split('->',-1)
+
+                        for count, n in enumerate(path_segmented):
+       
+                            if n == edges[m].split('->', -1)[1]:
+
+                                path = path.split('->',count+1)[count+1]
+                                path = edges[m] + '->' + path
+                                if k == len(all_paths)-2 and gate2 == 0:
+                                     gate2 = 1
+                                     path_holder.append(path[:-2])
+                                break
+
+                        break
+
+        gate = 0
+
+    
+    grad_string += '\n            #Build derivs\n'
+    #1 Iterate through all of the gsyns that we are looking at.
+    for name, value in parameters.items():
+        if "gSYN" in name and "R2Off" not in name:
+            #2. Look through all of the paths and match the names to the paths
+
+            cur_divs = []
+
+            #print(name)
+
+            for cur_path in path_holder:
+                #Parameter name
+                post_node = name.split('_',-1)[0]
+                pre_node = name.split('_',-1)[1]
+
+                #Path (Going to iterate through them just to qualify that the gsyn can only be updated by that synapse)
+                path_segements = cur_path.split('->',-1)
+
+                path_gate = 0
+                check = 0
+
+                #print(cur_path)
+
+                for ps in range(len(path_segements)):
+
+                    #print(path_segmented)
+
+                    #print(path_segmented[ps])
+                    #print(pre_node)
+
+                    if path_segements[ps] == pre_node:
+
+                        
+
+                        path_gate = 1
+
+                    if path_gate == 1:
+                        
+
+
+                        path_gate = 0
+
+
+                        if path_segements[ps+1] == post_node:
+                            check = 1
+                            path_gate = 0
+
+                if check == 1:
+
+
+                    deriv = ''
+
+
+
+                    for count_tar in range(int(len(path_segements)/2)):
+                        pre_der = path_segements[-(count_tar*2 + 2)]
+                        post_der = path_segements[-(count_tar*2 + 1)]
+
+    
+                        #3. Add the spiking derivate
+                        deriv += 'dspike_d' + post_der + '_V*'
+
+                        if pre_der == pre_node:
+                            deriv += 'dv_d' + post_der + '_' + pre_der + '_PSC_gSYN'
+                            break
+                        else:
+                            deriv += 'dv_d' + post_der + '_' + pre_der + '_PSC*' + 'd' + post_der + '_' + pre_der + '_PSC_dUk*'
+
+                    cur_divs.append(deriv)
+
+                    
+            
+            grad_string += '            dGSYN' + post_node + '_' + pre_node +' += ' 
+            for un_divs in np.unique(cur_divs):
+                grad_string += f'{un_divs}+'
+            grad_string = grad_string[:-1]
+            grad_string += '\n'
+            #grad_string += '            dGSYN' + post_node + '_' + pre_node +' = '
+            #
+            # grad_string += f'            if dGSYNR1On_On != 0:\n                voltage_derivative.append(dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN)\n'
+            # grad_string += f'            if dGSYNR1On_On != 0:\n                psc_derivative.append(dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN)\n'   
+
+            # #print(cur_divs)
+
+                            
+
+                        
+
+
+
 
     generated_code = generated_code + grad_string
 
@@ -340,13 +476,27 @@ def build_ODE(parameters):
         if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
             var = update_vars[k]
             var_base = var[:-3]
-            append_spikes += f'        print(max(dv_d{var_base}_tracker))\n' 
-            append_spikes += f'        print(min(dv_d{var_base}_tracker))\n'
+            
+            #append_spikes += f'        print(max(dv_d{var_base}_tracker))\n' 
+            #append_spikes += f'        print(min(dv_d{var_base}_tracker))\n'
 
-    #for name, value in parameters.items():
-    #    if "_gSYN" in name and "R2Off" not in name:
-    #        append_spikes += f'        print(max(dv_d{name}_tracker))\n'
-    #        append_spikes += f'        print(min(dv_d{name}_tracker))\n'
+    # for name, value in parameters.items():
+    #     if "_gSYN" in name and "R2Off" not in name:
+            
+    #         post_node = name.split('_',-1)[0]
+    #         pre_node = name.split('_',-1)[1]
+
+    #         if "R1On_" in name and "_On" in name:
+
+    #             append_spikes += f'    print(\'first few spikes\')\n'
+    #             append_spikes += f'    print(voltage_derivative[0:15])\n'
+    #             append_spikes += f'    print(psc_derivative[0:15])\n'
+
+    #             append_spikes += f'    print(\'maximums\')\n'
+    #             append_spikes += f'    print(max(voltage_derivative))\n'
+    #             append_spikes += f'    print(max(psc_derivative))\n'
+    #             append_spikes += f'    print(min(voltage_derivative))\n'
+    #             append_spikes += f'    print(min(psc_derivative))\n'
             
 
     generated_code = generated_code + append_spikes
@@ -357,21 +507,30 @@ def build_ODE(parameters):
     return_statement = "\n    return R2On_V_spikes"
 
     #Package gradients
-    for k in range(len(update_vars)):
-        if "Off_V" in update_vars[k] or "On_V" in update_vars[k]:
-            var = update_vars[k]
-            var_base = var[:-3]
+    count_p2 = 0
+    for name, value in parameters.items():
+        if "gSYN" in name and "R2Off" not in name:
 
-            if k == 0:
-                return_statement += f', [grad_{var_base}'
-            if k == 7:
-                return_statement += f', grad_{var_base}]'
+            post_node = name.split('_',-1)[0]
+            pre_node = name.split('_',-1)[1]
+
+            #print(count_p2)
+
+
+            if count_p2 == 0:
+                return_statement += f', [dGSYN{post_node}_{pre_node}'
+            elif count_p2 == 9:
+                return_statement += f', dGSYN{post_node}_{pre_node}]'
             else:
-                return_statement += f', grad_{var_base}'
+                return_statement += f', dGSYN{post_node}_{pre_node}'
+
+            #print(return_statement)
+
+            count_p2 += 1
 
     return_statement += '\n'
 
-    #generated_code = generated_code + return_statement
+    generated_code = generated_code + return_statement
 
     #----Training Loop
 
@@ -379,15 +538,16 @@ def build_ODE(parameters):
     \ndef main():
         num_epochs = 1
 
-        p = ones((1,1))*0.005   #Initial parameter value
+        p = ones((10))*0.02   #Initial parameter value
 
         #Adam
-        m = 0
-        v = 0
+        m = np.zeros((10))
+        v = np.zeros((10))
         beta1, beta2 = 0.92, 0.9995
         eps = 1e-6
         t = 0
         lr = 1e-3
+
 
         matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
         filename = f"{{matfile_path}}/goalPSTH.mat"
@@ -395,20 +555,31 @@ def build_ODE(parameters):
 
 
         #target_spikes = np.array(data['ans'][0])
-        target_spikes = 10
+        target_spikes = 100
     
         losses = []
         param_tracker = []
 
         for epoch in range(num_epochs):
 
+            #print('here')
+
             output, grads = forwards(p)  # forward pass
+
+            grad_holder2 = []
+            for z in grads:
+                #print(z[0])
+                grad_holder2.append(z[0][0])
+
+            grads = grad_holder2
+
+            grads = [float(x) for x in grads] 
             
             param_tracker.append(p)
 
             print(f'parameter = {{p}}')
 
-            print(np.shape(output))
+            #print(np.shape(output))
             output = np.reshape(output,(1,34998*10))
 
             print('Avg Firing Rate')
@@ -420,16 +591,57 @@ def build_ODE(parameters):
 
             loss = (target_spikes-fr)**2
 
+            print(float(2*(fr-target_spikes)))
+            print(grads)
 
-            out_grad = 2*(fr-target_spikes)*grads
+
+
+
+            #out_grad = float(2*(fr-target_spikes))*grads
+
+            #A negetive comes out here because we are doing dL/dspikes and the inner derivactive of -x is -1
+            #Target spikes is not what is being calculated. It is actually fr. So no negetive actually
+            scale = float(2*(fr - target_spikes))
+            out_grad = [scale * g for g in grads] 
 
             print('grad below')
             print(out_grad)
 
-            p = Update_Grads.grads_update(grads,p)
+            #p = Update_Grads.grads_update(grads,p)
 
             
-                
+            t += 1
+
+            print('here7')
+            print(m)
+            print(len(m))
+            print(np.shape(m))
+
+            m = [beta1*m[ms] + (1-beta1) * out_grad[ms] for ms in range(len(m))]
+            v = [beta2*v[vs] + (1-beta2) * (out_grad[vs]**2) for vs in range(len(v))]
+
+            #m = beta1 * m + (1 - beta1) * out_grad
+            #v = beta2 * v + (1 - beta2) * (out_grad ** 2)
+
+            print('m')
+            print(m)
+
+            m_hat = [m[ms]/(1 - beta1 ** t) for ms in range(len(m))]
+            v_hat = [v[vs]/(1 - beta2 ** t) for vs in range(len(v))]
+
+            #m_hat = m / (1 - beta1 ** t)
+            #v_hat = v / (1 - beta2 ** t)
+
+            print('v_hat')
+            print(v_hat)
+
+            p = [p[vs] - lr*m_hat[vs]/(np.sqrt(v_hat[vs]) + eps) for vs in range(len(v))]
+
+            #p = p - lr * m_hat / (np.sqrt(v_hat) + eps)
+
+            #print('p')
+            #print(p)
+
                 
 
             print('p below')
