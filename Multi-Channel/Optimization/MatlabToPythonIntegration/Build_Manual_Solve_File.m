@@ -1,7 +1,6 @@
 clear classes
 
 
-
 insert(py.sys.path,int32(0),'C:\Users\ipboy\Documents\GitHub\ModelingEffort\Multi-Channel\Optimization\MatlabToPythonIntegration');
 
 mod = py.importlib.import_module('Solve_File_Generator_Manual');

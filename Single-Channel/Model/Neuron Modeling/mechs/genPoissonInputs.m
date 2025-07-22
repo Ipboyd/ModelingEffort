@@ -138,6 +138,15 @@ trial_rate = squeeze(temp(:,:,trial)); % time x location x cells
 rate = trial_rate; 
 %end
 
+offseter = 3153;
+plotting_rate = trial_rate(offseter:offseter+3500*3);
+
+if(trial == 1)
+    figure;
+    plot(plotting_rate);
+end
+
+
 s = zeros(size(rate));
 
 for n = 1:size(rate,2)
@@ -175,6 +184,7 @@ for i=1:n   % sample
         spike_times=[spike_times; i];
     end
 end
+
 
 %Just for testing purposes to keep everything consistant
 

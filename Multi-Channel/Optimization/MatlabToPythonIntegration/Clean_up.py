@@ -94,7 +94,7 @@ def Clean_gen_code(generated_code):
             line = re.sub(r"\)\s*,\s*dtype=", ", dtype=", line)
 
         if "tspan =" in line:
-            line = "    tspan = np.array([0.1, 3500.0])"
+            line = "    tspan = np.array([0.1, 3500.0*scale_factor])"
 
         if "random_seed" in line:
             line = ""
@@ -104,6 +104,9 @@ def Clean_gen_code(generated_code):
 
         if "datafile" in line:
             line = ""
+
+        if "R2On_R2On_iNoise_V3_simlen =" in line:
+            line = "    R2On_R2On_iNoise_V3_simlen = tspan[1]*10"
 
         #if "R2On_R1On_PSC_gSYN =" in line and "dv_d" not in line:
         #    line = '    R2On_R1On_PSC_gSYN = p_Ron'

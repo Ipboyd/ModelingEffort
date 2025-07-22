@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.io
+import matplotlib.pyplot as plt
 
 def spike_generator(rate, dt, t_ref, t_ref_rel, rec):
     """
@@ -47,7 +48,7 @@ def spike_generator(rate, dt, t_ref, t_ref_rel, rec):
     return spike_train
 
 
-def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec):
+def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec, scale_factor):
     """
     Generate Poisson spike inputs from a .mat file of spike rates.
 
@@ -82,7 +83,7 @@ def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec):
 
     #Issue with this line below 5/20
 
-    #print(np.shape(temp))
+    
 
     #print(int(trial))
 
@@ -107,13 +108,26 @@ def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec):
         #print('here')
     #    rate = trial_rate[loc_size * (loc_num - 1):loc_size * loc_num, :]
     #else:
-    rate = trial_rate
+
+    #Scale down length according to scale factor
+
+    if scale_factor != 1:
+        #offset_val = np.argmax(trial_rate != 0) #If we are using a scale factor that is small, we do not want the signal to be all zeros if we are taking form the start of the signal. The signal starts with about 3000-5000 samples of silence.
+        offset_val = 3153
+
+        rate = trial_rate[int(offset_val):int(offset_val+len(trial_rate)*scale_factor)]
+
+
+    #plt.plot(rate)
+    #print(rate)
+    #print(np.argmax(trial_rate != 0))
 
     #rate = np.atleast_2d(rate)
 
     #print('here')
 
-    #print(len(rate))
+    #print('shape')
+    #print(np.shape(rate))
 
     s = np.zeros_like(rate)
 

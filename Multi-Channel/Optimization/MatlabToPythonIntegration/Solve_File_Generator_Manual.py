@@ -79,13 +79,15 @@ def build_ODE(parameters):
         import gc
         import scipy.io
         import numpy as np
+        from numba import njit
 
     """)
 
 
     #----Declare forwards loop & Initialize variables
     forwards_loop_header = textwrap.dedent("""\
-        def forwards(ps):
+        @njit
+        def forwards(ps,scale_factor):
     """)
 
     #Bring In params
@@ -158,7 +160,7 @@ def build_ODE(parameters):
             monitor_string += f"        {monitor_vars[k]} = {monitor_vals[k]}\n"
 
     #Declare Inputs
-    inputs_header = "\n        #Delcare Inputs\n        On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec)\n        Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec)\n"
+    inputs_header = "\n        #Delcare Inputs\n        On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)\n        Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec,scale_factor)\n"
 
     generated_code = generated_code + trial_loop_declaration + state_vars_string + monitor_string + inputs_header
 
@@ -538,7 +540,7 @@ def build_ODE(parameters):
     \ndef main():
         num_epochs = 1
 
-        p = ones((10))*0.02   #Initial parameter value
+        p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025   #Initial parameter value
 
         #Adam
         m = np.zeros((10))
@@ -547,6 +549,8 @@ def build_ODE(parameters):
         eps = 1e-6
         t = 0
         lr = 1e-3
+
+        scale_factor = 0.2
 
 
         matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
@@ -564,7 +568,7 @@ def build_ODE(parameters):
 
             #print('here')
 
-            output, grads = forwards(p)  # forward pass
+            output, grads = forwards(p,scale_factor)  # forward pass
 
             grad_holder2 = []
             for z in grads:
@@ -579,13 +583,13 @@ def build_ODE(parameters):
 
             print(f'parameter = {{p}}')
 
-            #print(np.shape(output))
-            output = np.reshape(output,(1,34998*10))
+            print(np.shape(output))
+            output = np.reshape(output,(1,int((35000*scale_factor-2)*10)))
 
             print('Avg Firing Rate')
-            print(output.sum()/10/3)
+            print(output.sum()/10/(3*scale_factor))
 
-            fr = output.sum()/10/3  #total spikes/num_trials/num_seconds
+            fr = output.sum()/10/(3*scale_factor)  #total spikes/num_trials/num_seconds
 
             #print(target_spikes)
 

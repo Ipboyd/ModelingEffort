@@ -4,11 +4,13 @@ import matplotlib.pyplot as plt
 import gc
 import scipy.io
 import numpy as np
+from numba import njit
 
-def forwards(ps):
+@njit
+def forwards(ps,scale_factor):
 
     #Params
-    tspan = np.array([0.1, 3500.0])
+    tspan = np.array([0.1, 3500.0*scale_factor])
     downsample_factor = 1.0
 
 
@@ -253,7 +255,7 @@ def forwards(ps):
     R2On_R2On_iNoise_V3_sigma = 0.0
     R2On_R2On_iNoise_V3_dt = 0.1
     R2On_R2On_iNoise_V3_nSYN = 0.015
-    R2On_R2On_iNoise_V3_simlen = 35000.0
+    R2On_R2On_iNoise_V3_simlen = tspan[1]*10
     R2On_R2On_iNoise_V3_tauD_N = 1.5
     R2On_R2On_iNoise_V3_tauR_N = 0.7
     R2On_R2On_iNoise_V3_E_exc = 0.0
@@ -472,8 +474,8 @@ def forwards(ps):
         S2OnOff_R1Off_PSC_syn = np.zeros((T, S2OnOff_Npop))
 
         #Delcare Inputs
-        On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec)
-        Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec)
+        On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)
+        Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec,scale_factor)
 
         for t in range(1,T):
 
@@ -1023,7 +1025,7 @@ def forwards(ps):
 def main():
         num_epochs = 1
 
-        p = np.ones(((10)))*0.02   #Initial parameter value
+        p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025   #Initial parameter value
 
         #Adam
         m = np.zeros((10))
@@ -1032,6 +1034,8 @@ def main():
         eps = 1e-6
         t = 0
         lr = 1e-3
+
+        scale_factor = 0.2
 
 
         matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
@@ -1049,7 +1053,7 @@ def main():
 
             #print('here')
 
-            output, grads = forwards(p)  # forward pass
+            output, grads = forwards(p,scale_factor)  # forward pass
 
             grad_holder2 = []
             for z in grads:
@@ -1064,13 +1068,13 @@ def main():
 
             print(f'parameter = {p}')
 
-            #print(np.shape(output))
-            output = np.reshape(output,(1,34998*10))
+            print(np.shape(output))
+            output = np.reshape(output,(1,int((35000*scale_factor-2)*10)))
 
             print('Avg Firing Rate')
-            print(output.sum()/10/3)
+            print(output.sum()/10/(3*scale_factor))
 
-            fr = output.sum()/10/3  #total spikes/num_trials/num_seconds
+            fr = output.sum()/10/(3*scale_factor)  #total spikes/num_trials/num_seconds
 
             #print(target_spikes)
 
