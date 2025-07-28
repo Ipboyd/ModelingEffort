@@ -11,6 +11,7 @@ import Update_Grads
 import pdb
 import textwrap
 import numpy as np
+import math
 
 #Recursion definition for tracking gradient paths
 def recurse(cur_node, tracker,nodes,edges):
@@ -79,14 +80,13 @@ def build_ODE(parameters):
         import gc
         import scipy.io
         import numpy as np
-        from numba import njit
-
+        import Calc_output_grad
+        import Update_params
     """)
 
 
     #----Declare forwards loop & Initialize variables
     forwards_loop_header = textwrap.dedent("""\
-        @njit
         def forwards(ps,scale_factor):
     """)
 
@@ -538,11 +538,13 @@ def build_ODE(parameters):
 
     training_loop = textwrap.dedent(f"""\
     \ndef main():
+        
+        
+        #Set epochs and parameter initialization
         num_epochs = 1
+        p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025
 
-        p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025   #Initial parameter value
-
-        #Adam
+        #Initilze Adam Parameters
         m = np.zeros((10))
         v = np.zeros((10))
         beta1, beta2 = 0.92, 0.9995
@@ -550,111 +552,49 @@ def build_ODE(parameters):
         t = 0
         lr = 1e-3
 
-        scale_factor = 0.2
+        #Adjust length of training signal
+        scale_factor = 0.1
 
-
-        matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
-        filename = f"{{matfile_path}}/goalPSTH.mat"
-        data = scipy.io.loadmat(filename)
-
-
-        #target_spikes = np.array(data['ans'][0])
-        target_spikes = 100
-    
+        #Keep track for plotting
         losses = []
         param_tracker = []
 
         for epoch in range(num_epochs):
 
-            #print('here')
-
+            #Track Parameters
+            param_tracker.append(p)
+            
+            #Run forwards pass
             output, grads = forwards(p,scale_factor)  # forward pass
 
+            #Extract gradients
             grad_holder2 = []
             for z in grads:
-                #print(z[0])
-                grad_holder2.append(z[0][0])
+                grad_holder2.append(float(z[0][0]))
 
-            grads = grad_holder2
+            #grads = [float(x) for x in grad_holder2] 
 
-            grads = [float(x) for x in grads] 
+            #Calcualtes loss functions
+            #---
+            #Current functions:
+            #    - Firing Rate L2 ("fr")
+            #    - PSTH L2 ("PSTH")
+            #    - Spike L2 Distance /WIP
+            #    - van Rossmum Distance (Spike Level) /WIP
+
+            print('here1')
+            out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "PSTH")
+            print('here2')
+
+            #Calculate parameter updates using Adam Optimizer
+            #---
+            #Uses 2 terms to control the momementum of the learning
+            #    -beta1 controlls short term momentum
+            #    -beta2 contorlls long term dampening
+
+            m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
             
-            param_tracker.append(p)
-
-            print(f'parameter = {{p}}')
-
-            print(np.shape(output))
-            output = np.reshape(output,(1,int((35000*scale_factor-2)*10)))
-
-            print('Avg Firing Rate')
-            print(output.sum()/10/(3*scale_factor))
-
-            fr = output.sum()/10/(3*scale_factor)  #total spikes/num_trials/num_seconds
-
-            #print(target_spikes)
-
-            loss = (target_spikes-fr)**2
-
-            print(float(2*(fr-target_spikes)))
-            print(grads)
-
-
-
-
-            #out_grad = float(2*(fr-target_spikes))*grads
-
-            #A negetive comes out here because we are doing dL/dspikes and the inner derivactive of -x is -1
-            #Target spikes is not what is being calculated. It is actually fr. So no negetive actually
-            scale = float(2*(fr - target_spikes))
-            out_grad = [scale * g for g in grads] 
-
-            print('grad below')
-            print(out_grad)
-
-            #p = Update_Grads.grads_update(grads,p)
-
-            
-            t += 1
-
-            print('here7')
-            print(m)
-            print(len(m))
-            print(np.shape(m))
-
-            m = [beta1*m[ms] + (1-beta1) * out_grad[ms] for ms in range(len(m))]
-            v = [beta2*v[vs] + (1-beta2) * (out_grad[vs]**2) for vs in range(len(v))]
-
-            #m = beta1 * m + (1 - beta1) * out_grad
-            #v = beta2 * v + (1 - beta2) * (out_grad ** 2)
-
-            print('m')
-            print(m)
-
-            m_hat = [m[ms]/(1 - beta1 ** t) for ms in range(len(m))]
-            v_hat = [v[vs]/(1 - beta2 ** t) for vs in range(len(v))]
-
-            #m_hat = m / (1 - beta1 ** t)
-            #v_hat = v / (1 - beta2 ** t)
-
-            print('v_hat')
-            print(v_hat)
-
-            p = [p[vs] - lr*m_hat[vs]/(np.sqrt(v_hat[vs]) + eps) for vs in range(len(v))]
-
-            #p = p - lr * m_hat / (np.sqrt(v_hat) + eps)
-
-            #print('p')
-            #print(p)
-
-                
-
-            print('p below')
-            print(p)
-
-            #loss = ((binned_counts - target_spikes)**2).mean()
             losses.append(loss)
-            
-
             print(f"Epoch {{epoch}}: Loss = {{loss.item()}}",flush=True) 
 
         return losses, output, param_tracker

@@ -1,0 +1,22 @@
+cd(userpath);
+cd('../GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting')
+
+clear all
+close all
+
+load('all_units_info_with_polished_criteria_modified_perf.mat','all_data');
+load('sound_files.mat','sampleRate','target1','target2');  %Sample Rate 195312 Hz
+
+plot(target1)
+
+SpikeTimes = all_data(7).ctrl_tar1_timestamps(:,1);
+
+%Since 
+
+
+%Figure out how much silence there is at the input relative to the amount
+%of silence for the stimuli
+
+%for m = 1:10
+
+%end

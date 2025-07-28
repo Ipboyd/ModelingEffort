@@ -1,7 +1,4 @@
 import numpy as np
-from numba import njit
-
-@njit
 def gen_poisson_times(N_pop, dt, FR, std, simlen=35000):
     """
     Generate Poisson spike trains with refractory period.
@@ -44,8 +41,8 @@ def gen_poisson_times(N_pop, dt, FR, std, simlen=35000):
             temp[spk_inds[violate_inds], i] = 0
 
     
-    #return np.array(temp)
-    return temp
+    return np.array(temp)
+    #return temp
 
 
 '''import torch

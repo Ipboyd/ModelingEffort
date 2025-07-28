@@ -5,7 +5,8 @@ num_params = 10;
 losses = [];
 a = x{1};
 for k = 1:epochs
-    losses = [losses, a{k}];
+    %print(float(a{k}))
+    losses = [losses, double(a{k})];
 end
 
 parameter_vals = [];

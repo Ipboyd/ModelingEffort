@@ -73,6 +73,9 @@ function tfrep = timefreq(audioWaveform, sampleRate, typeName, params)
             maxIndx = maxIndx(1);
             minIndx = find(f0 < tfrep.params.low_freq);
             minIndx = minIndx(end) + 1;
+
+            %disp('minIndx')
+            %disp(minIndx)
             
             normedS = abs(s(minIndx:maxIndx, :)); %<<<<<<<<<<<<<<<< s is output spectrogram
             

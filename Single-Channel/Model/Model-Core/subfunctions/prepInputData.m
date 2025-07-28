@@ -1,4 +1,5 @@
-padToTime = 3500; % [ms]
+%padToTime = 3500; % [ms]
+padToTime = 2980.1;
 tmax = max(cellfun(@numel,fr_target_on));
 labels = {'on','off'};
 for ICtype = [1 2]
@@ -23,6 +24,9 @@ for ICtype = [1 2]
 
 
     spks = permute(spks,[3 2 1]);
+
+    figure;
+    plot(eval(['fr_target_' labels{ICtype} '{2}']))
     
 
     save(fullfile(study_dir, 'solve',['IC_spks_' labels{ICtype} '.mat']),'spks','dt');

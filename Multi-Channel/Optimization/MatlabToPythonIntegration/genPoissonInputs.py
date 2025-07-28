@@ -47,7 +47,6 @@ def spike_generator(rate, dt, t_ref, t_ref_rel, rec):
 
     return spike_train
 
-
 def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec, scale_factor):
     """
     Generate Poisson spike inputs from a .mat file of spike rates.

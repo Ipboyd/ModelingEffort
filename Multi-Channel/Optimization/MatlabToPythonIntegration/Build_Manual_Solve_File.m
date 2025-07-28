@@ -30,6 +30,12 @@ py.importlib.reload(mod);
 mod = py.importlib.import_module('genPoissonTimes');
 py.importlib.reload(mod);
 
+mod = py.importlib.import_module('Calc_output_grad');
+py.importlib.reload(mod);
+
+mod = py.importlib.import_module('Update_params');
+py.importlib.reload(mod);
+
 
 addpath('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Single-Channel\Model\Model-Core\Model-Main\run\1-channel-paper\solve')
 

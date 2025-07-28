@@ -58,13 +58,10 @@ paramG.f0 = 4300; % ~strf.f(30)
 load('sound_files.mat','sampleRate','target1','target2'); 
 
 %Upsample to get to 200000 Hz. This is necessary to be interpretable by our
-%model witch works in 0.1 ms timesteps. The orignal sampling rate does not
-%play well with this.
-
-%This will upsample it and then downsample it so the duplication is spread
-%pretty evenly across samples.
-song1 = resample(target1,12500,12207);
-song2 = resample(target2,12500,12207);
+%model witch works in 0.1 ms timesteps. the sampleing rate does not play
+%well with this
+song1 = resample(target1;
+song2 = target2;
 
 
 %[song1,~] = audioread('200k_target1.wav');
