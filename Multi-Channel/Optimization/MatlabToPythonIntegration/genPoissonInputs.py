@@ -7,6 +7,9 @@ def spike_generator(rate, dt, t_ref, t_ref_rel, rec):
     Generate a Poisson spike train with an absolute and relative refractory period.
     """
     dt_sec = dt / 1000  # ms to seconds
+
+    #print(dt_sec)
+
     n = len(rate)
     spike_train = np.zeros(n)
     spike_times = []
@@ -115,6 +118,10 @@ def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec, scale_facto
         offset_val = 3153
 
         rate = trial_rate[int(offset_val):int(offset_val+len(trial_rate)*scale_factor)]
+
+    else:
+        rate = trial_rate
+
 
 
     #plt.plot(rate)

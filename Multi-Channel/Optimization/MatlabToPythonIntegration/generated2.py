@@ -329,8 +329,8 @@ def forwards(ps,scale_factor):
     R2On_R2On_iNoise_V3_token = genPoissonTimes.gen_poisson_times(R2On_Npop,R2On_R2On_iNoise_V3_dt,R2On_R2On_iNoise_V3_FR,R2On_R2On_iNoise_V3_sigma,R2On_R2On_iNoise_V3_simlen)
     R2On_R2On_iNoise_V3_scale = (R2On_R2On_iNoise_V3_tauD_N/R2On_R2On_iNoise_V3_tauR_N)**(R2On_R2On_iNoise_V3_tauR_N/(R2On_R2On_iNoise_V3_tauD_N-R2On_R2On_iNoise_V3_tauR_N))
 
-    T = len(np.arange(tspan[0],tspan[1],dt))
-    helper = np.arange(tspan[0],tspan[1],dt)
+    T = len(np.arange(tspan[0],tspan[1]+(dt),dt))
+    helper = np.arange(tspan[0],tspan[1]+(dt),dt)
     grad_On_V = 0
     grad_Off_V = 0
     grad_R1On_V = 0
@@ -476,7 +476,7 @@ def forwards(ps,scale_factor):
         On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)
         Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec,scale_factor)
 
-        for t in range(1,T):
+        for t in range(0,T):
 
             #ODEs
             On_V_k1 = ( (On_E_L-On_V[-1]) - On_R*On_g_ad[-1]*(On_V[-1]-On_E_k) - On_R*((((On_On_IC_g_postIC*(On_On_IC_input[t]*On_On_IC_netcon)*(On_V[-1]-On_On_IC_E_exc))))) + On_R*On_Itonic*On_Imask  ) / On_tau
@@ -1025,7 +1025,7 @@ def main():
 
 
         #Set epochs and parameter initialization
-        num_epochs = 1
+        num_epochs = 150
         p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025
 
         #Initilze Adam Parameters
@@ -1037,7 +1037,7 @@ def main():
         lr = 1e-3
 
         #Adjust length of training signal
-        scale_factor = 0.1
+        scale_factor = 1
 
         #Keep track for plotting
         losses = []
@@ -1066,9 +1066,7 @@ def main():
             #    - Spike L2 Distance /WIP
             #    - van Rossmum Distance (Spike Level) /WIP
 
-            print('here1')
-            out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "PSTH")
-            print('here2')
+            out_grad, loss, vr_ex = Calc_output_grad.calculate(output, grads, scale_factor, "vanRossum")
 
             #Calculate parameter updates using Adam Optimizer
             #---
@@ -1079,8 +1077,8 @@ def main():
             m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
 
             losses.append(loss)
-            print(f"Epoch {epoch}: Loss = {loss.item()}",flush=True) 
+            print(f"Epoch {epoch}: Loss = {loss}",flush=True) 
 
-        return losses, output, param_tracker
+        return losses, output, param_tracker, vr_ex
 
 

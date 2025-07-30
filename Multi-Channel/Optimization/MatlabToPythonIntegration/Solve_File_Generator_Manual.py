@@ -122,7 +122,10 @@ def build_ODE(parameters):
             fixed_param_declaration += f"    {lhs_list[k]} = {rhs_list[k]}\n"
 
     #Bring in T, helper, and grad
-    T_and_Helper_declaration = '\n    T = len(np.arange(tspan[0],tspan[1],dt))\n    helper = np.arange(tspan[0],tspan[1],dt)\n'
+    #Mind the 2*dt line
+    #Tspan reports the length of the stimulus in ms. np.arange is 0 index and exclusive which requires 1 more index. 
+    #7/28 Not using t-1 anymore? Can we just push the sim from 0 to T instea of 1 to T?
+    T_and_Helper_declaration = '\n    T = len(np.arange(tspan[0],tspan[1]+(dt),dt))\n    helper = np.arange(tspan[0],tspan[1]+(dt),dt)\n'
 
     #Add Gradients
     for k in range(len(update_vars)):
@@ -167,7 +170,7 @@ def build_ODE(parameters):
 
     #----ODE Intermost loop
     
-    ODE_loop_Declaration = '\n        for t in range(1,T):\n'
+    ODE_loop_Declaration = '\n        for t in range(0,T):\n'
 
     #ODE declarations
     ode_string = '\n            #ODEs\n'
@@ -276,6 +279,8 @@ def build_ODE(parameters):
             
             post_cell = name.split('_', -1)[0]
             pre_cell = name.split('_', -1)[1]
+
+            #grad_string += f'            print(helper[t])\n'
 
             grad_string += f'            dv_d{name} = -(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/15\n'
             #grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
@@ -541,7 +546,7 @@ def build_ODE(parameters):
         
         
         #Set epochs and parameter initialization
-        num_epochs = 1
+        num_epochs = 150
         p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025
 
         #Initilze Adam Parameters
@@ -553,7 +558,7 @@ def build_ODE(parameters):
         lr = 1e-3
 
         #Adjust length of training signal
-        scale_factor = 0.1
+        scale_factor = 1
 
         #Keep track for plotting
         losses = []
@@ -582,9 +587,7 @@ def build_ODE(parameters):
             #    - Spike L2 Distance /WIP
             #    - van Rossmum Distance (Spike Level) /WIP
 
-            print('here1')
-            out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "PSTH")
-            print('here2')
+            out_grad, loss, vr_ex = Calc_output_grad.calculate(output, grads, scale_factor, "vanRossum")
 
             #Calculate parameter updates using Adam Optimizer
             #---
@@ -593,11 +596,11 @@ def build_ODE(parameters):
             #    -beta2 contorlls long term dampening
 
             m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
-            
-            losses.append(loss)
-            print(f"Epoch {{epoch}}: Loss = {{loss.item()}}",flush=True) 
 
-        return losses, output, param_tracker
+            losses.append(loss)
+            print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
+
+        return losses, output, param_tracker, vr_ex
 
        
     """)
