@@ -492,73 +492,73 @@ def build_ODE(parameters):
 
     #----Post loop appending
 
-    #Append spikes
-    append_spikes = '\n        #Append Spikes\n'
+    # #Append spikes
+    # append_spikes = '\n        #Append Spikes\n'
         
-    for k in range(len(monitor_vars)):
-        if "V_spikes" in monitor_vars[k]:    
-            append_spikes += f'        {monitor_vars[k]}.append({monitor_vars[k]}_holder)\n'
-            #append_spikes += f'        print(max({monitor_vars[k]}_holder))\n'
+    # for k in range(len(monitor_vars)):
+    #     if "V_spikes" in monitor_vars[k]:    
+    #         append_spikes += f'        {monitor_vars[k]}.append({monitor_vars[k]}_holder)\n'
+    #         #append_spikes += f'        print(max({monitor_vars[k]}_holder))\n'
 
-    for k in range(len(update_vars)):
-        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
-            var = update_vars[k]
-            var_base = var[:-3]
+    # for k in range(len(update_vars)):
+    #     if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+    #         var = update_vars[k]
+    #         var_base = var[:-3]
             
-            #append_spikes += f'        print(max(dv_d{var_base}_tracker))\n' 
-            #append_spikes += f'        print(min(dv_d{var_base}_tracker))\n'
+    #         #append_spikes += f'        print(max(dv_d{var_base}_tracker))\n' 
+    #         #append_spikes += f'        print(min(dv_d{var_base}_tracker))\n'
 
-    # for name, value in parameters.items():
-    #     if "_gSYN" in name and "R2Off" not in name:
+    # # for name, value in parameters.items():
+    # #     if "_gSYN" in name and "R2Off" not in name:
             
-    #         post_node = name.split('_',-1)[0]
-    #         pre_node = name.split('_',-1)[1]
+    # #         post_node = name.split('_',-1)[0]
+    # #         pre_node = name.split('_',-1)[1]
 
-    #         if "R1On_" in name and "_On" in name:
+    # #         if "R1On_" in name and "_On" in name:
 
-    #             append_spikes += f'    print(\'first few spikes\')\n'
-    #             append_spikes += f'    print(voltage_derivative[0:15])\n'
-    #             append_spikes += f'    print(psc_derivative[0:15])\n'
+    # #             append_spikes += f'    print(\'first few spikes\')\n'
+    # #             append_spikes += f'    print(voltage_derivative[0:15])\n'
+    # #             append_spikes += f'    print(psc_derivative[0:15])\n'
 
-    #             append_spikes += f'    print(\'maximums\')\n'
-    #             append_spikes += f'    print(max(voltage_derivative))\n'
-    #             append_spikes += f'    print(max(psc_derivative))\n'
-    #             append_spikes += f'    print(min(voltage_derivative))\n'
-    #             append_spikes += f'    print(min(psc_derivative))\n'
+    # #             append_spikes += f'    print(\'maximums\')\n'
+    # #             append_spikes += f'    print(max(voltage_derivative))\n'
+    # #             append_spikes += f'    print(max(psc_derivative))\n'
+    # #             append_spikes += f'    print(min(voltage_derivative))\n'
+    # #             append_spikes += f'    print(min(psc_derivative))\n'
             
 
-    generated_code = generated_code + append_spikes
+    # generated_code = generated_code + append_spikes
 
     
     #----Return Statement
 
-    return_statement = "\n    return R2On_V_spikes"
+    # return_statement = "\n    return R2On_V_spikes"
 
-    #Package gradients
-    count_p2 = 0
-    for name, value in parameters.items():
-        if "gSYN" in name and "R2Off" not in name:
+    # #Package gradients
+    # count_p2 = 0
+    # for name, value in parameters.items():
+    #     if "gSYN" in name and "R2Off" not in name:
 
-            post_node = name.split('_',-1)[0]
-            pre_node = name.split('_',-1)[1]
+    #         post_node = name.split('_',-1)[0]
+    #         pre_node = name.split('_',-1)[1]
 
-            #print(count_p2)
+    #         #print(count_p2)
 
 
-            if count_p2 == 0:
-                return_statement += f', [dGSYN{post_node}_{pre_node}'
-            elif count_p2 == 9:
-                return_statement += f', dGSYN{post_node}_{pre_node}]'
-            else:
-                return_statement += f', dGSYN{post_node}_{pre_node}'
+    #         if count_p2 == 0:
+    #             return_statement += f', [dGSYN{post_node}_{pre_node}'
+    #         elif count_p2 == 9:
+    #             return_statement += f', dGSYN{post_node}_{pre_node}]'
+    #         else:
+    #             return_statement += f', dGSYN{post_node}_{pre_node}'
 
-            #print(return_statement)
+    #         #print(return_statement)
 
-            count_p2 += 1
+    #         count_p2 += 1
 
-    return_statement += '\n'
+    # return_statement += '\n'
 
-    generated_code = generated_code + return_statement
+    # generated_code = generated_code + return_statement
 
     #----Training Loop
 
