@@ -268,7 +268,10 @@ def build_ODE(parameters):
         if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
             var = update_vars[k]
             var_base = var[:-3]
-            grad_string += f'            dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))**2))/500\n' 
+            grad_string += f'            dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))**2))/500\n'  #Nominally 500
+
+            #Instead of normalizing with a constant you could track the derivatives at every time step for each trial and then divide by the maximum (initialized to 1?)
+
             #grad_string += f'            dv_d{var_base}_tracker.append(dspike_d{var_base})\n'
 
     #Search for all of the gsyns that we want to update
@@ -282,7 +285,7 @@ def build_ODE(parameters):
 
             #grad_string += f'            print(helper[t])\n'
 
-            grad_string += f'            dv_d{name} = -(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/15\n'
+            grad_string += f'            dv_d{name} = -(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/15\n' #Nominally 15
             #grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
             
             #if "R2On" in name and "R1On" in name:
@@ -290,11 +293,11 @@ def build_ODE(parameters):
             
             #grad_string += f'            print(dv_d{name})\n'
             
-            grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -((dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2)))/2500\n'
+            grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -((dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2)))/2500\n' #Nominally 2500
             #grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -(dt*{post_cell}_{pre_cell}_PSC_scale*2/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2))\n'
             
             #grad_string += f'            print(d{post_cell}_{pre_cell}_PSC_dUk)\n'
-            grad_string += f'            dv_d{post_cell}_{pre_cell}_PSC = -(dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/10\n'
+            grad_string += f'            dv_d{post_cell}_{pre_cell}_PSC = -(dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/10\n' #Nominally 10
             #grad_string += f'            print(dv_d{post_cell}_{pre_cell}_PSC)\n'
 
             #print('cells')
@@ -324,47 +327,77 @@ def build_ODE(parameters):
 
     #Need to find a way to just get a list of all the possible paths are are upstream of R2on
     #Just going to write out nodes and edges and do that
-   
+
+
+    #************** Code Review Area #1 ****************
+
+    #--------------------------------------------------------------------------#
+    #                  #DFS algorithm for compiling derivatives                #
+    #--------------------------------------------------------------------------#
+
+    #Should I make this its own .py file?
+    
+    #List out all of the edges in the network (see 1)
     nodes = ['R2On','R1On','On','Off','S2OnOff','S1OnOff','R1Off','R2Off']
     edges = ['On->R1On','On->S1OnOff','Off->R1Off','Off->S1OnOff','S1OnOff->R1On','S1OnOff->R1Off','R1On->R2On','R1On->S2OnOff','R1Off->R2Off','R1Off->S2OnOff','S2OnOff->R2On','S2OnOff->R2Off']
 
-    #Preform depth first search to get a list of all paths
+    #Preform depth first search to get a list of all paths that lead to output node (ex. R2On)
+    #
+    #Inputs : reference node, all nodes, edges
+    #Outptus : All of the nodes (str) in the order they are visited (Depth first)
+    #
     all_paths = recurse('R2On',[],nodes,edges)
-    print(all_paths)
 
+    #print('DFS output')
+    #print(all_paths)
+
+    #The DFS output only reports the order nodes are visited in NOT all the paths that I need to track for building the derivatives
+    #The following portion Extracts all of the paths that lead to the first nodal entry (which should be the reference node)
+    #Only paths that flow to the reference node are relevant in updating the gradients.
+    #If all possible paths that flow to the reference node are reported then all possible relavent supaths will be definition be included.
     path_holder = []
     path = ''
     gate = 0
     gate2 = 0
-
-
+    
+    #Start by going through each node in the DFS
     for k in range(len(all_paths)-1):
 
-        #Compare with the eddges
+        #Look through the edges:
+        # Here lets designate downstream nodes as those the arrow points towards in edges so for ex. On->R1On  :  On = Upstream , R1On = Downstream
         for m in range(len(edges)):
             if edges[m].split('->', -1)[0] == all_paths[k+1] and edges[m].split('->', -1)[1] == all_paths[k]:
                 path = edges[m] + '->' + path
                 gate = 1    
 
         #If you have gone through all of them and the gate does not get flipped then append
-        #print(gate)
+        #This checks to see if we are at the end of a "primary path" which is a path the goes from the reference node to the last possilbe node. By doing this we include all node subpaths that reach the reference node.
         if gate == 0:
+            #First append the total path but exclue the hanging ->
             path_holder.append(path[:-2])
+
+            #Now we need to backtrack up the graph in the DFS search. We have found the last node in the DFS search (2) and we need to go back up to where a path branches (note it might go all the way back to the reference node)
+            #Search back through the number of nodes that we have already gone through (k)
             for z in range(k):
+                # Look at all of the edges to see if there is a branching connection
                 for m in range(len(edges)):
                     if edges[m].split('->', -1)[0] == all_paths[k+1] and edges[m].split('->', -1)[1] == all_paths[k-(z+1)]:
-
-                        #1. Search backwards to find the node that it connects to. Done
-                        #2. Search through the path and replace in place the new connection
-          
+                        
+                        #Split the current path up into segments (-1 just means as many as possible)
                         path_segmented = path.split('->',-1)
 
+                        #Now through the segemented path
                         for count, n in enumerate(path_segmented):
-       
+                            
+                            #If the segement matches the dowsnstream node, that branched from the upstearm node detected
+                            #then cut the path and update the path with the new node.
                             if n == edges[m].split('->', -1)[1]:
 
                                 path = path.split('->',count+1)[count+1]
                                 path = edges[m] + '->' + path
+
+                                #This detects the edge case where all paths have been found. 
+                                #This automatcailly stops the sequence and breaks out of the chain
                                 if k == len(all_paths)-2 and gate2 == 0:
                                      gate2 = 1
                                      path_holder.append(path[:-2])
@@ -373,20 +406,25 @@ def build_ODE(parameters):
                         break
 
         gate = 0
-
     
+    #print('list of all primary paths')
+    #print(path_holder)
+    
+    #Now we have to build all of the derivatives in the file
+    #The following code takes the primary paths and constructs all the gradients for all sub paths.
     grad_string += '\n            #Build derivs\n'
-    #1 Iterate through all of the gsyns that we are looking at.
+
+    #Iterate through all of the parameters. 
+    #As it stands we are just looking at gSYN
     for name, value in parameters.items():
+        #Right now ignore R2Off because it is not on the update path and calculating it will just take up space (TODO implement automatic collection for nodes on actual update path)
         if "gSYN" in name and "R2Off" not in name:
-            #2. Look through all of the paths and match the names to the paths
-
+            
+            #Here we are going to look through each path check to see if the parameter is on the path we are currently looking at
             cur_divs = []
-
-            #print(name)
-
             for cur_path in path_holder:
-                #Parameter name
+                
+                #Grab the downstream (post node) and upstream (pre node)
                 post_node = name.split('_',-1)[0]
                 pre_node = name.split('_',-1)[1]
 
@@ -396,77 +434,60 @@ def build_ODE(parameters):
                 path_gate = 0
                 check = 0
 
-                #print(cur_path)
-
+                #Loop through each of the path segements and see if it contains the parameter we are trying to update
                 for ps in range(len(path_segements)):
 
-                    #print(path_segmented)
-
-                    #print(path_segmented[ps])
-                    #print(pre_node)
-
+                    #If the parameter exists on the path and has both the pre and post node then move to the next part (in this case the synaptic parameter is a connection between two nodes)
                     if path_segements[ps] == pre_node:
-
-                        
 
                         path_gate = 1
 
                     if path_gate == 1:
-                        
-
-
+                    
                         path_gate = 0
-
 
                         if path_segements[ps+1] == post_node:
                             check = 1
                             path_gate = 0
-
+                
+                #If we have a valid connection then build the derivative 
                 if check == 1:
-
 
                     deriv = ''
 
-
-
+                    #all paths have to include the reference node at some pint.
+                    #what happens here is that you look through your path for a given node if it happens that you find this node early then you are close to the reference node and you derivative
+                    #will be compact. If you have something far away it will iterate through until the pre_der = pre_node (pre_node is set way up above). you will iterate until you hit the parameter edge and then break out.
                     for count_tar in range(int(len(path_segements)/2)):
                         pre_der = path_segements[-(count_tar*2 + 2)]
                         post_der = path_segements[-(count_tar*2 + 1)]
 
-    
                         #3. Add the spiking derivate
                         deriv += 'dspike_d' + post_der + '_V*'
 
+                        #If we are at the last relavent node add the derivative w.r.t. the parameter
                         if pre_der == pre_node:
                             deriv += 'dv_d' + post_der + '_' + pre_der + '_PSC_gSYN'
                             break
+                        #Else keep thre chain going by adding the derivatve w.r.t the psc and then w.r.t spiking
                         else:
                             deriv += 'dv_d' + post_der + '_' + pre_der + '_PSC*' + 'd' + post_der + '_' + pre_der + '_PSC_dUk*'
 
                     cur_divs.append(deriv)
 
-                    
             
+            #Construct the actual gradient that will be in the script
             grad_string += '            dGSYN' + post_node + '_' + pre_node +' += ' 
+            #Check to make sure that each path you are putting in is unique and not a duplicate path (duplicate sub-paths are find)
             for un_divs in np.unique(cur_divs):
                 grad_string += f'{un_divs}+'
             grad_string = grad_string[:-1]
             grad_string += '\n'
-            #grad_string += '            dGSYN' + post_node + '_' + pre_node +' = '
-            #
-            # grad_string += f'            if dGSYNR1On_On != 0:\n                voltage_derivative.append(dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN)\n'
-            # grad_string += f'            if dGSYNR1On_On != 0:\n                psc_derivative.append(dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN)\n'   
-
-            # #print(cur_divs)
-
-                            
-
-                        
-
-
-
 
     generated_code = generated_code + grad_string
+
+
+    #************** Code Review Area #1 END! ****************
 
 
     #----Post loop appending
@@ -546,13 +567,13 @@ def build_ODE(parameters):
         
         
         #Set epochs and parameter initialization
-        num_epochs = 150
+        num_epochs = 20
         p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025
 
         #Initilze Adam Parameters
         m = np.zeros((10))
         v = np.zeros((10))
-        beta1, beta2 = 0.92, 0.9995
+        beta1, beta2 = 0.999, 0.99995   #Nominally 0.92, 0.9995
         eps = 1e-6
         t = 0
         lr = 1e-3
@@ -585,9 +606,9 @@ def build_ODE(parameters):
             #    - Firing Rate L2 ("fr")
             #    - PSTH L2 ("PSTH")
             #    - Spike L2 Distance /WIP
-            #    - van Rossmum Distance (Spike Level) /WIP
+            #    - van Rossum Distance (Spike Level) /WIP
 
-            out_grad, loss, vr_ex = Calc_output_grad.calculate(output, grads, scale_factor, "vanRossum")
+            out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "spikeL2")
 
             #Calculate parameter updates using Adam Optimizer
             #---
@@ -598,9 +619,10 @@ def build_ODE(parameters):
             m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
 
             losses.append(loss)
-            print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
+            print(f"Epoch {{epoch}}: L2 Loss = {{loss[0]}}: Vr Loss = {{loss[1]}}",flush=True) 
+            #print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
 
-        return losses, output, param_tracker, vr_ex
+        return losses, output, param_tracker
 
        
     """)
