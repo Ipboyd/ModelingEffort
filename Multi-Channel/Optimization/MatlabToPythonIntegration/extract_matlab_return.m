@@ -1,4 +1,4 @@
-epochs = 150;
+epochs = 20;
 num_params = 10;
 
 %Extract Losses
@@ -42,6 +42,6 @@ plot(1:epochs, parameter_vals)
 xlabel('epochs')
 ylabel('R1 to R2 Strength')
 subplot(2,1,2)
-plot(1:epochs, losses)
+plot(1:epochs, losses(1:2:2*epochs))
 xlabel('epochs')
 ylabel('loss')
