@@ -13,5 +13,6 @@ def adam_update(m,v,p,t,beta1,beta2,lr,eps,out_grad):
 
     #Update p
     p = [p[vs] - lr*m_hat[vs]/(np.sqrt(v_hat[vs]) + eps) for vs in range(len(v))]
+    #p = [p[vs] - lr*m_hat[vs] for vs in range(len(m))]
 
     return m,v,p,t

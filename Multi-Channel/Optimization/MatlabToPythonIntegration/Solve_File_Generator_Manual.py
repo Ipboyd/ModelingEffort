@@ -87,7 +87,7 @@ def build_ODE(parameters):
 
     #----Declare forwards loop & Initialize variables
     forwards_loop_header = textwrap.dedent("""\
-        def forwards(ps,scale_factor):
+        def main(trial_number,ps,scale_factor):
     """)
 
     #Bring In params
@@ -111,6 +111,14 @@ def build_ODE(parameters):
             pre_node = name.split('_',-1)[1]
 
             params += f'    dGSYN{post_node}_{pre_node} = 0\n'
+            #params += f'    dGSYN{post_node}_{pre_node}_tracker = []\n'
+
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            params += f'    dspike_d{var_base}_tracker = []\n'
+
 
     params += f'    psc_derivative = []\n'
     params += f'    voltage_derivative = []\n'
@@ -147,49 +155,49 @@ def build_ODE(parameters):
 
     #----Initilize variables that get reset per trial
 
-    trial_loop_declaration = '\n    for trial_number in range(10):\n'
+    #trial_loop_declaration = '\n    for trial_number in range(10):\n'
 
     #Bring in State vars
-    state_vars_string = '\n        #State Variable Declaration\n'
+    state_vars_string = '\n    #State Variable Declaration\n'
     for k in range(len(state_vars)):
-        state_vars_string += f"        {state_vars[k]} = {State_variable_Identifier.replace_ones_zeros(state_vals[k])}\n"
+        state_vars_string += f"    {state_vars[k]} = {State_variable_Identifier.replace_ones_zeros(state_vals[k])}\n"
 
     #Bring in Monitors
-    monitor_string = '\n        #Monitor Declaration\n'
+    monitor_string = '\n    #Monitor Declaration\n'
     for k in range(len(monitor_vars)):
         if "V_spikes" in monitor_vars[k]:
-            monitor_string += f"        {monitor_vars[k]}_holder = []\n"
+            monitor_string += f"    {monitor_vars[k]}_holder = []\n"
         else:  
-            monitor_string += f"        {monitor_vars[k]} = {monitor_vals[k]}\n"
+            monitor_string += f"    {monitor_vars[k]} = {monitor_vals[k]}\n"
 
     #Declare Inputs
-    inputs_header = "\n        #Delcare Inputs\n        On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)\n        Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec,scale_factor)\n"
+    inputs_header = "\n    #Delcare Inputs\n    On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)\n    Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec,scale_factor)\n"
 
-    generated_code = generated_code + trial_loop_declaration + state_vars_string + monitor_string + inputs_header
-
+    #generated_code = generated_code + trial_loop_declaration + state_vars_string + monitor_string + inputs_header
+    generated_code = generated_code + state_vars_string + monitor_string + inputs_header
 
     #----ODE Intermost loop
     
-    ODE_loop_Declaration = '\n        for t in range(0,T):\n'
+    ODE_loop_Declaration = '\n    for t in range(0,T):\n'
 
     #ODE declarations
-    ode_string = '\n            #ODEs\n'
+    ode_string = '\n        #ODEs\n'
     for k in range(len(pairs)):
         rhs_ode = FormatODEs_Ns.reformat_input_time_indexing(FormatODEs_Ns.reformat_discrete_time_indexing(pairs[k][1]))
         rhs_ode_rpl = rhs_ode.replace("[t-1]", "[-1]")
-        ode_string += f"            {pairs[k][0]} = {rhs_ode_rpl}\n"
+        ode_string += f"        {pairs[k][0]} = {rhs_ode_rpl}\n"
         
    
     #Update Eulers
-    update_eulers = '\n            #Update Eulers\n'
+    update_eulers = '\n        #Update Eulers\n'
 
     for k in range(len(update_vars)):
         rep_val = update_vals[k].replace("[t-1]", "[-1]")
-        update_eulers += f"            {update_vars[k][:-3]}[-2] = {update_vars[k][:-3]}[-1]\n"
-        update_eulers += f"            {update_vars[k][:-3]}[-1] = {rep_val}\n"
+        update_eulers += f"        {update_vars[k][:-3]}[-2] = {update_vars[k][:-3]}[-1]\n"
+        update_eulers += f"        {update_vars[k][:-3]}[-1] = {rep_val}\n"
 
     #Spiking Behavior
-    test1_string = '\n            #Spiking and conditional actions\n'
+    test1_string = '\n        #Spiking and conditional actions\n'
     
     #Test 1 (Spiking activity)
     for k in range(len(update_vars)):
@@ -199,14 +207,14 @@ def build_ODE(parameters):
             var_name = var[:-5]
             var_prev = var.replace("[t]", "[-2]")
             var_thresh = f"{var.replace('[t]', '_thresh')}"
-            test1_string += f"            {var_base}_spikes_holder.append(int((({var_base}[-1] >= {var_thresh}) and ({var_prev} < {var_thresh}))))\n"
-            test1_string += f"            if {var_base}_spikes_holder[-1]:\n"       
-            test1_string += f"                {var_name}_tspike[int({var_name}_buffer_index)-1] = helper[t]\n"
-            test1_string += f"                {var_name}_buffer_index = ({var_name}_buffer_index % 5) + 1\n"
+            test1_string += f"        {var_base}_spikes_holder.append(int((({var_base}[-1] >= {var_thresh}) and ({var_prev} < {var_thresh}))))\n"
+            test1_string += f"        if {var_base}_spikes_holder[-1]:\n"       
+            test1_string += f"            {var_name}_tspike[int({var_name}_buffer_index)-1] = helper[t]\n"
+            test1_string += f"            {var_name}_buffer_index = ({var_name}_buffer_index % 5) + 1\n"
             
 
     #Test 2 (Voltage reset and adaptation) 
-    test2_string = '\n                #Voltage reset and adaptation\n'
+    test2_string = '\n            #Voltage reset and adaptation\n'
     for k in range(len(update_vars)):
         if "_V[t]" in update_vars[k]:
             var = update_vars[k]
@@ -216,16 +224,16 @@ def build_ODE(parameters):
             var_reset = f"{var.replace('[t]', '_reset')}"
             var_adapt = f"{var.replace('V[t]', 'g_ad[t]')}"
             var_inc = f"{var.replace('V[t]', 'g_inc')}"
-            test2_string += f"            {var_base}_test2a = {var_base}[-1] > {var_thresh}\n"
-            test2_string += f"            if {var_base}_test2a:\n"
-            test2_string += f"                {var[:-3]}[-2] = {var[:-3]}[-1] \n"
-            test2_string += f"                {var[:-3]}[-1] = {var_reset} \n"
-            test2_string += f"                {var_adapt[:-3]}[-2] = {var_adapt[:-3]}[-1]\n"
-            test2_string += f"                {var_adapt[:-3]}[-1] = {var_adapt[:-3]}[-1] + {var_inc}\n"
-            test2_string += f"            {var_base}_test2b = np.any(helper[t] <= {var_name}_tspike + {var_name}_t_ref)\n"
-            test2_string += f"            if {var_base}_test2b:\n"
-            test2_string += f"                {var[:-3]}[-2] = {var[:-3]}[-1]\n"
-            test2_string += f"                {var[:-3]}[-1] = {var_reset}\n"
+            test2_string += f"        {var_base}_test2a = {var_base}[-1] > {var_thresh}\n"
+            test2_string += f"        if {var_base}_test2a:\n"
+            test2_string += f"            {var[:-3]}[-2] = {var[:-3]}[-1] \n"
+            test2_string += f"            {var[:-3]}[-1] = {var_reset} \n"
+            test2_string += f"            {var_adapt[:-3]}[-2] = {var_adapt[:-3]}[-1]\n"
+            test2_string += f"            {var_adapt[:-3]}[-1] = {var_adapt[:-3]}[-1] + {var_inc}\n"
+            test2_string += f"        {var_base}_test2b = np.any(helper[t] <= {var_name}_tspike + {var_name}_t_ref)\n"
+            test2_string += f"        if {var_base}_test2b:\n"
+            test2_string += f"            {var[:-3]}[-2] = {var[:-3]}[-1]\n"
+            test2_string += f"            {var[:-3]}[-1] = {var_reset}\n"
 
     #Test 3 (Update PSC vars) 
     test3_string = '\n            #Update PSC vars\n'
@@ -242,16 +250,16 @@ def build_ODE(parameters):
         var_max = f"{var.replace('delay', 'maxF')}"
         var_fP = f"{var.replace('delay', 'fP')}"
 
-        test3_string += f"            {var_base}_test3 = np.any(helper[t] == {statement_pairs[k][0]} + {statement_pairs[k][1]})\n"  
-        test3_string += f"            if {var_base}_test3:\n"  
-        test3_string += f"                {var_x}[-2] = {var_x}[-1]\n"
-        test3_string += f"                {var_q}[-2] = {var_F}[-1]\n"
-        test3_string += f"                {var_F}[-2] = {var_F}[-1]\n"
-        test3_string += f"                {var_P}[-2] = {var_P}[-1]\n"
-        test3_string += f"                {var_x}[-1] = {var_x}[-1] + {var_q}[-1]\n"
-        test3_string += f"                {var_q}[-1] = {var_F}[-1] * {var_P}[-1]\n"
-        test3_string += f"                {var_F}[-1] = {var_F}[-1] + {var_fF}*({var_max}-{var_F}[-1])\n"
-        test3_string += f"                {var_P}[-1] = {var_P}[-1] * (1 - {var_fP})\n"
+        test3_string += f"        {var_base}_test3 = np.any(helper[t] == {statement_pairs[k][0]} + {statement_pairs[k][1]})\n"  
+        test3_string += f"        if {var_base}_test3:\n"  
+        test3_string += f"            {var_x}[-2] = {var_x}[-1]\n"
+        test3_string += f"            {var_q}[-2] = {var_F}[-1]\n"
+        test3_string += f"            {var_F}[-2] = {var_F}[-1]\n"
+        test3_string += f"            {var_P}[-2] = {var_P}[-1]\n"
+        test3_string += f"            {var_x}[-1] = {var_x}[-1] + {var_q}[-1]\n"
+        test3_string += f"            {var_q}[-1] = {var_F}[-1] * {var_P}[-1]\n"
+        test3_string += f"            {var_F}[-1] = {var_F}[-1] + {var_fF}*({var_max}-{var_F}[-1])\n"
+        test3_string += f"            {var_P}[-1] = {var_P}[-1] * (1 - {var_fP})\n"
 
     generated_code = generated_code + ODE_loop_Declaration + ode_string + update_eulers + test1_string + test2_string + test3_string
     
@@ -259,16 +267,23 @@ def build_ODE(parameters):
 
     #Going to try to build in gradient to forwards loop
     #Build out gradients
-    grad_string = '\n            #Grad Calculations\n'
+    grad_string = '\n        #Grad Calculations\n'
 
 
     #Grab all of the valid voltage update ones. This is the spiking deriavte wrt the voltage
-    grad_string += '\n\n            #Surrogate Spike Related Derivates\n'
+
+
+    #Current issue: This can go to infinity for some reason
+
+    grad_string += '\n\n        #Surrogate Spike Related Derivates\n'
     for k in range(len(update_vars)):
         if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
             var = update_vars[k]
             var_base = var[:-3]
-            grad_string += f'            dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))**2))/500\n'  #Nominally 500
+            grad_string += f'        dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))**2))/500\n'  #Nominally 500
+
+            grad_string += f'        dspike_d{var_base}_tracker.append({var_base}_thresh)\n'
+
 
             #Instead of normalizing with a constant you could track the derivatives at every time step for each trial and then divide by the maximum (initialized to 1?)
 
@@ -276,7 +291,7 @@ def build_ODE(parameters):
 
     #Search for all of the gsyns that we want to update
     #Write all of the partials of the voltage w.r.t the parameters
-    grad_string += '\n\n            #PSC & Parameter Related Derivates\n'
+    grad_string += '\n\n        #PSC & Parameter Related Derivates\n'
     for name, value in parameters.items():
         if "_gSYN" in name and "R2Off" not in name:
             
@@ -285,7 +300,8 @@ def build_ODE(parameters):
 
             #grad_string += f'            print(helper[t])\n'
 
-            grad_string += f'            dv_d{name} = -(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/15\n' #Nominally 15
+            grad_string += f'        dv_d{name} = -(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/15\n' #Nominally 15
+
             #grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
             
             #if "R2On" in name and "R1On" in name:
@@ -293,16 +309,22 @@ def build_ODE(parameters):
             
             #grad_string += f'            print(dv_d{name})\n'
             
-            grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -((dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2)))/2500\n' #Nominally 2500
+            grad_string += f'        d{post_cell}_{pre_cell}_PSC_dUk = -((dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2)))/2500\n' #Nominally 2500
             #grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -(dt*{post_cell}_{pre_cell}_PSC_scale*2/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2))\n'
             
             #grad_string += f'            print(d{post_cell}_{pre_cell}_PSC_dUk)\n'
-            grad_string += f'            dv_d{post_cell}_{pre_cell}_PSC = -(dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/10\n' #Nominally 10
+            grad_string += f'        dv_d{post_cell}_{pre_cell}_PSC = -(dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/10\n' #Nominally 10
             #grad_string += f'            print(dv_d{post_cell}_{pre_cell}_PSC)\n'
-
+            
             #print('cells')
             #print(pre_cell)
             #print(post_cell)
+
+            post_node = name.split('_',-1)[0]
+            pre_node = name.split('_',-1)[1]
+
+
+            
 
             #if "R1On_" in name and "_On" in name:
             #    grad_string += f'            if dspike_dR2On_V != 0:\n                voltage_derivative.append(dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN)\n'
@@ -412,7 +434,7 @@ def build_ODE(parameters):
     
     #Now we have to build all of the derivatives in the file
     #The following code takes the primary paths and constructs all the gradients for all sub paths.
-    grad_string += '\n            #Build derivs\n'
+    grad_string += '\n        #Build derivs\n'
 
     #Iterate through all of the parameters. 
     #As it stands we are just looking at gSYN
@@ -477,7 +499,7 @@ def build_ODE(parameters):
 
             
             #Construct the actual gradient that will be in the script
-            grad_string += '            dGSYN' + post_node + '_' + pre_node +' += ' 
+            grad_string += '        dGSYN' + post_node + '_' + pre_node +' += ' 
             #Check to make sure that each path you are putting in is unique and not a duplicate path (duplicate sub-paths are find)
             for un_divs in np.unique(cur_divs):
                 grad_string += f'{un_divs}+'
@@ -488,6 +510,44 @@ def build_ODE(parameters):
 
 
     #************** Code Review Area #1 END! ****************
+
+
+    #----Multi Core Return statement
+
+    deriv_return = ''
+
+    #for name, value in parameters.items():
+    #    #Right now ignore R2Off because it is not on the update path and calculating it will just take up space (TODO implement automatic collection for nodes on actual update path)
+    #    if "gSYN" in name and "R2Off" not in name:
+    #        post_node = name.split('_',-1)[0]
+    #        pre_node = name.split('_',-1)[1]
+    #
+    #        deriv_return += f'\n    print(max(dGSYN{post_node}_{pre_node}_tracker))\n'
+
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            #deriv_return += f'    print(max(\'dspike_d{var_base}_tracker\'))\n'
+            #deriv_return += f'    print(max(dspike_d{var_base}_tracker))\n'
+
+    deriv_return2 = ''
+
+    for name, value in parameters.items():
+        #Right now ignore R2Off because it is not on the update path and calculating it will just take up space (TODO implement automatic collection for nodes on actual update path)
+        if "gSYN" in name and "R2Off" not in name:
+            post_node = name.split('_',-1)[0]
+            pre_node = name.split('_',-1)[1]
+            deriv_return2 += 'dGSYN' + post_node + '_' + pre_node +', '
+
+            
+    
+    deriv_return2 = '[' + deriv_return2[:-2] + ']'
+
+    return_statement = f"\n{deriv_return}\n    return R2On_V_spikes_holder, {deriv_return2}"
+
+    generated_code = generated_code + return_statement
+
 
 
     #----Post loop appending
@@ -562,78 +622,77 @@ def build_ODE(parameters):
 
     #----Training Loop
 
-    training_loop = textwrap.dedent(f"""\
-    \ndef main():
+    # training_loop = textwrap.dedent(f"""\
+    # \ndef main():
         
         
-        #Set epochs and parameter initialization
-        num_epochs = 20
-        p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025
+    #     #Set epochs and parameter initialization
+    #     num_epochs = 1
+    #     p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025
 
-        #Initilze Adam Parameters
-        m = np.zeros((10))
-        v = np.zeros((10))
-        beta1, beta2 = 0.999, 0.99995   #Nominally 0.92, 0.9995
-        eps = 1e-6
-        t = 0
-        lr = 1e-3
+    #     #Initilze Adam Parameters
+    #     m = np.zeros((10))
+    #     v = np.zeros((10))
+    #     beta1, beta2 = 0.999, 0.99995   #Nominally 0.92, 0.9995
+    #     eps = 1e-6
+    #     t = 0
+    #     lr = 1e-3
 
-        #Adjust length of training signal
-        scale_factor = 1
+    #     #Adjust length of training signal
+    #     scale_factor = 1
 
-        #Keep track for plotting
-        losses = []
-        param_tracker = []
+    #     #Keep track for plotting
+    #     losses = []
+    #     param_tracker = []
 
-        for epoch in range(num_epochs):
+    #     for epoch in range(num_epochs):
 
-            #Track Parameters
-            param_tracker.append(p)
+    #         #Track Parameters
+    #         param_tracker.append(p)
             
-            #Run forwards pass
-            output, grads = forwards(p,scale_factor)  # forward pass
+    #         #Run forwards pass
+    #         output, grads = forwards(p,scale_factor)  # forward pass
 
-            #Extract gradients
-            grad_holder2 = []
-            for z in grads:
-                grad_holder2.append(float(z[0][0]))
+    #         #Extract gradients
+    #         grad_holder2 = []
+    #         for z in grads:
+    #             grad_holder2.append(float(z[0][0]))
 
-            #grads = [float(x) for x in grad_holder2] 
+    #         #grads = [float(x) for x in grad_holder2] 
 
-            #Calcualtes loss functions
-            #---
-            #Current functions:
-            #    - Firing Rate L2 ("fr")
-            #    - PSTH L2 ("PSTH")
-            #    - Spike L2 Distance /WIP
-            #    - van Rossum Distance (Spike Level) /WIP
+    #         #Calcualtes loss functions
+    #         #---
+    #         #Current functions:
+    #         #    - Firing Rate L2 ("fr")
+    #         #    - PSTH L2 ("PSTH")
+    #         #    - Spike L2 Distance /WIP
+    #         #    - van Rossum Distance (Spike Level) /WIP
 
-            out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "spikeL2")
+    #         out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "spikeL2")
 
-            #Calculate parameter updates using Adam Optimizer
-            #---
-            #Uses 2 terms to control the momementum of the learning
-            #    -beta1 controlls short term momentum
-            #    -beta2 contorlls long term dampening
+    #         #Calculate parameter updates using Adam Optimizer
+    #         #---
+    #         #Uses 2 terms to control the momementum of the learning
+    #         #    -beta1 controlls short term momentum
+    #         #    -beta2 contorlls long term dampening
 
-            m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
+    #         m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
 
-            losses.append(loss)
-            print(f"Epoch {{epoch}}: L2 Loss = {{loss[0]}}: Vr Loss = {{loss[1]}}",flush=True) 
-            #print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
+    #         losses.append(loss)
+    #         print(f"Epoch {{epoch}}: L2 Loss = {{loss[0]}}: Vr Loss = {{loss[1]}}",flush=True) 
+    #         #print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
 
-        return losses, output, param_tracker
+    #     return losses, output, param_tracker
 
        
-    """)
+    # """)
 
-    generated_code = generated_code + training_loop
+    # generated_code = generated_code + training_loop
         
     
     #--------------------------------------------------------         Clean up and port to .py        --------------------------------------------------------------------------#
    
     generated_code = Clean_up.Clean_gen_code(generated_code)
-
 
     with open("generated2.py", "w") as f:
         f.write(generated_code)
