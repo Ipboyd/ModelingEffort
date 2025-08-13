@@ -1,5 +1,4 @@
-from generated2 import forwards   # your big function
-import functools
+
 
 def _single_trial(trial_number, ps, scale_factor):
     """
@@ -13,4 +12,8 @@ def _single_trial(trial_number, ps, scale_factor):
     #   If you prefer not to touch generated2.py yet, simply copy-paste
     #   the body of that inner loop here.
     #
-    return forwards(trial_number, ps, scale_factor)
+    import importlib, generated2  # your big function
+    #import functools
+    generated2 = importlib.reload(generated2)
+
+    return generated2.main(trial_number, ps, scale_factor)

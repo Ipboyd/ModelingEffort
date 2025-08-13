@@ -1,5 +1,8 @@
 import numpy as np
 import scipy.io
+from scipy.io import loadmat
+from scipy.signal import lfilter
+import matplotlib.pyplot as plt
 
 def calculate(forwards_output, grads, scale_factor, grad_type):
 
@@ -60,95 +63,141 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
     elif grad_type == "spikeL2":
         
-        #Set parameter 
-        tau = 10 #(ms)
+        # -- Constants
 
-        #TODO Bring in the target spikes
-        matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
-        filename = f"{matfile_path}/picture_fit.mat"
-        data = scipy.io.loadmat(filename)
+        tau_vr = 10 #ms
+        dt = 0.1 #ms
+        dts = dt/1000 #in seconds
+        alpha = np.exp(-dt/tau_vr)
+
+        # -- Load in data
+
+        filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/picture_fit.mat"
+        data = loadmat(filename)['picture']
+
+        forwards_out = np.asarray(forwards_output, dtype=np.float32)  
+        data = data.astype(np.float32)
+
+        # -- L2 Loss & Deriv Vectorized
+
+        diff = forwards_out - data               
+        L2_loss_avg  = np.mean(np.sum(diff*diff, axis=1))  
+        L2_deriv_avg = 2.0 * np.mean(np.sum(diff,      axis=1))
+
+        # -- Vr Loss
+
+        b = [1.0]
+        a = [1.0, -alpha]
+
+        traces_sim  = lfilter(b, a, forwards_out, axis=1)
+        traces_data = lfilter(b, a, data, axis=1)
+
+        #np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
+
+        #plt.plot(traces_sim[0])
+        #plt.show()
+
+        vr_diff_squared     = (traces_sim - traces_data)**2    
+        
+       
+
+        Vr_loss_avg = np.mean(np.trapz(vr_diff_squared, dx=dts, axis=1))
+
+        out_grad = [L2_deriv_avg * g for g in grads]
+        
+        return out_grad, [L2_loss_avg, Vr_loss_avg]
+
+        #return out_grad, [L2_loss_out,Vr_loss_out]
+
+        # #Set parameter 
+        # tau = 10 #(ms)
+
+        # #TODO Bring in the target spikes
+        # matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
+        # filename = f"{matfile_path}/picture_fit.mat"
+        # data = scipy.io.loadmat(filename)
 
 
-        data = data['picture']
-        L2_deriv_avg = [];
-        L2_loss_avg = [];
-        Vr_Loss_avg = [];
+        # data = data['picture']
+        # L2_deriv_avg = [];
+        # L2_loss_avg = [];
+        # Vr_Loss_avg = [];
 
        
 
-        #Loop through every trial
-        for m in range(10):
+        # #Loop through every trial
+        # for m in range(10):
 
 
-            vr_loss = 0;
-            L2_deriv = 0;
-            L2_loss = 0;
-            vr_data = []
+        #     vr_loss = 0;
+        #     L2_deriv = 0;
+        #     L2_loss = 0;
+        #     vr_data = []
             
 
 
-            #Go through the picture horizontally
-            data_trial = data[m]
-            sim_trial = np.array(forwards_output[m])
+        #     #Go through the picture horizontally
+        #     data_trial = data[m]
+        #     sim_trial = np.array(forwards_output[m])
 
-            data_spikes = np.where(data_trial == 1)[0]
-            sim_spikes = np.where(sim_trial == 1)[0]
-
-
-            for k in range(np.shape(data)[1]):
-
-                #print('data length')
-                #print(np.shape(data)[1])
-
-                L2_deriv += 2*(sim_trial[k]-data_trial[k])
-                L2_loss += (sim_trial[k]-data_trial[k])**2
-
-                data_val = 0
-                data_deriv = 0
-                for z in range(len(data_spikes)):
-
-                    if data_spikes[z] <= k:
-                        #Convert indicies and time constant to be in seconds
-                        data_val += np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
-
-                    else:
-                        data_val += 0
+        #     data_spikes = np.where(data_trial == 1)[0]
+        #     sim_spikes = np.where(sim_trial == 1)[0]
 
 
-                #Find g(t)
-                sim_val = 0
+        #     for k in range(np.shape(data)[1]):
+
+        #         #print('data length')
+        #         #print(np.shape(data)[1])
+
+        #         L2_deriv += 2*(sim_trial[k]-data_trial[k])
+        #         L2_loss += (sim_trial[k]-data_trial[k])**2
+
+        #         data_val = 0
+        #         data_deriv = 0
+        #         for z in range(len(data_spikes)):
+
+        #             if data_spikes[z] <= k:
+        #                 #Convert indicies and time constant to be in seconds
+        #                 data_val += np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
+
+        #             else:
+        #                 data_val += 0
 
 
-                for z in range(len(sim_spikes)):
-                    if sim_spikes[z] <= k:
-                        #Convert indicies and time constant to be in seconds
-                        sim_val += np.exp(-((k-sim_spikes[z])/10000)/(tau/1000))
+        #         #Find g(t)
+        #         sim_val = 0
 
 
-                    else:
-                        sim_val += 0
+        #         for z in range(len(sim_spikes)):
+        #             if sim_spikes[z] <= k:
+        #                 #Convert indicies and time constant to be in seconds
+        #                 sim_val += np.exp(-((k-sim_spikes[z])/10000)/(tau/1000))
 
-                vr_data.append((sim_val-data_val)**2)
+
+        #             else:
+        #                 sim_val += 0
+
+        #         vr_data.append((sim_val-data_val)**2)
             
 
-            #Take the auc of vr_data and vr_deriv
-            for j in range(len(vr_data)-1):
-                #0.1/1000 is dt in seconds (slice width)
-                vr_loss += (vr_data[j]+vr_data[j+1])*(0.1/1000)/2
+        #     #Take the auc of vr_data and vr_deriv
+        #     for j in range(len(vr_data)-1):
+        #         #0.1/1000 is dt in seconds (slice width)
+        #         vr_loss += (vr_data[j]+vr_data[j+1])*(0.1/1000)/2
 
 
-            L2_deriv_avg.append(L2_deriv)
-            L2_loss_avg.append(L2_loss)
-            Vr_Loss_avg.append(vr_loss)
+        #     L2_deriv_avg.append(L2_deriv)
+        #     L2_loss_avg.append(L2_loss)
+        #     Vr_Loss_avg.append(vr_loss)
 
-        L2_deriv_out = np.mean(L2_deriv_avg)
-        L2_loss_out = np.mean(L2_loss_avg)
-        Vr_loss_out = np.mean(Vr_Loss_avg)
+        # L2_deriv_out = np.mean(L2_deriv_avg)
+        # L2_loss_out = np.mean(L2_loss_avg)
+        # Vr_loss_out = np.mean(Vr_Loss_avg)
 
 
-        out_grad = [L2_deriv_out * g for g in grads] 
+        # out_grad = [L2_deriv_out * g for g in grads] 
 
-        return out_grad, [L2_loss_out,Vr_loss_out]
+        # return out_grad, [L2_loss_out,Vr_loss_out]
         
 
 
