@@ -76,13 +76,26 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         data = loadmat(filename)['picture']
 
         forwards_out = np.asarray(forwards_output, dtype=np.float32)  
+
+        #print(np.shape(forwards_out))
+
+        #forwards_out = np.zeros((10,29801,1))
+
         data = data.astype(np.float32)
 
         # -- L2 Loss & Deriv Vectorized
 
-        diff = forwards_out - data               
-        L2_loss_avg  = np.mean(np.sum(diff*diff, axis=1))  
-        L2_deriv_avg = 2.0 * np.mean(np.sum(diff,      axis=1))
+        diff = forwards_out - data[:,:, np.newaxis]  
+        
+  
+
+        L2_loss_avg  = np.mean(np.sum(diff*diff, axis=1),axis=0) 
+        
+        
+
+        L2_deriv_avg = 2.0 * np.mean(np.sum(diff, axis=1),axis=0)
+
+        
 
         # -- Vr Loss
 
@@ -90,7 +103,7 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         a = [1.0, -alpha]
 
         traces_sim  = lfilter(b, a, forwards_out, axis=1)
-        traces_data = lfilter(b, a, data, axis=1)
+        traces_data = lfilter(b, a, data[:,:, np.newaxis]  , axis=1)
 
         #np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
 
@@ -101,9 +114,18 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         
        
 
-        Vr_loss_avg = np.mean(np.trapz(vr_diff_squared, dx=dts, axis=1))
+        Vr_loss_avg = np.mean(np.trapz(vr_diff_squared, dx=dts, axis=1), axis = 0)
 
-        out_grad = [L2_deriv_avg * g for g in grads]
+        #print(np.shape(grads))
+        #print(len(grads))
+        #print(L2_deriv_avg)
+
+        #print(grads)
+
+        out_grad = L2_deriv_avg * grads 
+
+        #print(out_grad)
+        #print(Vr_loss_avg)
         
         return out_grad, [L2_loss_avg, Vr_loss_avg]
 
