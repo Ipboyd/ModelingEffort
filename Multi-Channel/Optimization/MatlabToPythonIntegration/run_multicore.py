@@ -130,7 +130,7 @@ def run():
     # --- Build ODEs (same as: ParamsReturned = py.Solve_File_Generator_Manual.build_ODE(p); ) ---
     # If build_ODE returns something you need later, capture it.
 
-    batch_size = 2000
+    batch_size = 20
 
     
     ParamsReturned = modules["Solve_File_Generator_Manual"].build_ODE(p,batch_size)
@@ -140,7 +140,7 @@ def run():
 
     from generated2_wrapper import _single_trial
 
-    num_epochs = 8
+    num_epochs = 1
     num_params = 10
     
     p = Init_Params.pinit(batch_size,num_params,load_from_file=False);
@@ -157,7 +157,7 @@ def run():
     beta1, beta2 = 0.99, 0.9995   #Nominally 0.92, 0.9995
     eps = 1e-6
     t = 0
-    lr = 1e-3
+    lr = 5e-3
 
     #print(p)
 
@@ -260,7 +260,7 @@ def run():
         #    - spike l2 distance /wip
         #    - van rossum distance (spike level) /wip
 
-        out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "spikeL2")
+        out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "ISI")
 
         #Calculate parameter updates using Adam Optimizer
         #---
@@ -279,7 +279,7 @@ def run():
 
         losses.append(loss)
         
-        print(f"Epoch {epoch}: Min L2 Loss = {min(loss[0])}: Min Vr Loss = {min(loss[1])}",flush=True) 
+        print(f"Epoch {epoch}: Mean L2 Loss = {np.mean(loss[0])}: Min Vr Loss = {np.mean(loss[1])}",flush=True) 
         #print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
 
     t_post = time.perf_counter() - t0  

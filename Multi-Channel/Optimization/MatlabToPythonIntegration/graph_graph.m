@@ -1,7 +1,7 @@
 % Example data
 s = [1 1 3 3 2 2 4 4 6 5];   % source nodes
 t = [4 3 4 5 5 3 7 6 7 6];   % target nodes
-weights = coeff(:,10);  % your 10 edge weights
+weights = coeff(:,9);  % your 10 edge weights
 
 % Define node names (must be a cell array of char vectors or string array)
 nodeNames = ["On","Off","S1","R1On","R1Off","S2","R2"];

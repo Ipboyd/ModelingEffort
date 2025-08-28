@@ -1,3 +1,10 @@
+addpath('results\')
+
+m = matfile('run_2025-08-14_04-38-07.mat');
+losses = m.losses;
+param_tracker = m.param_tracker;
+
+
 pc_axis1 = 9;
 pc_axis2 = 10;
 
@@ -9,7 +16,7 @@ samples = reshape(permute(param_tracker, [1 3 2]), [], P);   % (E*B) × P
 
 % Flatten loss to match rows in samples
 
-loss = squeeze(losses(:,1,:));
+loss = squeeze(losses(:,2,:));
 loss_flat = loss(:);      
 
 [coeff, score, latent, tsquared, explained, mu] = pca(samples, ...
@@ -60,15 +67,27 @@ F = scatteredInterpolant(x, y, z,'natural','none');
 Z = F(xq, yq);
 
 % Mask outside convex hull (optional)
-%DT = delaunayTriangulation(x, y);
-%inside = ~isnan(pointLocation(DT, xq(:), yq(:)));
-%Z(~reshape(inside, size(Z))) = NaN;
+DT = delaunayTriangulation(x, y);
+inside = ~isnan(pointLocation(DT, xq(:), yq(:)));
+Z(~reshape(inside, size(Z))) = NaN;
 
-% Plot
+% % Plot
+% figure;
+% imagesc(xlims, ylims, Z); set(gca,'YDir','normal'); axis equal tight; hold on;
+% colormap(parula); cb=colorbar; ylabel(cb,'Loss');
+% 
+% %scatter(x, y, 8, z, 'filled', 'MarkerEdgeColor','k', 'MarkerFaceAlpha',0.85);
+% xlabel('PC1'); ylabel('PC2');
+% title('PC space colored by nearest-loss field');
+
+% --- after you compute Z and mask with NaNs ---
 figure;
-imagesc(xlims, ylims, Z); set(gca,'YDir','normal'); axis equal tight; hold on;
-colormap(turbo); cb=colorbar; ylabel(cb,'Loss');
+himg = imagesc(xlims, ylims, Z);
+set(himg,'AlphaData', isfinite(Z));     % transparent where Z is NaN
+set(gca,'YDir','normal','Color','w');   % black background shows through
+axis equal tight; hold on;
+colormap(turbo); cb = colorbar; ylabel(cb,'Loss');
+xlabel('PC1'); ylabel('PC2'); title('PC space colored by nearest-loss field');
 
-scatter(x, y, 8, z, 'filled', 'MarkerEdgeColor','k', 'MarkerFaceAlpha',0.85);
-xlabel('PC1'); ylabel('PC2');
-title('PC space colored by nearest-loss field');
+K = convexHull(DT);                    % hull vertex order (counter-clockwise)
+plot(DT.Points(K,1), DT.Points(K,2), 'w-', 'LineWidth', 0.5);   % black edge on top

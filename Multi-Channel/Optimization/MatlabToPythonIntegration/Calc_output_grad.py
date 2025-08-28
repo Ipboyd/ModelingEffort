@@ -3,6 +3,194 @@ import scipy.io
 from scipy.io import loadmat
 from scipy.signal import lfilter
 import matplotlib.pyplot as plt
+from scipy.integrate import cumulative_trapezoid
+
+def plot_g_field(g_field, spike_idx, dt, c=0, b=0, t_ms_window=None, title_suffix=""):
+    """
+    g_field:   (C,T,B)
+    spike_idx: (C,K,B) ints, -1 for no spike
+    dt:        ms
+    c,b:       which channel & batch to show
+    """
+    C, T, B = g_field.shape
+    t = np.arange(T) * dt
+    if t_ms_window is None:
+        sl = slice(None)
+    else:
+        i0 = max(0, int(np.floor(t_ms_window[0] / dt)))
+        i1 = min(T, int(np.ceil(t_ms_window[1] / dt)))
+        sl = slice(i0, i1)
+
+    # spikes for this (c,b)
+    si = spike_idx[c, :, b]
+    si = si[(si >= 0) & (si < T)]
+    t_spk = si * dt
+
+    # --- g_field trace + spike markers
+    plt.figure(figsize=(10, 3.2))
+    plt.plot(t[sl], g_field[c, sl, b], label="g_field(t)")
+    for tt in t_spk:
+        if (sl.start is None or t[sl.start] <= tt) and (sl.stop is None or tt <= t[min(sl.stop-1, T-1)]):
+            plt.axvline(tt, linestyle=":", linewidth=0.8)
+    plt.title(f"Adjoint field g(t)  [C={c}, B={b}] {title_suffix}")
+    plt.xlabel("Time (ms)"); plt.ylabel("g(t)")
+    plt.grid(True, alpha=0.3); plt.legend()
+
+    # --- sample g at spikes + histogram
+    if si.size:
+        g_at_spikes = g_field[c, si, b]
+        plt.figure(figsize=(6, 3))
+        plt.hist(g_at_spikes, bins=40)
+        plt.title(f"Histogram of g(t_k) over spikes  [C={c}, B={b}]")
+        plt.xlabel("g(t_k)"); plt.ylabel("# spikes")
+        plt.grid(True, alpha=0.3)
+
+        # also overlay as scatter on the trace window
+        plt.figure(figsize=(10, 3.2))
+        plt.plot(t[sl], g_field[c, sl, b], label="g_field(t)")
+        mask_in = (t_spk >= (t[sl.start] if sl.start is not None else t[0])) & \
+                  (t_spk <= (t[min(sl.stop-1, T-1)] if sl.stop is not None else t[-1]))
+        tsp = t_spk[mask_in]
+        gsp = g_at_spikes[mask_in]
+        plt.scatter(tsp, gsp, s=20, label="g(t_k) at spikes")
+        plt.title(f"g(t) with g(t_k) markers  [C={c}, B={b}]")
+        plt.xlabel("Time (ms)"); plt.ylabel("g(t)")
+        plt.grid(True, alpha=0.3); plt.legend()
+
+    plt.show()
+
+def plot_vr_traces(e_syn_sim, e_mem_sim, y_sim, y_data, forwards_out, spike_idx, dt,
+                   c=0, b=0, t_ms_window=None):
+    """
+    e_syn_sim, e_mem_sim, y_sim, y_data: arrays shaped (C, T, B)
+    forwards_out: (C, T, B) binary spikes (for markers)
+    spike_idx: (C, K, B) integer indices; -1 where no spike
+    dt: timestep in ms
+    c,b: which channel/batch to plot
+    t_ms_window: (t0_ms, t1_ms) to zoom; None = full duration
+    """
+    C, T, B = y_sim.shape
+    assert 0 <= c < C and 0 <= b < B
+    t = np.arange(T) * dt
+
+    if t_ms_window is not None:
+        t0_ms, t1_ms = t_ms_window
+        i0 = max(0, int(np.floor(t0_ms / dt)))
+        i1 = min(T, int(np.ceil(t1_ms / dt)))
+        sl = slice(i0, i1)
+    else:
+        sl = slice(None)
+
+    # Spike times for vertical markers
+    si = spike_idx[c, :, b]
+    si = si[(si >= 0) & (si < T)]
+    t_spk = si * dt
+
+    # --- One-pole filtered components
+    plt.figure(figsize=(10, 3.5))
+    plt.plot(t[sl], e_syn_sim[c, sl, b], label='e_syn_sim')
+    plt.plot(t[sl], e_mem_sim[c, sl, b], label='e_mem_sim', linestyle='--')
+    for tt in t_spk:
+        if sl.start is None or (t[sl.start] <= tt <= t[min(sl.stop-1, T-1)]):
+            plt.axvline(tt, linestyle=':', linewidth=0.8)
+    plt.title(f'One-pole filtered traces (C={c}, B={b})')
+    plt.xlabel('Time (ms)'); plt.ylabel('Amplitude')
+    plt.grid(True, alpha=0.3); plt.legend()
+
+    # --- Double-exp output and target + error
+    e = (y_sim - y_data)
+    plt.figure(figsize=(10, 3.5))
+    plt.plot(t[sl], y_sim[c, sl, b], label='y_sim')
+    # y_data may have B==1; protect the index
+    bd = min(b, y_data.shape[2]-1)
+    plt.plot(t[sl], y_data[c, sl, bd], label='y_data', linestyle='--', alpha=0.8)
+    plt.plot(t[sl], e[c, sl, b], label='error = y_sim - y_data', linestyle=':')
+    for tt in t_spk:
+        if sl.start is None or (t[sl.start] <= tt <= t[min(sl.stop-1, T-1)]):
+            plt.axvline(tt, linestyle=':', linewidth=0.8)
+    plt.title(f'Double-exp output & error (C={c}, B={b})')
+    plt.xlabel('Time (ms)'); plt.ylabel('Amplitude')
+    plt.grid(True, alpha=0.3); plt.legend()
+    plt.show()
+
+def gather_at_indices(g_field, spike_idx):
+    """
+    g_field:   (C, T, B)  values defined at every time step
+    spike_idx: (C, K, B)  integer indices into the time axis (use -1 for 'no spike')
+
+    returns:
+      g_tk: (C, K, B) = g_field sampled at each spike time
+      mask: (C, K, B) = True where a valid spike exists
+    """
+    C, T, B = g_field.shape
+    C2, K, B2 = spike_idx.shape
+    assert C == C2 and B == B2
+
+    # valid entries: 0..T-1; we’ll zero-out invalid ones later
+    mask = (spike_idx >= 0) & (spike_idx < T)
+    safe_idx = np.where(mask, spike_idx, 0)  # dummy index for masked spots
+
+    # advanced indexing to gather along time axis
+    c = np.arange(C)[:, None, None]        # (C,1,1)
+    b = np.arange(B)[None, None, :]        # (1,1,B)
+    g_tk = g_field[c, safe_idx, b]         # (C,K,B)
+
+    # zero out padded/invalid spikes
+    g_tk = np.where(mask, g_tk, 0.0)
+    return g_tk, mask
+
+def reduce_over_C_and_K(g_tk, grads, mask=None, average_over_batch=True):
+    """
+    g_tk:  (C, K, B)    = L/t_k (the 'adjoint field' sampled at spikes)
+    grads: either (C, K, B) or (C, K, B, P) = t_k/
+    mask:  (C, K, B) optional; if provided, zeroes non-spikes
+
+    returns:
+      out_grad: (B,) if grads is (C,K,B), else (B,P)
+                (batch-averaged to (P,) if average_over_batch=True)
+    """
+    if mask is not None:
+        g_tk = np.where(mask, g_tk, 0.0)
+        grads = np.where(mask[..., None] if grads.ndim == 4 else mask, grads, 0.0)
+
+    if grads.ndim == 3:                    # no parameter axis
+        prod = g_tk * grads                # (C,K,B)
+        out = prod.sum(axis=(0, 1))        # (B,)
+    else:                                   # grads has parameter axis P
+        prod = g_tk[..., None] * grads     # (C,K,B,P)
+        out = prod.sum(axis=(0, 1))        # (B,P)
+
+    if average_over_batch:
+        return out.mean(axis=0)
+    return out
+
+
+def spike_idx_from_binary(x, thresh=0.5, refrac_ms=0.0, dt=0.1):
+
+    C, T, B = x.shape
+    refrac = int(round(refrac_ms / dt))
+    per_cb = []
+    Kmax = 0
+
+    for c in range(C):
+        for b in range(B):
+            k = np.flatnonzero(x[c, :, b] > thresh)
+            if refrac > 1 and k.size:
+                keep = np.empty_like(k, dtype=bool)
+                keep[0] = True
+                keep[1:] = (np.diff(k) >= refrac)
+                k = k[keep]
+            per_cb.append(k)
+            Kmax = max(Kmax, k.size)
+
+    spike_idx = -np.ones((C, Kmax, B), dtype=np.int32)
+    it = 0
+    for c in range(C):
+        for b in range(B):
+            k = per_cb[it]; it += 1
+            spike_idx[c, :k.size, b] = k
+    return spike_idx
+
 
 def calculate(forwards_output, grads, scale_factor, grad_type):
 
@@ -76,26 +264,13 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         data = loadmat(filename)['picture']
 
         forwards_out = np.asarray(forwards_output, dtype=np.float32)  
-
-        #print(np.shape(forwards_out))
-
-        #forwards_out = np.zeros((10,29801,1))
-
         data = data.astype(np.float32)
 
         # -- L2 Loss & Deriv Vectorized
 
         diff = forwards_out - data[:,:, np.newaxis]  
-        
-  
-
         L2_loss_avg  = np.mean(np.sum(diff*diff, axis=1),axis=0) 
-        
-        
-
         L2_deriv_avg = 2.0 * np.mean(np.sum(diff, axis=1),axis=0)
-
-        
 
         # -- Vr Loss
 
@@ -105,266 +280,390 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         traces_sim  = lfilter(b, a, forwards_out, axis=1)
         traces_data = lfilter(b, a, data[:,:, np.newaxis]  , axis=1)
 
-        #np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
-
-        #plt.plot(traces_sim[0])
-        #plt.show()
 
         vr_diff_squared     = (traces_sim - traces_data)**2    
         
-       
-
         Vr_loss_avg = np.mean(np.trapz(vr_diff_squared, dx=dts, axis=1), axis = 0)
 
-        #print(np.shape(grads))
-        #print(len(grads))
-        #print(L2_deriv_avg)
-
-        #print(grads)
-
         out_grad = L2_deriv_avg * grads 
-
-        #print(out_grad)
-        #print(Vr_loss_avg)
         
         return out_grad, [L2_loss_avg, Vr_loss_avg]
-
-        #return out_grad, [L2_loss_out,Vr_loss_out]
-
-        # #Set parameter 
-        # tau = 10 #(ms)
-
-        # #TODO Bring in the target spikes
-        # matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
-        # filename = f"{matfile_path}/picture_fit.mat"
-        # data = scipy.io.loadmat(filename)
-
-
-        # data = data['picture']
-        # L2_deriv_avg = [];
-        # L2_loss_avg = [];
-        # Vr_Loss_avg = [];
-
-       
-
-        # #Loop through every trial
-        # for m in range(10):
-
-
-        #     vr_loss = 0;
-        #     L2_deriv = 0;
-        #     L2_loss = 0;
-        #     vr_data = []
-            
-
-
-        #     #Go through the picture horizontally
-        #     data_trial = data[m]
-        #     sim_trial = np.array(forwards_output[m])
-
-        #     data_spikes = np.where(data_trial == 1)[0]
-        #     sim_spikes = np.where(sim_trial == 1)[0]
-
-
-        #     for k in range(np.shape(data)[1]):
-
-        #         #print('data length')
-        #         #print(np.shape(data)[1])
-
-        #         L2_deriv += 2*(sim_trial[k]-data_trial[k])
-        #         L2_loss += (sim_trial[k]-data_trial[k])**2
-
-        #         data_val = 0
-        #         data_deriv = 0
-        #         for z in range(len(data_spikes)):
-
-        #             if data_spikes[z] <= k:
-        #                 #Convert indicies and time constant to be in seconds
-        #                 data_val += np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
-
-        #             else:
-        #                 data_val += 0
-
-
-        #         #Find g(t)
-        #         sim_val = 0
-
-
-        #         for z in range(len(sim_spikes)):
-        #             if sim_spikes[z] <= k:
-        #                 #Convert indicies and time constant to be in seconds
-        #                 sim_val += np.exp(-((k-sim_spikes[z])/10000)/(tau/1000))
-
-
-        #             else:
-        #                 sim_val += 0
-
-        #         vr_data.append((sim_val-data_val)**2)
-            
-
-        #     #Take the auc of vr_data and vr_deriv
-        #     for j in range(len(vr_data)-1):
-        #         #0.1/1000 is dt in seconds (slice width)
-        #         vr_loss += (vr_data[j]+vr_data[j+1])*(0.1/1000)/2
-
-
-        #     L2_deriv_avg.append(L2_deriv)
-        #     L2_loss_avg.append(L2_loss)
-        #     Vr_Loss_avg.append(vr_loss)
-
-        # L2_deriv_out = np.mean(L2_deriv_avg)
-        # L2_loss_out = np.mean(L2_loss_avg)
-        # Vr_loss_out = np.mean(Vr_Loss_avg)
-
-
-        # out_grad = [L2_deriv_out * g for g in grads] 
-
-        # return out_grad, [L2_loss_out,Vr_loss_out]
-        
-
-
 
     elif grad_type == "vanRossum":
 
 
-        #Set parameter 
-        tau = 10 #(ms)
-        #filter_length = 1000
+        # -- Constants
+
+        tau_vr1 = 100 #ms
+        dt = 0.1 #ms
+        dts = dt/1000 #in seconds
+        alpha = np.exp(-dt/tau_vr1)
+
+        # -- Load in data
+
+        filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/picture_fit.mat"
+        data = loadmat(filename)['picture']
+
+        forwards_out = np.asarray(forwards_output, dtype=np.float32)  
+        data = data.astype(np.float32)
+
+        # -- L2 Loss & Deriv Vectorized
+
+        diff = forwards_out - data[:,:, np.newaxis]  
+        L2_loss_avg  = np.mean(np.sum(diff*diff, axis=1),axis=0) 
+
+        # -- Vr Loss
+
+        b = [1.0]
+        a = [1.0, -alpha]
+
+        traces_sim  = lfilter(b, a, forwards_out, axis=1)
+        traces_data = lfilter(b, a, data[:,:, np.newaxis]  , axis=1)
+
+        #Data error
+        e = traces_sim-traces_data
+
+        #Derivative of loss w.r.t spike times (most inner part)
+        dL_dtk = (1.0/tau_vr1) * traces_sim - forwards_out
+
+        Vr_deriv_avg = np.mean(np.trapz(2.0 * e * dL_dtk, dx=dts, axis=1),axis=0)
+
+
+        spike_idx = spike_idx_from_binary(forwards_out, thresh=0.5, refrac_ms=1.0, dt=dt)
+
+        plot_g_field(dL_dtk, spike_idx, dt=dt, c=0, b=0, t_ms_window=(500, 900))
+
+        plot_vr_traces(traces_sim, traces_data, e, e,
+               forwards_out, spike_idx,
+               dt=dt, c=0, b=0, t_ms_window=(500, 800))  # tweak window as you like
+
+
+
+        #traces_sim_deriv_heavy  = (1/tau_vr1) * lfilter(b, a, forwards_out, axis=1)
+        #traces_data_deriv_heavy = (1/tau_vr1) * lfilter(b, a, data[:,:, np.newaxis]  , axis=1)
+
+        #Basically just multiplying all the positive points by alpha without including any time dependence (this account for edge effects)
+        #traces_sim_deriv_delta  = lfilter(b, b, forwards_out, axis=1)
+        #traces_data_deriv_delta = lfilter(b, b, data[:,:, np.newaxis]  , axis=1)
+
+        vr_diff_squared     = (traces_sim - traces_data)**2    
+        #vr_diff_deriv     = 2 * ((traces_sim_deriv_heavy-traces_sim_deriv_delta) - (traces_data_deriv_heavy-traces_data_deriv_delta))
+        
+        Vr_loss_avg = np.mean(np.trapz(vr_diff_squared, dx=dts, axis=1), axis = 0)
+        #Vr_deriv_avg = np.mean(np.trapz(vr_diff_deriv, dx=dts, axis=1), axis = 0)
+
+        out_grad = Vr_deriv_avg * grads 
+        
+        return out_grad, [L2_loss_avg, Vr_loss_avg]
+
+
+    elif grad_type == "SummedVR":
+
+        dt = 0.1  # ms
+        dts = dt/1000 #in seconds
+
+        # -- Constants
+        tau_mem = 10.0  # ms
+        tau_syn = 5.0   # ms
+        alpha_mem = np.exp(-dt / tau_mem)
+        alpha_syn = np.exp(-dt / tau_syn)
+        c = 1.0 / (1.0 - tau_mem / tau_syn)
+
+        forwards_out = np.asarray(forwards_output, dtype=np.float32)
+        filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/picture_fit.mat"
+        data = loadmat(filename)['picture'].astype(np.float32)[:, :, None] 
+
+        # -- L2 Loss
+        diff = forwards_out - data
+        L2_loss_avg = np.mean(np.sum(diff * diff, axis=1), axis=0)
+
+        # -- forward
+        e_syn_sim = lfilter([1.0], [1.0, -alpha_syn], forwards_out, axis=1)
+        e_mem_sim = lfilter([1.0], [1.0, -alpha_mem], forwards_out, axis=1)
+        y_sim = e_syn_sim - 0.1*e_mem_sim
+
+
+
+
+        e_syn_data = lfilter([1.0], [1.0, -alpha_syn], data, axis=1)
+        e_mem_data = lfilter([1.0], [1.0, -alpha_mem], data, axis=1)
+        y_data = e_syn_data - 0.1*e_mem_data
+
+        e = y_sim - y_data 
+
+
+        dL_dtk =  ((1.0/tau_syn) * e_syn_sim - (1.0/tau_mem) * e_mem_sim)
+
+        Vr_deriv_avg = np.mean(np.trapz(2.0 * e * dL_dtk, dx=dts, axis=1),axis=0)
+
+        #print(Vr_deriv_avg)
+
+        #e_rev = e[:, ::-1, :]
+        #corr_syn_rev = lfilter([1.0], [1.0, -alpha_syn], e_rev, axis=1)
+        #corr_mem_rev = lfilter([1.0], [1.0, -alpha_mem], e_rev , axis=1)
+        #corr_syn = corr_syn_rev[:, ::-1, :]
+        #corr_mem = corr_mem_rev[:, ::-1, :]
+
+
+        #g_field = 2.0 * c * ((corr_syn / tau_syn) - (corr_mem / tau_mem))
 
         
 
 
+        #spike_idx = spike_idx_from_binary(forwards_out, thresh=0.5, refrac_ms=1.0, dt=dt)
+
+        #plot_g_field(dL_dtk, spike_idx, dt=dt, c=0, b=0, t_ms_window=(500, 900))
+
+        #plot_vr_traces(e_syn_sim, e_mem_sim, y_sim, y_data,
+        #       forwards_out, spike_idx,
+        #       dt=dt, c=0, b=0, t_ms_window=(500, 800))  # tweak window as you like
+
+        #g_tk, mask = gather_at_indices(g_field, spike_idx)  
+
+        # collapse over channels & spikes to a (B,) scale; normalize by #valid spikes
+        #n_eff = np.maximum(mask.sum(axis=(0, 1)), 1)
+        #Vr_deriv_batch = (g_tk.sum(axis=(0, 1)) / n_eff) * dt   # (B,)
+
+        # match your existing scalar  grads pattern
+        #scale = float(Vr_deriv_batch.mean())
 
 
-        #TODO Bring in the target spikes
-        matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting"
-        filename = f"{matfile_path}/picture_fit.mat"
-        data = scipy.io.loadmat(filename)
+        
+        out_grad = Vr_deriv_avg * grads 
 
-        #print(data)
-        #print('here')
-        #print(np.max(forwards_output,1))
+        # VR loss (use dx=dt in ms)
+        vr_diff_squared = (y_sim - y_data) ** 2
+        Vr_loss_avg = np.mean(np.trapz(vr_diff_squared, dx=dts, axis=1), axis=0)
 
-        data = data['picture']
-
-        repackaged_data = []
-        #Repackage data
-        #for k in range(len(data)):
-        #    repackaged_data.append
-        #    print(data[k][0])
+        return out_grad, [L2_loss_avg, Vr_loss_avg]
 
 
-        #print(data)
-
-        #Build pictures
-        loss = 0
-        cumulative_deriv = 0
-
-        #Loop through every trial
-        for m in range(10):
-
-            #print(forwards_output)
-            #print('here')
-            #print(np.shape(np.array(forwards_output)))
-            #print(max(max(forwards_output)))
-
-            vr_data = []
-
-            vr_deriv = []
-
-            #Go through the picture horizontally
-            data_trial = data[m]
-            sim_trial = np.array(forwards_output[m])
-
-            
-
-            data_spikes = np.where(data_trial == 1)[0]
-            sim_spikes = np.where(sim_trial == 1)[0]
+    elif grad_type == "ISI":
 
 
-            #print(data_spikes)
-            #print(sim_spikes)
+        forwards_out = np.asarray(forwards_output, dtype=np.float32)
+        filename = "c:/users/ipboy/documents/github/modelingeffort/multi-channel/plotting/oliverdataplotting/picture_fit.mat"
+        data = loadmat(filename)['picture'].astype(np.float32)[:, :, None] 
 
-            for k in range(np.shape(data)[1]):
+         # -- l2 loss
+        diff = forwards_out - data
+        l2_loss_avg = np.mean(np.sum(diff * diff, axis=1), axis=0)
 
-                #print(k)
-                
+        # -- isi
 
+        #"temperature of argmax caluclation"
+        beta = 10
+        eps = 1e-8
+        dt = 0.1
+        dts = dt/1000
 
+        inms = []
+        inms_loss = []
 
-                #Find (f(t))
-                data_val = 0
-                data_deriv = 0
-                for z in range(len(data_spikes)):
-                    #print(data_spikes[z])
-                    if data_spikes[z] <= k:
-                        #Convert indicies and time constant to be in seconds
-                        data_val += np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
-                        data_deriv += (1/(tau/1000))*np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
+        time_vector = np.arange(0,np.shape(forwards_output)[1])*dts
 
-                    #Accounts for the derivative of the heavyside
-                    elif data_spikes[z] == k:
-                        data_deriv -= np.exp(-((k-data_spikes[z])/10000)/(tau/1000))
+        
+        
+        for sample in range(np.shape(forwards_output)[0]):
+            tp_sim = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+            tf_sim = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
 
-                    else:
-                        data_val += 0
-                        data_deriv += 0
+            tf_data_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+            tf_sim_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+            tp_data_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+            tp_sim_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
 
-
-                #Find g(t)
-                sim_val = 0
-                sim_deriv = 0
-
-
-                for z in range(len(sim_spikes)):
-                    if sim_spikes[z] <= k:
-                        #Convert indicies and time constant to be in seconds
-                        sim_val += np.exp(-((k-sim_spikes[z])/10000)/(tau/1000))
-                        sim_deriv += (1/(tau/1000))*np.exp(-((k-sim_spikes[z])/10000)/(tau/1000))
-
-                    #Accounts for the derivative of the heavyside
-                    elif sim_spikes[z] == k:
-                        sim_deriv -= np.exp(-((k-sim_spikes[z])/10000)/(tau/1000))
-
-                    else:
-                        sim_val += 0
-                        sim_deriv += 0
-
-                vr_data.append((sim_val-data_val)**2)
-                vr_deriv.append(2*(sim_deriv-data_deriv))
-            
-
-            #Take the auc of vr_data and vr_deriv
-            for j in range(len(vr_data)-1):
-                #0.1/1000 is dt in seconds (slice width)
-                loss += (vr_data[j]+vr_data[j+1])*(0.1/1000)/2
-
-                cumulative_deriv += (vr_deriv[j]+vr_deriv[j+1])*(0.1/1000)/2
+            indicies = [np.append(0,np.flatnonzero(forwards_out[sample, :, b] == 1)) for b in range(np.shape(forwards_output)[2])]
+            indicies2 = np.append(0,np.where(data[sample] == 1)[0])
 
 
-        out_grad = [cumulative_deriv * g for g in grads] 
+            for b in range(np.shape(forwards_output)[2]):
 
-            
+                #-- Calculate ISI Loss
 
+                #Sim
+                future_spikes = indicies[b][1:]*dts
+                cur_spikes = indicies[b][:-1]*dts
 
+                scalar = future_spikes - cur_spikes
 
+                mask_p = (0 <= np.subtract.outer((time_vector),(future_spikes)))
+                tp_sim_loss[:,b] = np.sum(mask_p*scalar,axis=1)
 
+                mask_f = mask_p
+                mask_f[:,1:] = mask_f[:,:-1]
+                mask_f[:,0] = True
+                tf_sim_loss[:,b] = np.sum(mask_f*scalar,axis=1)
 
+                #Data
+                future_spikes_data = indicies2[1:]*dts
+                cur_spikes_data = indicies2[:-1]*dts
 
-        #print('here')
+                scalar_data = future_spikes_data - cur_spikes_data
 
-        #print(np.shape(data))
-        #print(np.shape(forwards_output),flush=True)
+                mask_p = (0 < np.subtract.outer((time_vector),(future_spikes_data)))
+                tp_data_loss[:,b] = np.sum(mask_p*scalar_data,axis=1)
 
-        #Reshape the data
-        #output_reshaped = np.reshape(fowards_output,(1,int((29801*scale_factor-2)*10)))
-        #data_reshpaed = '\TODO'
+                mask_f = mask_p
+                mask_f[:,1:] = mask_f[:,:-1]
+                mask_f[:,0] = True
+                tf_data_loss[:,b] = np.sum(mask_f*scalar_data,axis=1)
 
-        return out_grad, loss
+                #Calculate Derivative
+
+                #deriv = -scalar*np.exp(time_vector)
+
+                step_p =  np.sum(((scalar[1:])/((np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[1:])))+1))),axis=1)
+
+                tf_sim[:,b] = np.sum(((-scalar[:-1]*100*np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[:-1]))))/((np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[:-1])))+1))**2),axis=1)
+                tp_sim[:,b] = np.sum(((-scalar[1:]*100*np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[1:]))))/((np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[1:])))+1))**2),axis=1)
+
+                import matplotlib.pyplot as plt
+
+                # Assuming these variables already exist:
+                # time_vector: 1D array of time points
+                # tf_sim: 2D array (e.g., time x batch), tf_sim[:, b] is one trace
+                # tp_sim: 2D array (e.g., time x batch), tp_sim[:, b] is another trace
+                # b: the batch index you're interested in
+
+                # Create the plot
+                plt.figure(figsize=(10, 5))
+
+                # Plot tf_sim
+                plt.plot(time_vector, tf_sim[:, b], label='tf_sim', color='blue')
+
+                # Plot tp_sim
+                plt.plot(time_vector, tp_sim[:, b], label='tp_sim', color='orange')
+
+                # Labeling
+                plt.xlabel('Time')
+                plt.ylabel('Signal Amplitude')
+                plt.title('tf_sim vs tp_sim')
+                plt.legend()
+                plt.grid(True)
+
+                # Show the plot
+                plt.show()
 
 
 
+
+            alpha_sim = np.array(tf_sim)-np.array(tp_sim)
+            #alpha_data = np.array(tf_data)-np.array(tp_data)
+
+            alpha_sim_loss = np.array(tf_sim_loss)-np.array(tp_sim_loss)
+            alpha_data_loss = np.array(tf_data_loss)-np.array(tp_data_loss)
+
+
+            denom = np.maximum(np.maximum(alpha_sim_loss, alpha_data_loss), eps)
+            inm_loss = np.abs(alpha_sim_loss - alpha_data_loss) / denom
+
+            #inm_loss = np.abs(alpha_sim_loss-alpha_data_loss)/np.max(alpha_sim_loss,alpha_data_loss,eps)
+            inms_loss.append(inm_loss)
+
+            #print(alpha_sim)
+            #print(alpha_sim_loss)
+            #print(inm_loss)
+
+            #note -- derived derivate for isi is likely incorrect. you do not need to take the derivative w.r.t the data spikes
+            #going to try and just leave out the am' terms from the derivation and then trace back and see what happends
+            #we could do all possible pairwise comparisons (i do not think it is exactly necessary but it could get rid of a little bit of noise in the simulations)
+            #it would be wise to try both of these options and see what results you get from each of them.
+            inm = (((alpha_sim_loss-alpha_data_loss)/(np.sqrt((alpha_sim_loss-alpha_data_loss)**2)+eps)) * (alpha_sim))/((1/beta)*((beta*np.exp(beta*alpha_sim))/(np.exp(beta*alpha_sim_loss)+np.exp(beta*alpha_data_loss))))
+            inms.append(inm)
+
+        inms_loss = np.stack(inms_loss, axis=0)
+        inms = np.stack(inms, axis=0)
+
+        avginm_loss = np.mean(inms_loss,axis=0)
+        isi_loss_avg = np.trapz(avginm_loss, axis=0)
+
+        avginm = np.mean(inms,axis=0)
+        isi_deriv_avg = np.trapz(avginm, axis=0)
+
+        #print(np.shape(avginm))
+        #print(np.shape(isi_deriv_avg))
+
+        out_grad = isi_deriv_avg * grads 
+
+        return out_grad, [l2_loss_avg, isi_loss_avg]
 
     else:
         print("please enter valid loss type")
         return
+                    #tf_sim_loss_sum = np.sum)
+
+
+
+                #for k in range(np.shape(forwards_output)[1]):
+                #    tf_data_sum = 0
+                #    tf_sim_sum = 0
+                #    tp_data_sum = 0
+                #    tp_sim_sum = 0
+
+                #    tf_data_loss_sum = 0
+                #    tf_sim_loss_sum = 0
+                #    tp_data_loss_sum = 0
+                #    tp_sim_loss_sum = 0
+
+
+
+
+                #     for m in range(len(indicies[b])-1):
+                #         #divide by 10000 to get to our dt timestep
+
+                #         #print(len(indicies))
+                #         #print(len(indicies[b]))
+
+                #         tf_scale = -((indicies[b][m+1]/10000)-(indicies[b][m]/10000))
+
+                #         if m > 0:
+                #             tp_scale = -((indicies[b][m]/10000)-(indicies[b][m-1]/10000))
+                #         else:
+                #             tp_scale = 0
+                        
+
+                #         tf_sim_sum += (tf_scale*np.exp(-((k/10000)-(indicies[b][m+1]/10000))))/((np.exp(-((k/10000)-(indicies[b][m+1]/10000)))+1))**2
+                #         tp_sim_sum += (tp_scale*np.exp(-((k/10000)-(indicies[b][m]/10000))))/((np.exp(-((k/10000)-(indicies[b][m]/10000)))+1))**2
+
+                #         if indicies[b][m] < k:
+
+                #             tf_sim_loss_sum += indicies[b][m+1]
+                #             tp_sim_loss_sum += indicies[b][m]
+
+                #     for m2 in range(len(indicies2)-1):
+
+                #         # tf_scale = -((indicies2[m2+1]/10000)-(indicies2[m2]/10000))
+
+                #         # if m > 0:
+                #         #     tp_scale = -((indicies2[m2]/10000)-(indicies2[m2-1]/10000))
+                #         # else:
+                #         #     tp_scale = 0
+
+                #         # tf_data_sum += (tf_scale/np.exp(-((k/10000)-(indicies2[m2+1]/10000))))/(1/(np.exp(-((k/10000)-(indicies2[m2+1]/10000)))+1))**2
+                #         # tp_data_sum += (tp_scale/np.exp(-((k/10000)-(indicies2[m2]/10000))))/(1/(np.exp(-((k/10000)-(indicies2[m2]/10000)))+1))**2
+
+                #         if indicies2[m2] < k:
+
+                #             tf_data_loss_sum += indicies2[m2+1]
+                #             tp_data_loss_sum += indicies2[m2]
+
+                #     tf_data_batch = np.append(tf_data_batch,tf_data_sum)
+                #     tf_sim_batch = np.append(tf_sim_batch,tf_sim_sum)
+                #     tp_data_batch = np.append(tp_data_batch,tp_data_sum)
+                #     tp_sim_batch = np.append(tp_sim_batch,tp_sim_sum)
+
+                #     tf_data_loss_batch = np.append(tf_data_loss_batch,tf_data_loss_sum)
+                #     tf_sim_loss_batch = np.append(tf_sim_loss_batch,tf_sim_loss_sum)
+                #     tp_data_loss_batch = np.append(tp_data_loss_batch,tp_data_loss_sum)
+                #     tp_sim_loss_batch = np.append(tp_sim_loss_batch,tp_sim_loss_sum)
+
+                # tf_data.append(tf_data_batch)
+                # tf_sim.append(tf_sim_batch)
+                # tp_data.append(tp_data_batch)
+                # tp_sim.append(tp_sim_batch)
+
+                # tf_data_loss.append(tf_data_loss_batch)
+                # tf_sim_loss.append(tf_sim_loss_batch)
+                # tp_data_loss.append(tp_data_loss_batch)
+                # tp_sim_loss.append(tp_sim_loss_batch)

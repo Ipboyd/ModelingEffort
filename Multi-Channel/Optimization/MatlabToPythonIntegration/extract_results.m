@@ -26,4 +26,4 @@ sgtitle('Average Convergence across all initializations')
 
 
 figure(51)
-spy(output(:,:,198))
+spy(output(:,:,3))

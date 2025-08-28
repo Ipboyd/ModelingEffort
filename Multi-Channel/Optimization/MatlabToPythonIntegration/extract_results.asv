@@ -10,7 +10,7 @@
 %Check to see if we are converging on average
 avg_across_all_inits = mean(losses,3);
 
-figure(1);
+figure(50);
 subplot(2,1,1)
 plot(avg_across_all_inits(:,1))
 title('L2')
@@ -25,5 +25,5 @@ sgtitle('Average Convergence across all initializations')
 [val2,idx2] = min(squeeze(val),[],2);
 
 
-figure(2)
-spy(output(:,:,12))
+figure(51)
+spy(output(:,:,24))
