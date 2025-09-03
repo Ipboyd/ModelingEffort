@@ -443,150 +443,353 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         forwards_out = np.asarray(forwards_output, dtype=np.float32)
         filename = "c:/users/ipboy/documents/github/modelingeffort/multi-channel/plotting/oliverdataplotting/picture_fit.mat"
-        data = loadmat(filename)['picture'].astype(np.float32)[:, :, None] 
+        data = loadmat(filename)['picture'].astype(np.float32)[:,:,None]
 
-         # -- l2 loss
+        # -- l2 loss
         diff = forwards_out - data
         l2_loss_avg = np.mean(np.sum(diff * diff, axis=1), axis=0)
 
-        # -- isi
+        # -- ISI
 
-        #"temperature of argmax caluclation"
-        beta = 10
+        beta = 100  #"temperature of argmax caluclation"
         eps = 1e-8
         dt = 0.1
         dts = dt/1000
+        buffer_frac = 0.1
 
-        inms = []
-        inms_loss = []
+        data = np.transpose(data,(2,0,1)) #Transpose things to be Batch,trials,timecouse
+        forwards_out = np.transpose(forwards_out,(2,0,1))
 
-        time_vector = np.arange(0,np.shape(forwards_output)[1])*dts
+        # -- Calculate the loss
+
+        breaks = data.astype(bool) 
+        breaks_sim = forwards_out.astype(bool)
+        T = data.shape[-1]
+        T_sim = forwards_out.shape[-1]
+        pos = np.arange(T,dtype=int)
+        pos_sim = np.arange(T_sim, dtype=int)
+
+        # ---- previous fill (last breakpoint i) ----
+        mark = np.where(breaks, pos, 0)              # indices at breakpoints, 0 elsewhere
+        mark_sim = np.where(breaks_sim, pos_sim, 0)
+
+        prev_fill = np.maximum.accumulate(mark, axis=-1)
+        prev_fill_sim = np.maximum.accumulate(mark_sim, axis = -1)
+
+        # ---- next fill (first breakpoint strictly > i, clamped to last) ----
+
+        arr = np.where(breaks, pos, T)        # sentinel where no break
+        arr_sim = np.where(breaks_sim, pos_sim, T_sim)
+        right_min = np.minimum.accumulate(arr[..., ::-1], axis=-1)[..., ::-1]  # next  i (or sentinel)
+        right_min_sim = np.minimum.accumulate(arr_sim[..., ::-1], axis=-1)[..., ::-1]
+        last_break = prev_fill[..., -1]              # rightmost breakpoint per timecourse
+        last_break_sim = prev_fill_sim[..., -1] 
+        next_ge = np.where(right_min == T, last_break[..., None], right_min)
+        next_ge_sim = np.where(right_min_sim == T_sim, last_break_sim[..., None], right_min_sim)
+        next_gt = np.concatenate([next_ge[..., 1:], last_break[..., None]], axis=-1)  # shift -> strictly >
+        next_gt_sim = np.concatenate([next_ge_sim[..., 1:], last_break_sim[..., None]], axis=-1)  # shift -> strictly >
+
+        # -- Caluclate ISI specifiic metric
+
+        Xisi = next_gt-prev_fill
+        Xisi_sim = next_gt_sim-prev_fill_sim
+
+
+        IofT = np.abs(Xisi_sim-Xisi)/(np.maximum(Xisi_sim,Xisi)+eps)
+
+        #print(np.shape(IofT))
+
+        # -- Take the AUC and calculate mean across trials
+
+        ItAUC = np.trapz(IofT,axis=-1)
+
+        #print(np.shape(ItAUC))
+
+        Loss = np.mean(ItAUC,axis=-1) #Loss per object in batch
+        
+        t = np.arange(-buffer_frac*np.shape(forwards_out)[2]*dts,np.shape(forwards_out)[2]*dts,dts)
+
+
+        #Trying to build out a difference vector for changes instead of it being biased by the length of the sim.
+        Bidx, Cidx, Tidx = np.where(mark_sim)  
+
+        Tprev = np.zeros(len(Tidx))
+
+        Tprev[1:] = Tidx[:-1]
+
+        is_group_start = np.ones_like(Tidx, dtype=bool)
+        is_group_start[1:] = (Bidx[1:] != Bidx[:-1]) | (Cidx[1:] != Cidx[:-1])
+
+        Tprev[is_group_start] = -1
+
+        diff = np.where(Tprev >= 0, Tidx - Tprev, Tidx)
+
+        #Create a copy the size of mark_sim for saftey
+        mark_sim_copy = np.zeros((np.shape(mark_sim)[0],np.shape(mark_sim)[1],np.shape(mark_sim)[2]))
+        mark_sim_copy[Bidx,Cidx,Tidx] = diff
+        
+        mark_sim_copy_future = np.zeros((np.shape(mark_sim)[0],np.shape(mark_sim)[1],np.shape(mark_sim)[2]))
+        Tidx_Future = np.empty_like(Tidx)
+        Tidx_Future[1:] = Tidx[:-1]
+
+        Tidx_Future[is_group_start] = 0
+
+        mark_sim_copy_future[Bidx,Cidx,Tidx_Future] = diff
+
+        #kernel_func = 1/(np.exp(-beta*t)+1)
+        
+        #Trying bump function
+        kernel_func = beta*(1/(np.exp(-beta*t)+1))*(1-(1/(np.exp(-beta*t)+1)))
+
+        #Trying Low di hi minus hi di low over low low (Maybe later?)
+        #kernel_func = (np.exp(-t)+1)/(np.exp(-beta*t)+1)**2
+
+
+        kernel = kernel_func*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t)))
+
+        from scipy.signal import fftconvolve
+
+        #print(np.shape(mark_sim))
+
+
+        y = fftconvolve(mark_sim_copy, kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        y2 = fftconvolve(mark_sim_copy_future, kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+
+        print(np.shape(y))
+
+
+        print(Loss)
+
+
+        # -- Deriviative
+
+
+        # - Idea 
+
+        # - Step 1: Create a mark_sim for the future spikes (tf)
+        # - Step 2: Create sigmoid representation for all spike times
+        # - step 3: Sum across all
+        # - step 4: Adjust the gain
+
+
+        #Start witht the process from mark_sim
+
+        #I think steps 2 and 3 are just a convolution
+
+
+        # Create the plot
+        plt.figure(figsize=(10, 5))
+
+        # Plot tp
+        plt.plot(pos, y[0,0,:], label='p_smooth', color='blue')
+        plt.plot(pos, prev_fill_sim[0,0,:], label='tp_sim', color='green')
+
+        # Plot tf
+        plt.plot(pos, y2[0,0,:], label='p_smooth', color='blue')
+        plt.plot(pos, next_gt_sim[0,0,:], label='tp_sim', color='green')
+
+        # Labeling
+        plt.xlabel('Time')
+        plt.ylabel('Signal Amplitude')
+        plt.legend()
+        plt.grid(True)
+
+        # Show the plot
+        plt.show()
+
+
+        # Create the plot
+        plt.figure(figsize=(10, 5))
+
+        # Plot tp
+        plt.plot(pos, prev_fill[0,0,:], label='tp_data', color='blue')
+        plt.plot(pos, prev_fill_sim[0,0,:], label='tp_sim', color='green')
+
+        # Plot tf
+        plt.plot(pos, next_gt[0,0,:], label='tf_data', color='orange')
+        plt.plot(pos, next_gt_sim[0,0,:], label='tf_sim', color='red')
+
+        # Labeling
+        plt.xlabel('Time')
+        plt.ylabel('Signal Amplitude')
+        plt.legend()
+        plt.grid(True)
+
+        # Show the plot
+        plt.show()
+
+        # #Create the plot
+        # plt.figure(figsize=(10, 5))
+
+        # #Plot Xisis
+        # plt.plot(pos, Xisi[0,0,:], label='Xisi_data', color='blue')
+        # plt.plot(pos, Xisi_sim[0,0,:], label='Xisi_sim', color='green')
+
+        # #Plot IofT
+        # plt.plot(pos, IofT[0,0,:], label='IofT', color='orange')
+
+        # #Labeling
+        # plt.xlabel('Time')
+        # plt.ylabel('Signal Amplitude')
+        # plt.legend()
+        # plt.grid(True)
+
+        # #Show the plot
+        # plt.show()
+
+
+        #Quick explaination of what is happening
+
+        #sentinel = T
+
+        #Sentinel takes on a value greater than anythin possible within the array
+        #Then you filp the array and accumulate the minimas
+
+        #arr[..., ::-1] filps the array
+        #then you accumulate along the inner most axis, then you filp back with [..., ::-1]
+
+        #Doing this you end up with the intended trace but just shifted one right basically and there is still some sentinels left over.
+
+        #Last_break looks for the last spike index using prev_fill
+        #Then next_ge replaces all of the sentinels with this number
+        #Then we shift to the right once.
+
+
+
+        
+
+
+        #inms = []
+        #inms_loss = []
+
+        #time_vector = np.arange(0,np.shape(forwards_output)[1])*dts
 
         
         
-        for sample in range(np.shape(forwards_output)[0]):
-            tp_sim = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
-            tf_sim = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+        # for sample in range(np.shape(forwards_output)[0]):
+        #     tp_sim = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+        #     tf_sim = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
 
-            tf_data_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
-            tf_sim_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
-            tp_data_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
-            tp_sim_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+        #     tf_data_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+        #     tf_sim_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+        #     tp_data_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
+        #     tp_sim_loss = np.zeros([np.shape(forwards_output)[1],np.shape(forwards_output)[2]])
 
-            indicies = [np.append(0,np.flatnonzero(forwards_out[sample, :, b] == 1)) for b in range(np.shape(forwards_output)[2])]
-            indicies2 = np.append(0,np.where(data[sample] == 1)[0])
-
-
-            for b in range(np.shape(forwards_output)[2]):
-
-                #-- Calculate ISI Loss
-
-                #Sim
-                future_spikes = indicies[b][1:]*dts
-                cur_spikes = indicies[b][:-1]*dts
-
-                scalar = future_spikes - cur_spikes
-
-                mask_p = (0 <= np.subtract.outer((time_vector),(future_spikes)))
-                tp_sim_loss[:,b] = np.sum(mask_p*scalar,axis=1)
-
-                mask_f = mask_p
-                mask_f[:,1:] = mask_f[:,:-1]
-                mask_f[:,0] = True
-                tf_sim_loss[:,b] = np.sum(mask_f*scalar,axis=1)
-
-                #Data
-                future_spikes_data = indicies2[1:]*dts
-                cur_spikes_data = indicies2[:-1]*dts
-
-                scalar_data = future_spikes_data - cur_spikes_data
-
-                mask_p = (0 < np.subtract.outer((time_vector),(future_spikes_data)))
-                tp_data_loss[:,b] = np.sum(mask_p*scalar_data,axis=1)
-
-                mask_f = mask_p
-                mask_f[:,1:] = mask_f[:,:-1]
-                mask_f[:,0] = True
-                tf_data_loss[:,b] = np.sum(mask_f*scalar_data,axis=1)
-
-                #Calculate Derivative
-
-                #deriv = -scalar*np.exp(time_vector)
-
-                step_p =  np.sum(((scalar[1:])/((np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[1:])))+1))),axis=1)
-
-                tf_sim[:,b] = np.sum(((-scalar[:-1]*100*np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[:-1]))))/((np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[:-1])))+1))**2),axis=1)
-                tp_sim[:,b] = np.sum(((-scalar[1:]*100*np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[1:]))))/((np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[1:])))+1))**2),axis=1)
-
-                import matplotlib.pyplot as plt
-
-                # Assuming these variables already exist:
-                # time_vector: 1D array of time points
-                # tf_sim: 2D array (e.g., time x batch), tf_sim[:, b] is one trace
-                # tp_sim: 2D array (e.g., time x batch), tp_sim[:, b] is another trace
-                # b: the batch index you're interested in
-
-                # Create the plot
-                plt.figure(figsize=(10, 5))
-
-                # Plot tf_sim
-                plt.plot(time_vector, tf_sim[:, b], label='tf_sim', color='blue')
-
-                # Plot tp_sim
-                plt.plot(time_vector, tp_sim[:, b], label='tp_sim', color='orange')
-
-                # Labeling
-                plt.xlabel('Time')
-                plt.ylabel('Signal Amplitude')
-                plt.title('tf_sim vs tp_sim')
-                plt.legend()
-                plt.grid(True)
-
-                # Show the plot
-                plt.show()
+        #     indicies = [np.append(0,np.flatnonzero(forwards_out[sample, :, b] == 1)) for b in range(np.shape(forwards_output)[2])]
+        #     indicies2 = np.append(0,np.where(data[sample] == 1)[0])
 
 
+        #     for b in range(np.shape(forwards_output)[2]):
+
+        #         #-- Calculate ISI Loss
+
+        #         #Sim
+        #         future_spikes = indicies[b][1:]*dts
+        #         cur_spikes = indicies[b][:-1]*dts
+
+        #         scalar = future_spikes - cur_spikes
+
+        #         mask_p = (0 <= np.subtract.outer((time_vector),(future_spikes)))
+        #         tp_sim_loss[:,b] = np.sum(mask_p*scalar,axis=1)
+
+        #         mask_f = mask_p
+        #         mask_f[:,1:] = mask_f[:,:-1]
+        #         mask_f[:,0] = True
+        #         tf_sim_loss[:,b] = np.sum(mask_f*scalar,axis=1)
+
+        #         #Data
+        #         future_spikes_data = indicies2[1:]*dts
+        #         cur_spikes_data = indicies2[:-1]*dts
+
+        #         scalar_data = future_spikes_data - cur_spikes_data
+
+        #         mask_p = (0 < np.subtract.outer((time_vector),(future_spikes_data)))
+        #         tp_data_loss[:,b] = np.sum(mask_p*scalar_data,axis=1)
+
+        #         mask_f = mask_p
+        #         mask_f[:,1:] = mask_f[:,:-1]
+        #         mask_f[:,0] = True
+        #         tf_data_loss[:,b] = np.sum(mask_f*scalar_data,axis=1)
+
+        #         #Calculate Derivative
+
+        #         #deriv = -scalar*np.exp(time_vector)
+
+        #         step_p =  np.sum(((scalar[1:])/((np.exp(-1000*np.subtract.outer((time_vector),(cur_spikes[1:])))+1))),axis=1)
+        #         step_f =  np.sum(((scalar[:-1])/((np.exp(-1000*np.subtract.outer((time_vector),(cur_spikes[:-1])))+1))),axis=1)
+
+        #         tf_sim[:,b] = np.sum(((-scalar[:-1]*100*np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[:-1]))))/((np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[:-1])))+1))**2),axis=1)
+        #         tp_sim[:,b] = np.sum(((-scalar[1:]*100*np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[1:]))))/((np.exp(-100*np.subtract.outer((time_vector),(cur_spikes[1:])))+1))**2),axis=1)
+
+        #         import matplotlib.pyplot as plt
+
+        #         # Assuming these variables already exist:
+        #         # time_vector: 1D array of time points
+        #         # tf_sim: 2D array (e.g., time x batch), tf_sim[:, b] is one trace
+        #         # tp_sim: 2D array (e.g., time x batch), tp_sim[:, b] is another trace
+        #         # b: the batch index you're interested in
+
+        #         # Create the plot
+        #         plt.figure(figsize=(10, 5))
+
+        #         # Plot tf_sim
+        #         plt.plot(time_vector, step_f, label='tf_sim', color='blue')
+
+        #         # Plot tp_sim
+        #         plt.plot(time_vector, step_p, label='tp_sim', color='orange')
+
+        #         # Labeling
+        #         plt.xlabel('Time')
+        #         plt.ylabel('Signal Amplitude')
+        #         plt.title('tf_sim vs tp_sim')
+        #         plt.legend()
+        #         plt.grid(True)
+
+        #         # Show the plot
+        #         plt.show()
 
 
-            alpha_sim = np.array(tf_sim)-np.array(tp_sim)
-            #alpha_data = np.array(tf_data)-np.array(tp_data)
-
-            alpha_sim_loss = np.array(tf_sim_loss)-np.array(tp_sim_loss)
-            alpha_data_loss = np.array(tf_data_loss)-np.array(tp_data_loss)
 
 
-            denom = np.maximum(np.maximum(alpha_sim_loss, alpha_data_loss), eps)
-            inm_loss = np.abs(alpha_sim_loss - alpha_data_loss) / denom
+        #     alpha_sim = np.array(tf_sim)-np.array(tp_sim)
+        #     #alpha_data = np.array(tf_data)-np.array(tp_data)
 
-            #inm_loss = np.abs(alpha_sim_loss-alpha_data_loss)/np.max(alpha_sim_loss,alpha_data_loss,eps)
-            inms_loss.append(inm_loss)
+        #     alpha_sim_loss = np.array(tf_sim_loss)-np.array(tp_sim_loss)
+        #     alpha_data_loss = np.array(tf_data_loss)-np.array(tp_data_loss)
 
-            #print(alpha_sim)
-            #print(alpha_sim_loss)
-            #print(inm_loss)
 
-            #note -- derived derivate for isi is likely incorrect. you do not need to take the derivative w.r.t the data spikes
-            #going to try and just leave out the am' terms from the derivation and then trace back and see what happends
-            #we could do all possible pairwise comparisons (i do not think it is exactly necessary but it could get rid of a little bit of noise in the simulations)
-            #it would be wise to try both of these options and see what results you get from each of them.
-            inm = (((alpha_sim_loss-alpha_data_loss)/(np.sqrt((alpha_sim_loss-alpha_data_loss)**2)+eps)) * (alpha_sim))/((1/beta)*((beta*np.exp(beta*alpha_sim))/(np.exp(beta*alpha_sim_loss)+np.exp(beta*alpha_data_loss))))
-            inms.append(inm)
+        #     denom = np.maximum(np.maximum(alpha_sim_loss, alpha_data_loss), eps)
+        #     inm_loss = np.abs(alpha_sim_loss - alpha_data_loss) / denom
 
-        inms_loss = np.stack(inms_loss, axis=0)
-        inms = np.stack(inms, axis=0)
+        #     #inm_loss = np.abs(alpha_sim_loss-alpha_data_loss)/np.max(alpha_sim_loss,alpha_data_loss,eps)
+        #     inms_loss.append(inm_loss)
 
-        avginm_loss = np.mean(inms_loss,axis=0)
-        isi_loss_avg = np.trapz(avginm_loss, axis=0)
+        #     #print(alpha_sim)
+        #     #print(alpha_sim_loss)
+        #     #print(inm_loss)
 
-        avginm = np.mean(inms,axis=0)
-        isi_deriv_avg = np.trapz(avginm, axis=0)
+        #     #note -- derived derivate for isi is likely incorrect. you do not need to take the derivative w.r.t the data spikes
+        #     #going to try and just leave out the am' terms from the derivation and then trace back and see what happends
+        #     #we could do all possible pairwise comparisons (i do not think it is exactly necessary but it could get rid of a little bit of noise in the simulations)
+        #     #it would be wise to try both of these options and see what results you get from each of them.
+        #     inm = (((alpha_sim_loss-alpha_data_loss)/(np.sqrt((alpha_sim_loss-alpha_data_loss)**2)+eps)) * (alpha_sim))/((1/beta)*((beta*np.exp(beta*alpha_sim))/(np.exp(beta*alpha_sim_loss)+np.exp(beta*alpha_data_loss))))
+        #     inms.append(inm)
 
-        #print(np.shape(avginm))
-        #print(np.shape(isi_deriv_avg))
+        # inms_loss = np.stack(inms_loss, axis=0)
+        # inms = np.stack(inms, axis=0)
 
-        out_grad = isi_deriv_avg * grads 
+        # avginm_loss = np.mean(inms_loss,axis=0)
+        # isi_loss_avg = np.trapz(avginm_loss, axis=0)
 
-        return out_grad, [l2_loss_avg, isi_loss_avg]
+        # avginm = np.mean(inms,axis=0)
+        # isi_deriv_avg = np.trapz(avginm, axis=0)
+
+        # #print(np.shape(avginm))
+        # #print(np.shape(isi_deriv_avg))
+
+        # out_grad = isi_deriv_avg * grads 
+
+        # return out_grad, [l2_loss_avg, isi_loss_avg]
 
     else:
         print("please enter valid loss type")
