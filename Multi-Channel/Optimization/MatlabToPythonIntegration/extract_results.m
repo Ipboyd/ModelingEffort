@@ -16,7 +16,7 @@ plot(avg_across_all_inits(:,1))
 title('L2')
 subplot(2,1,2)
 plot(avg_across_all_inits(:,2))
-title('van Rossum')
+title('ISI Score')
 
 sgtitle('Average Convergence across all initializations')
 
@@ -26,4 +26,4 @@ sgtitle('Average Convergence across all initializations')
 
 
 figure(51)
-spy(output(:,:,3))
+spy(output(:,:,9))

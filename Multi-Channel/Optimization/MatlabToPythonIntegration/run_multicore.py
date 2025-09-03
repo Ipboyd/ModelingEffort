@@ -140,7 +140,7 @@ def run():
 
     from generated2_wrapper import _single_trial
 
-    num_epochs = 1
+    num_epochs = 2
     num_params = 10
     
     p = Init_Params.pinit(batch_size,num_params,load_from_file=False);
@@ -279,7 +279,7 @@ def run():
 
         losses.append(loss)
         
-        print(f"Epoch {epoch}: Mean L2 Loss = {np.mean(loss[0])}: Min Vr Loss = {np.mean(loss[1])}",flush=True) 
+        print(f"Epoch {epoch}: Mean L2 Loss = {np.mean(loss[0])}: Mean ISI Loss = {np.mean(loss[1])}",flush=True) 
         #print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
 
     t_post = time.perf_counter() - t0  

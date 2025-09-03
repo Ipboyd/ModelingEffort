@@ -353,6 +353,8 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         #Vr_deriv_avg = np.mean(np.trapz(vr_diff_deriv, dx=dts, axis=1), axis = 0)
 
         out_grad = Vr_deriv_avg * grads 
+
+        print(Vr_deriv_avg)
         
         return out_grad, [L2_loss_avg, Vr_loss_avg]
 
@@ -451,11 +453,12 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         # -- ISI
 
-        beta = 100  #"temperature of argmax caluclation"
+        beta = 100 #Sharpness control
         eps = 1e-8
         dt = 0.1
         dts = dt/1000
         buffer_frac = 0.1
+        temp = 0.1
 
         data = np.transpose(data,(2,0,1)) #Transpose things to be Batch,trials,timecouse
         forwards_out = np.transpose(forwards_out,(2,0,1))
@@ -505,9 +508,30 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         #print(np.shape(ItAUC))
 
-        Loss = np.mean(ItAUC,axis=-1) #Loss per object in batch
+        isi_loss_avg = np.mean(ItAUC,axis=-1) #Loss per object in batch
         
         t = np.arange(-buffer_frac*np.shape(forwards_out)[2]*dts,np.shape(forwards_out)[2]*dts,dts)
+
+
+        #Build out same thing as below with data
+
+        Bidx, Cidx, Tidx = np.where(mark)
+
+        Tprev = np.zeros(len(Tidx))
+        Tprev[1:] = Tidx[:-1]
+        is_group_start = np.ones_like(Tidx, dtype=bool)
+        is_group_start[1:] = (Bidx[1:] != Bidx[:-1]) | (Cidx[1:] != Cidx[:-1])
+        Tprev[is_group_start] = -1
+        diff = np.where(Tprev >= 0, Tidx - Tprev, Tidx)
+        mark_sim_copy_data = np.zeros((np.shape(mark)[0],np.shape(mark)[1],np.shape(mark)[2]))
+        mark_sim_copy_data[Bidx,Cidx,Tidx] = diff
+
+        mark_sim_copy_future_data = np.zeros((np.shape(mark)[0],np.shape(mark)[1],np.shape(mark)[2]))
+        Tidx_Future = np.empty_like(Tidx)
+        Tidx_Future[1:] = Tidx[:-1]
+        Tidx_Future[is_group_start] = 0
+        mark_sim_copy_future_data[Bidx,Cidx,Tidx_Future] = diff
+
 
 
         #Trying to build out a difference vector for changes instead of it being biased by the length of the sim.
@@ -536,29 +560,93 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         mark_sim_copy_future[Bidx,Cidx,Tidx_Future] = diff
 
-        #kernel_func = 1/(np.exp(-beta*t)+1)
+
+        m1 = (mark_sim_copy != 0).astype(np.int32) 
+        m2 = (mark_sim_copy_future != 0).astype(np.int32) 
+
+        kernel_func = 1/(np.exp(-beta*t)+1)
         
-        #Trying bump function
-        kernel_func = beta*(1/(np.exp(-beta*t)+1))*(1-(1/(np.exp(-beta*t)+1)))
+        #Local Bump
+        #local_bump = beta*(1/(np.exp(-beta*t)+1))*(1-(1/(np.exp(-beta*t)+1)))
+
+        #Delta j+1 is mark_sim_copy_future_data
 
         #Trying Low di hi minus hi di low over low low (Maybe later?)
-        #kernel_func = (np.exp(-t)+1)/(np.exp(-beta*t)+1)**2
+        #deriv_kernel_func = ((np.exp(-beta*t)+1)-(beta*np.exp(-beta*t)))/(np.exp(-beta*t)+1)**2
 
+        #Trying something else
+        #dervative of future spikes (tk doesn't really exist here). This ends up giving he same time kernel as the non derived version
+        dtf = kernel_func
+        #There are two parts to the tp derivitve. One that has scaling and one that does not dtps does not and is also just the time kernel I think
+        dtp1 = kernel_func
+        #This one has the scaling and everything else
+        dtp2 = -(beta*np.exp(-beta*t))/(np.exp(-beta*t)+1)**2
+        
 
-        kernel = kernel_func*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t)))
+        #Try to normalize for stability? (dts)
+
+        kernel = kernel_func*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        d1_kernel =  dtf*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        d2_kernel =  dtp1*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        d3_kernel =  dtp2*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
 
         from scipy.signal import fftconvolve
 
         #print(np.shape(mark_sim))
 
+        t_p = fftconvolve(mark_sim_copy, kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        t_f = fftconvolve(mark_sim_copy_future, kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
 
-        y = fftconvolve(mark_sim_copy, kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
-        y2 = fftconvolve(mark_sim_copy_future, kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        t_p_data = fftconvolve(mark_sim_copy_data, kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        t_f_data = fftconvolve(mark_sim_copy_future_data, kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
 
-        print(np.shape(y))
+        #print(np.shape(mark_sim_copy))
+        #print(np.shape(kernel))
+        #print(np.shape(deriv_kernel_func))
+
+        t_f_prime = fftconvolve(m2, d1_kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        t_p1_prime = fftconvolve(m1, d2_kernel, mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        t_p2_prime = fftconvolve(mark_sim_copy, d3_kernel, mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        
+        t_p_prime = t_p1_prime + t_p2_prime
+        
+
+        xisim = t_f_data - t_p_data
+        xisin = t_f - t_p
+
+        xisin_prime = t_f_prime - t_p_prime
+
+        #Soft L1-ish deriviative
+        abs_calc = abs(xisin-xisim)
+        #abs_calc = np.sqrt((xisin-xisim)**2) #Pretty sure this is the same thing
+        abs_surrogate = ((xisin-xisim)/((np.sqrt((xisin-xisim)**2))+eps)) * xisin_prime
+
+        #Softmax-ish derivative
+        soft_calc = np.maximum(xisin,xisim) + eps
+        #soft_calc = temp*np.log(np.exp(xisin/temp)+np.exp(xisim/temp))
+        soft_surrogate = (1/(np.exp(xisin/temp)+np.exp(xisim/temp))) * np.exp(xisin/temp) * xisin_prime
+
+        I_grad = (soft_calc * abs_surrogate - abs_calc * soft_surrogate)/(soft_calc**2)
+
+        #print('here')
+        #print(np.shape(I_grad))
+
+        I_auc = np.trapz(I_grad, axis=-1)
+
+        isi_deriv_avg = np.mean(I_auc, axis=-1)
+
+        print('grads')
+        print(isi_deriv_avg)
 
 
-        print(Loss)
+        out_grad = isi_deriv_avg*dts * grads 
+
+        return out_grad, [l2_loss_avg, isi_loss_avg]
+
+        #print(np.shape(y))
+
+
+        #print(Loss)
 
 
         # -- Deriviative
@@ -577,46 +665,46 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         #I think steps 2 and 3 are just a convolution
 
 
-        # Create the plot
-        plt.figure(figsize=(10, 5))
+        # # Create the plot
+        # plt.figure(figsize=(10, 5))
 
-        # Plot tp
-        plt.plot(pos, y[0,0,:], label='p_smooth', color='blue')
-        plt.plot(pos, prev_fill_sim[0,0,:], label='tp_sim', color='green')
+        # # Plot tp
+        # plt.plot(pos, t_p_prime[0,0,:], label='p_smooth', color='blue')
+        # plt.plot(pos, prev_fill_sim[0,0,:], label='tp_sim', color='green')
 
-        # Plot tf
-        plt.plot(pos, y2[0,0,:], label='p_smooth', color='blue')
-        plt.plot(pos, next_gt_sim[0,0,:], label='tp_sim', color='green')
+        # # Plot tf
+        # plt.plot(pos, t_f_prime[0,0,:], label='p_smooth', color='blue')
+        # plt.plot(pos, next_gt_sim[0,0,:], label='tp_sim', color='green')
 
-        # Labeling
-        plt.xlabel('Time')
-        plt.ylabel('Signal Amplitude')
-        plt.legend()
-        plt.grid(True)
+        # # Labeling
+        # plt.xlabel('Time')
+        # plt.ylabel('Signal Amplitude')
+        # plt.legend()
+        # plt.grid(True)
 
-        # Show the plot
-        plt.show()
+        # # Show the plot
+        # plt.show()
 
 
-        # Create the plot
-        plt.figure(figsize=(10, 5))
+        # # Create the plot
+        # plt.figure(figsize=(10, 5))
 
-        # Plot tp
-        plt.plot(pos, prev_fill[0,0,:], label='tp_data', color='blue')
-        plt.plot(pos, prev_fill_sim[0,0,:], label='tp_sim', color='green')
+        # # Plot tp
+        # plt.plot(pos, prev_fill[0,0,:], label='tp_data', color='blue')
+        # plt.plot(pos, prev_fill_sim[0,0,:], label='tp_sim', color='green')
 
-        # Plot tf
-        plt.plot(pos, next_gt[0,0,:], label='tf_data', color='orange')
-        plt.plot(pos, next_gt_sim[0,0,:], label='tf_sim', color='red')
+        # # Plot tf
+        # plt.plot(pos, next_gt[0,0,:], label='tf_data', color='orange')
+        # plt.plot(pos, next_gt_sim[0,0,:], label='tf_sim', color='red')
 
-        # Labeling
-        plt.xlabel('Time')
-        plt.ylabel('Signal Amplitude')
-        plt.legend()
-        plt.grid(True)
+        # # Labeling
+        # plt.xlabel('Time')
+        # plt.ylabel('Signal Amplitude')
+        # plt.legend()
+        # plt.grid(True)
 
-        # Show the plot
-        plt.show()
+        # # Show the plot
+        # plt.show()
 
         # #Create the plot
         # plt.figure(figsize=(10, 5))
@@ -786,10 +874,6 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         # #print(np.shape(avginm))
         # #print(np.shape(isi_deriv_avg))
-
-        # out_grad = isi_deriv_avg * grads 
-
-        # return out_grad, [l2_loss_avg, isi_loss_avg]
 
     else:
         print("please enter valid loss type")

@@ -1,6 +1,6 @@
 addpath('results\')
 
-m = matfile('run_2025-08-14_04-38-07.mat');
+m = matfile('run_2025-09-03_04-18-23.mat');
 losses = m.losses;
 param_tracker = m.param_tracker;
 
