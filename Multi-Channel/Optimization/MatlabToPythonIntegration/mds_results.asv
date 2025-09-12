@@ -1,0 +1,347 @@
+m = matfile('run_2025-09-05_22-19-39.mat');
+losses = m.losses;
+param_tracker = m.param_tracker;
+output = m.output;
+
+%% ===== Probabilistic k-means via GMM + ellipse overlays =====
+K_range = 2:6;        % search range for number of clusters (adjust as you like)
+nsig    = 2;          % ellipse radius in std devs (2 ~ 95%)
+reg     = 1e-6;       % covariance regularization to avoid singular matrices
+
+% Helper to fit GMM by BIC
+fit_gmm_bic = @(X) local_fit_gmm_bic(X, K_range, reg);
+
+% P: n_runs x 10, loss: n_runs x 1
+
+last_run = transpose(squeeze(param_tracker(300,:,:)));
+last_loss = transpose(squeeze(losses(300,2,:)));
+
+Z = zscore(last_run);
+
+% PCA (== classical MDS for Euclidean)
+figure;
+[coeff,score,~,~,explained] = pca(Z);
+scatter(score(:,1), score(:,2), 30, last_loss, 'filled'); colorbar; title('PCA');
+
+
+% 1) PCA
+X_pca = score(:,1:2);
+gm_pca = fit_gmm_bic(X_pca);
+figure; scatter(X_pca(:,1), X_pca(:,2), 30, last_loss, 'filled'); colorbar;
+title(sprintf('PCA + GMM (K=%d, BIC=%.1f)', gm_pca.NumComponents, gm_pca.BIC));
+xlabel('PC1'); ylabel('PC2'); hold on; axis equal;
+local_overlay_gmm_ellipses(gm_pca, nsig);
+
+
+% Non-metric MDS
+D = pdist(Z,'euclidean');   % or 'cosine', or Mahalanobis via squareform
+[Y,stress] = mdscale(D, 3, 'Criterion','sstress', 'Replicates',10);
+figure; scatter(Y(:,1), Y(:,2), 30, last_loss, 'filled'); colorbar; title(sprintf('MDS (stress=%.3g)',stress));
+%shepardplot(D, Y);  % diagnostic
+% ---- Prep (cast to double, sanitize) ----
+Z = zscore(last_run);
+Z = double(Z);                 % IMPORTANT: UMAP expects double for sparse weights
+Z(~isfinite(Z)) = 0;           % guard against NaN/Inf
+
+
+% 2) MDS
+X_mds = Y(:,1:2);
+gm_mds = fit_gmm_bic(X_mds);
+figure; scatter(X_mds(:,1), X_mds(:,2), 30, last_loss, 'filled'); colorbar;
+title(sprintf('MDS + GMM (K=%d, BIC=%.1f)', gm_mds.NumComponents, gm_mds.BIC));
+xlabel('MDS1'); ylabel('MDS2'); hold on; axis equal;
+local_overlay_gmm_ellipses(gm_mds, nsig);
+
+
+% ---- t-SNE (2D) ----
+rng(0,'twister');
+n = size(Z,1);
+perp = max(5, min(10, floor((n-1)/3)));
+Y_tsne = tsne(Z, 'NumDimensions', 2, 'Perplexity', perp, ...
+                 'Standardize', false, 'Distance', 'euclidean', ...
+                 'LearnRate', 200, 'Verbose', 0, 'Exaggeration', 4);
+figure; scatter(Y_tsne(:,1), Y_tsne(:,2), 30, last_loss, 'filled');
+colorbar; title(sprintf('t-SNE (perplexity=%d)', perp));
+xlabel('tSNE-1'); ylabel('tSNE-2');
+
+
+% 3) t-SNE
+X_tsne = Y_tsne; % already 2-D
+gm_tsne = fit_gmm_bic(X_tsne);
+figure; scatter(X_tsne(:,1), X_tsne(:,2), 30, last_loss, 'filled'); colorbar;
+title(sprintf('t-SNE + GMM (K=%d, BIC=%.1f)', gm_tsne.NumComponents, gm_tsne.BIC));
+xlabel('tSNE-1'); ylabel('tSNE-2'); hold on; axis equal;
+local_overlay_gmm_ellipses(gm_tsne, nsig);
+
+%%
+% ---- UMAP via run_umap (File Exchange) ----
+rng(0,'twister');
+numNeighbors = 10;
+minDist = 0.01;
+
+assert(exist('run_umap','file')==2, 'run_umap.m not on path.');
+
+[Y_umap, umap_params, umap_stats] = run_umap(Z, ...
+    'n_components', 2, ...
+    'n_neighbors',  numNeighbors, ...
+    'min_dist',     minDist, ...
+    'metric',       'euclidean', ...
+    'verbose',      'none');   % 'graph','text','figure' for debug
+
+figure; scatter(Y_umap(:,1), Y_umap(:,2), 30, last_loss, 'filled');
+colorbar; title(sprintf('UMAP (neighbors=%d, minDist=%.2f)', numNeighbors, minDist));
+xlabel('UMAP-1'); ylabel('UMAP-2');
+
+
+% 4) UMAP
+X_umap = Y_umap; % already 2-D
+gm_umap = fit_gmm_bic(X_umap);
+figure; scatter(X_umap(:,1), X_umap(:,2), 30, last_loss, 'filled'); colorbar;
+title(sprintf('UMAP + GMM (K=%d, BIC=%.1f)', gm_umap.NumComponents, gm_umap.BIC));
+xlabel('UMAP-1'); ylabel('UMAP-2'); hold on; axis equal;
+local_overlay_gmm_ellipses(gm_umap, nsig);
+
+
+
+% ---- Compute membership by ellipse (inclusive) and aggregate means ----
+param_names = arrayfun(@(i) sprintf('param_%d', i), 1:size(last_run,2), 'UniformOutput', false);
+
+S_pca  = local_cluster_stats_by_ellipse(X_pca,  gm_pca,  nsig, last_run, last_loss, param_names, 'PCA');
+S_mds  = local_cluster_stats_by_ellipse(X_mds,  gm_mds,  nsig, last_run, last_loss, param_names, 'MDS');
+S_tsne = local_cluster_stats_by_ellipse(X_tsne, gm_tsne, nsig, last_run, last_loss, param_names, 'tSNE');
+S_umap = local_cluster_stats_by_ellipse(X_umap, gm_umap, nsig, last_run, last_loss, param_names, 'UMAP');
+
+% Example: show the per-cluster means (PCA) as a table
+disp('PCA per-ellipse means of original 10D weights:');
+disp(S_pca.means_table);
+disp(S_mds.means_table);
+disp(S_tsne.means_table);
+disp(S_umap.means_table);
+
+[fPCA, axPCA]   = make_blank_cluster_figure('PCA',  S_pca);
+[fMDS, axMDS]   = make_blank_cluster_figure('MDS',  S_mds);
+[fTSNE, axTSNE] = make_blank_cluster_figure('t-SNE',S_tsne);
+[fUMAP, axUMAP] = make_blank_cluster_figure('UMAP', S_umap);
+
+
+%% ===== Local functions (can live at end of your script) =====
+function gm_best = local_fit_gmm_bic(X, K_range, reg)
+    % Ensure double + finite
+    X = double(X);
+    X(~isfinite(X)) = 0;
+    opts = statset('MaxIter', 1000, 'TolFun', 1e-8, 'Display','off');
+    bestBIC = inf; gm_best = [];
+    for K = K_range
+        try
+            gm = fitgmdist(X, K, ...
+                'CovarianceType', 'full', ...
+                'SharedCovariance', false, ...
+                'RegularizationValue', reg, ...
+                'Replicates', 5, ...
+                'Options', opts);
+            if gm.BIC < bestBIC
+                bestBIC = gm.BIC; gm_best = gm;
+            end
+        catch
+            % fitting can fail for some K; skip
+        end
+    end
+    if isempty(gm_best)
+        % fall back to K=2
+        gm_best = fitgmdist(X, 2, ...
+            'CovarianceType','full','SharedCovariance',false, ...
+            'RegularizationValue', reg, 'Replicates', 5, ...
+            'Options', opts);
+    end
+end
+
+function local_overlay_gmm_ellipses(gm, nsig)
+    mu = gm.mu;                     % K x 2
+    K  = gm.NumComponents;
+    for k = 1:K
+        Sigma = gm.Sigma(:,:,k);    % 2x2
+        local_draw_cov_ellipse(mu(k,:), Sigma, nsig, 'LineWidth',1.5);
+        plot(mu(k,1), mu(k,2), 'x', 'MarkerSize',10, 'LineWidth',1.5);
+        text(mu(k,1), mu(k,2), sprintf('  %d',k), 'FontSize',10, 'FontWeight','bold');
+    end
+end
+
+function h = local_draw_cov_ellipse(m, S, nsig, varargin)
+    % Draw the nsig-sigma ellipse of 2x2 covariance S centered at m (1x2)
+    [V, D] = eig((S+S')/2);           % symmetrize for safety
+    % Radii along principal axes:
+    r = nsig * sqrt(max(diag(D), 0));
+    % Parametric circle:
+    t = linspace(0, 2*pi, 200);
+    xy = [cos(t); sin(t)];
+    % Transform to ellipse:
+    E = (V * diag(r)) * xy;
+    x = E(1,:) + m(1);
+    y = E(2,:) + m(2);
+    h = plot(x, y, varargin{:});
+end
+
+
+%% ===== Local helpers =====
+function out = local_cluster_stats_by_ellipse(X2, gm, nsig, Xorig, loss, param_names, label)
+    K = gm.NumComponents;
+    idx_sets = cell(K,1);
+    counts   = zeros(K,1);
+    meansMat = nan(K, size(Xorig,2));
+    lossMean = nan(K,1);
+
+    for k = 1:K
+        mu = gm.mu(k,:);
+        S  = (gm.Sigma(:,:,k)+gm.Sigma(:,:,k)')/2;  % symmetrize
+        S  = S + 1e-9*eye(2);                       % tiny reg
+        Sinv = pinv(S);
+        d    = X2 - mu;                             % n x 2
+        m2   = sum((d*Sinv).*d, 2);                 % Mahalanobis^2
+        idx  = find(m2 <= nsig^2);                  % inside ellipse
+        idx_sets{k} = idx;
+        counts(k)   = numel(idx);
+        if ~isempty(idx)
+            meansMat(k,:) = mean(Xorig(idx,:), 1, 'omitnan');
+            lossMean(k)   = mean(loss(idx), 'omitnan');
+        end
+    end
+
+    % Build table: Cluster, N, mean loss, then parameter means
+    T = array2table(meansMat, 'VariableNames', param_names);
+    T = addvars(T, (1:K)', counts, lossMean, 'Before', 1, ...
+        'NewVariableNames', {'Cluster','N','MeanLoss'});
+    out = struct('label',label,'idx_sets',{idx_sets},'counts',counts, ...
+                 'means',meansMat,'lossMean',lossMean,'means_table',T);
+end
+
+
+%% ===== Helpers =====
+function [fig, ax] = make_blank_cluster_figure(method_label, S)
+    K = height(S.means_table);
+    if K < 1, K = numel(S.idx_sets); end  % fallback
+
+    [nrows, ncols] = best_subplot_grid(K);
+
+    tileW = 300; tileH = 400;  % <- every tile this big, regardless of K
+    gapX  = 20;  gapY  = 20;
+    margin = struct('L',70,'R',100,'T',60,'B',50);
+    cbW = 0;    % space to reserve for a shared colorbar
+
+    % Compute figure size so tiles stay the same size across figures
+    figW = margin.L + ncols*tileW + (ncols-1)*gapX + margin.R + cbW;
+    figH = margin.T + nrows*tileH + (nrows-1)*gapY + margin.B;
+
+    fig = figure('Name',[method_label ' clusters'], 'Color','w', ...
+        'Units','pixels','Position',[80 80 figW figH]);
+    tl = tiledlayout(fig, nrows, ncols, 'TileSpacing','none','Padding','none');
+    title(tl, sprintf('%s: %d ellipse%s', method_label, K, plural_s(K)), 'FontWeight','bold');
+
+    %fig = figure('Name',[method_label ' clusters'], 'Color','w');
+    %fig.Units = 'normalized'; fig.Position = [0.05 0.06 0.5 0.86];
+
+    %tl = tiledlayout(nrows, ncols, 'TileSpacing','compact', 'Padding','compact');
+    %title(tl, sprintf('%s: %d ellipse%s', method_label, K, plural_s(K)));
+
+    ax = gobjects(K,1);
+    for k = 1:K
+        ax(k) = nexttile(tl);
+        axis(ax(k), 'off'); box(ax(k), 'on'); hold(ax(k), 'on');
+
+        % Optional: quick annotation in the middle of the blank tile
+        N  = S.counts(k);
+        ML = S.lossMean(k);
+        title(ax(k), sprintf('Cluster %d', k));
+        text(ax(k), 1.0, -0.1, sprintf('N = %d', N), 'HorizontalAlignment','center');
+        if ~isnan(ML)
+            text(ax(k), 1.0, -0.25, sprintf('Mean Loss = %.3g', ML), 'HorizontalAlignment','center');
+        end
+
+
+        %ADD IN GRAPH GRAPH HERE
+
+        s = [1 1 3 3 2 2 4 4 6 5];   % source nodes
+        t = [4 3 4 5 5 3 7 6 7 6];   % target nodes
+        weights = S.means(k,:);  % your 10 edge weights
+        
+        % Define node names (must be a cell array of char vectors or string array)
+        nodeNames = ["On","Off","S1","R1On","R1Off","S2","R2"];
+        
+        % Desired positions (column-like “onset / PV / offset” layout)
+        pos = table( ...
+           ["On";   "S1";  "Off";  "R1On"; "R1Off"; "S2";  "R2"], ... % <- node names
+           [0;      1.0;     2.0;      0;      2.0;       1;     0], ...   % X
+           [0.0;    1.0;   0.0;    2.0;    2.0;     3.0;   4.0], ... % Y
+           'VariableNames', {'Name','X','Y'});
+        
+        
+        
+        % Create graph using node names instead of numeric IDs
+        G = digraph(nodeNames(s), nodeNames(t), weights);
+        
+        
+        % Plot with edge thickness proportional to weight
+        %figure;
+        h = plot(G, 'Layout', 'force');
+        %h.LineWidth = 1 + 3*(G.Edges.Weight / max(G.Edges.Weight)); % scale thickness
+        %h.EdgeCData = G.Edges.Weight;  % color edges by weight
+        
+        % Map node names to our coordinates
+        [tf, loc] = ismember(string(G.Nodes.Name), pos.Name);
+        assert(all(tf), 'Some nodes are missing from the position table.');
+        h.XData = pos.X(loc);
+        h.YData = pos.Y(loc);
+        
+        
+        % Edge thickness proportional to magnitude of weight
+        h.LineWidth = 1 + 10*(abs(G.Edges.Weight) / max(abs(G.Edges.Weight)));
+        
+        % Edge colors based on signed weight
+        h.EdgeCData = G.Edges.Weight;
+        
+        colormap parula; colorbar;
+
+        
+            
+
+        %Fit view with padding (so edges don't kiss the bar)
+        pad = 0.15; x = h.XData; y = h.YData;
+        dx = range(x); if dx==0, dx=1; end
+        dy = range(y); if dy==0, dy=1; end
+        xlim(ax(k), [min(x)-pad*dx, max(x)+pad*dx]);
+        ylim(ax(k), [min(y)-pad*dy, max(y)+pad*dy]);
+
+        
+        % 
+        % % ----- Reserve space on the right and park colorbar there -----
+        % cb_frac = 0.12;         % fraction of tile width to devote to the colorbar
+        % cb_gap  = 0.01;         % small gap between axes and colorbar (normalized)
+        % p0 = ax(k).Position;    % [x y w h] in normalized figure units
+        % 
+        % % shrink axes width
+        % cbw = p0(3)*cb_frac;
+        % axw = p0(3) - cbw - cb_gap;
+        % ax(k).Position = [p0(1), p0(2), axw, p0(4)];
+        % 
+        % % make colorbar and place it in the reserved strip
+        % cb = colorbar(ax(k));
+        % cb.Units = 'normalized';
+        % cb.Position = [p0(1)+axw+cb_gap, p0(2), cbw, p0(4)];  % no overlap
+        % cb.TickDirection = 'out';
+        % 
+        % % keep indices handy
+        setappdata(ax(k), 'cluster_indices', S.idx_sets{k});
+
+    end
+
+    %colorbar(tl,'Location','eastoutside');
+
+end
+
+function [r,c] = best_subplot_grid(K)
+    c = ceil(sqrt(K));
+    r = ceil(K / c);
+end
+
+function s = plural_s(n)
+    s = ''; if n ~= 1, s = 's'; end
+end

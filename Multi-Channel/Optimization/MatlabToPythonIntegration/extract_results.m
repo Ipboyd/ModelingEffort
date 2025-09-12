@@ -24,6 +24,9 @@ sgtitle('Average Convergence across all initializations')
 [val,idx] = min(losses);
 [val2,idx2] = min(squeeze(val),[],2);
 
+figure;
 
-figure(51)
-spy(output(:,:,9))
+b_num = 12;
+spy(output(:,:,b_num))
+
+params = param_tracker(300,:,b_num)

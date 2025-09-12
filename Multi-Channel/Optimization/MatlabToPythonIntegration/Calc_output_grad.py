@@ -212,7 +212,7 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         return out_grad, loss
 
-    elif grad_type == "PSTH":
+    elif grad_type == "PSTH_old":
 
         signal_length = 35000
         offset = 3153
@@ -453,12 +453,12 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         # -- ISI
 
-        beta = 100 #Sharpness control
+        beta = 10 #Sharpness control
         eps = 1e-8
         dt = 0.1
         dts = dt/1000
         buffer_frac = 0.1
-        temp = 0.1
+        temp = 10
 
         data = np.transpose(data,(2,0,1)) #Transpose things to be Batch,trials,timecouse
         forwards_out = np.transpose(forwards_out,(2,0,1))
@@ -574,21 +574,34 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         #Trying Low di hi minus hi di low over low low (Maybe later?)
         #deriv_kernel_func = ((np.exp(-beta*t)+1)-(beta*np.exp(-beta*t)))/(np.exp(-beta*t)+1)**2
 
-        #Trying something else
+        # #Past Kernels
+        # #dervative of future spikes (tk doesn't really exist here). This ends up giving he same time kernel as the non derived version
+        # dtf = kernel_func
+        # #There are two parts to the tp derivitve. One that has scaling and one that does not dtps does not and is also just the time kernel I think
+        # dtp1 = kernel_func
+        # #This one has the scaling and everything else
+        # dtp2 = -(beta*np.exp(-beta*t))/(np.exp(-beta*t)+1)**2
+
+        #Future Kernels
         #dervative of future spikes (tk doesn't really exist here). This ends up giving he same time kernel as the non derived version
-        dtf = kernel_func
+        dtp = kernel_func
         #There are two parts to the tp derivitve. One that has scaling and one that does not dtps does not and is also just the time kernel I think
-        dtp1 = kernel_func
+        dtf1 = -kernel_func
         #This one has the scaling and everything else
-        dtp2 = -(beta*np.exp(-beta*t))/(np.exp(-beta*t)+1)**2
+        dtf2 = -(beta*np.exp(-beta*t))/(np.exp(-beta*t)+1)**2
         
 
         #Try to normalize for stability? (dts)
 
+        # kernel = kernel_func*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        # d1_kernel =  dtf*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        # d2_kernel =  dtp1*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        # d3_kernel =  dtp2*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+
         kernel = kernel_func*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
-        d1_kernel =  dtf*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
-        d2_kernel =  dtp1*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
-        d3_kernel =  dtp2*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        d1_kernel =  dtp*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        d2_kernel =  dtf1*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
+        d3_kernel =  dtf2*np.ones((np.shape(forwards_out)[0],np.shape(forwards_out)[1],len(t))) * dts
 
         from scipy.signal import fftconvolve
 
@@ -604,12 +617,15 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         #print(np.shape(kernel))
         #print(np.shape(deriv_kernel_func))
 
-        t_f_prime = fftconvolve(m2, d1_kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
-        t_p1_prime = fftconvolve(m1, d2_kernel, mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
-        t_p2_prime = fftconvolve(mark_sim_copy, d3_kernel, mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        t_p_prime = fftconvolve(m1, d1_kernel , mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        t_f1_prime = fftconvolve(m2, d2_kernel, mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
+        t_f2_prime = fftconvolve(mark_sim_copy_future, d3_kernel, mode='full', axes=(-1,))[:,:,int(buffer_frac*np.shape(forwards_out)[2]):int(buffer_frac*np.shape(forwards_out)[2])+np.shape(forwards_out)[2]]
         
-        t_p_prime = t_p1_prime + t_p2_prime
+
+
+        #t_p_prime = t_p1_prime + t_p2_prime
         
+        t_f_prime = t_f1_prime + t_f2_prime
 
         xisim = t_f_data - t_p_data
         xisin = t_f - t_p
@@ -635,8 +651,8 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         isi_deriv_avg = np.mean(I_auc, axis=-1)
 
-        print('grads')
-        print(isi_deriv_avg)
+        #print('grads')
+        #print(isi_deriv_avg)
 
 
         out_grad = isi_deriv_avg*dts * grads 
@@ -874,6 +890,179 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         # #print(np.shape(avginm))
         # #print(np.shape(isi_deriv_avg))
+
+
+
+    elif grad_type == "PSTH":
+
+        # -- Constants
+        dt = 0.1 #ms
+        dts = dt/1000 #in seconds
+        bin_width = 200 # binwidth/10 = ms ex. binwidth 200 = 20 ms
+
+        # -- Load in data
+
+        forwards_out = np.asarray(forwards_output, dtype=np.float32)
+        filename = "c:/users/ipboy/documents/github/modelingeffort/multi-channel/plotting/oliverdataplotting/picture_fit.mat"
+        data = loadmat(filename)['picture'].astype(np.float32)[:,:,None]
+
+        data = np.transpose(data,(2,0,1)) #Transpose things to be Batch,trials,timecouse
+        forwards_out = np.transpose(forwards_out,(2,0,1))
+
+        # -- L2 Loss & Deriv Vectorized
+
+        diff = forwards_out - data
+        L2_loss_avg = np.mean(np.sum(diff * diff, axis=-1), axis=-1)
+        #L2_deriv_avg = 2.0 * np.mean(np.sum(diff, axis=1),axis=0)
+
+        # -- PSTH Average
+
+        #print(np.shape(forwards_out))
+        #print(np.shape(data))
+
+        #Idea - Transpose creating a seperate dimentions to sum across with the length of the bin width.
+        #Going to trim from front of signal because thats the only area of true silence.
+
+        num_bins, remainder = divmod(np.shape(data)[-1], bin_width) 
+
+        forwards_out_r = forwards_out[:,:,remainder:]
+        data_r = data[:,:,remainder:]
+
+        #print(np.shape(forwards_out_r))
+        #print(np.shape(data_r))
+
+        #print(np.shape(forwards_out_r)[2]/num_bins)
+
+        forwards_out_reshaped = forwards_out_r.reshape((np.shape(forwards_out_r)[0],np.shape(forwards_out_r)[1],num_bins,bin_width))
+        data_reshaped = data_r.reshape((np.shape(data_r)[0],np.shape(data_r)[1],num_bins,bin_width))
+
+        #print(np.shape(forwards_out_reshaped))
+        #print(np.shape(data_reshaped))
+
+        #Histogram per trial
+        #Then sum over all trials to get PSTH
+
+        #print(np.shape(forwards_out_reshaped))
+
+        forwards_out_hist = np.sum(np.sum(forwards_out_reshaped,axis=-1),axis=-2)
+        data_hist = np.sum(np.sum(data_reshaped,axis=-1),axis=-2)
+
+        import matplotlib.pyplot as plt
+
+        # Assuming these variables already exist:
+        # time_vector: 1D array of time points
+        # tf_sim: 2D array (e.g., time x batch), tf_sim[:, b] is one trace
+        # tp_sim: 2D array (e.g., time x batch), tp_sim[:, b] is another trace
+        # b: the batch index you're interested in
+
+
+        #plt.figure(figsize=(10, 5))
+
+        #print(np.shape(data_hist))
+        #print(np.shape(forwards_out_hist))
+
+        #print(data_hist)
+
+        # Plot tf_sim
+
+        #plt.plot(data_hist[0,:], label='sim_PSTH')
+
+
+        # Plot tp_sim
+
+        #plt.show()
+              
+        #print(np.shape(forwards_out_hist))
+        #print(np.shape(data_hist))
+
+        diff = forwards_out_hist - data_hist
+
+        #print(np.shape(diff))
+
+        #PSTH_loss_avg = np.mean(np.sum(diff * diff, axis=-1), axis=-1)
+        PSTH_loss_avg = np.sum(diff * diff, axis=-1)
+
+        #print(PSTH_loss_avg)
+
+        #print(np.shape(PSTH_loss_avg))
+
+        #PSTH_deriv_avg = 2.0 * np.mean(np.sum(diff, axis=-1),axis=-1)
+        PSTH_deriv_avg = 2.0 * np.sum(diff, axis=-1)
+        
+        out_grad = PSTH_deriv_avg * grads 
+
+        return out_grad, [L2_loss_avg, PSTH_loss_avg]
+
+
+    elif grad_type == "PSTH_VR":
+
+        # -- Constants
+        tau_vr1 = 100 #ms
+        dt = 0.1 #ms
+        dts = dt/1000 #in seconds
+        bin_width = 200 # binwidth/10 = ms ex. binwidth 200 = 20 ms
+        alpha = np.exp(-dt/tau_vr1)
+        loss_gain = 50 # attempt to keep the loss values fairly close in magnetude
+
+        # -- Load in data
+
+        forwards_out = np.asarray(forwards_output, dtype=np.float32)
+        filename = "c:/users/ipboy/documents/github/modelingeffort/multi-channel/plotting/oliverdataplotting/picture_fit.mat"
+        data = loadmat(filename)['picture'].astype(np.float32)[:,:,None]
+
+
+        # -- VR additional deriv
+
+        b = [1.0]
+        a = [1.0, -alpha]
+
+        traces_sim  = lfilter(b, a, forwards_out, axis=1)
+        traces_data = lfilter(b, a, data  , axis=1)
+
+        #Data error
+        e = traces_sim-traces_data
+
+        #Derivative of loss w.r.t spike times (most inner part)
+        dL_dtk = (1.0/tau_vr1) * traces_sim - forwards_out
+
+        Vr_deriv_avg = np.mean(np.trapz(2.0 * e * dL_dtk, dx=dts, axis=1),axis=0)
+
+
+        data = np.transpose(data,(2,0,1)) #Transpose things to be Batch,trials,timecouse
+        forwards_out = np.transpose(forwards_out,(2,0,1))
+
+        # -- L2 Loss & Deriv Vectorized
+
+        diff = forwards_out - data
+        L2_loss_avg = np.mean(np.sum(diff * diff, axis=-1), axis=-1)
+
+        # -- PSTH Average
+
+        num_bins, remainder = divmod(np.shape(data)[-1], bin_width) 
+
+        forwards_out_r = forwards_out[:,:,remainder:]
+        data_r = data[:,:,remainder:]
+
+        forwards_out_reshaped = forwards_out_r.reshape((np.shape(forwards_out_r)[0],np.shape(forwards_out_r)[1],num_bins,bin_width))
+        data_reshaped = data_r.reshape((np.shape(data_r)[0],np.shape(data_r)[1],num_bins,bin_width))
+
+        forwards_out_hist = np.sum(np.sum(forwards_out_reshaped,axis=-1),axis=-2)
+        data_hist = np.sum(np.sum(data_reshaped,axis=-1),axis=-2)
+
+        diff = forwards_out_hist - data_hist
+
+
+        PSTH_loss_avg = np.sum(diff * diff, axis=-1)
+        PSTH_deriv_avg = 2.0 * np.sum(diff, axis=-1)
+
+        
+
+        #print(PSTH_deriv_avg)
+        #print(Vr_deriv_avg)
+        
+        out_grad = (PSTH_deriv_avg + loss_gain*Vr_deriv_avg) * grads 
+
+        return out_grad, [L2_loss_avg, PSTH_loss_avg]
 
     else:
         print("please enter valid loss type")

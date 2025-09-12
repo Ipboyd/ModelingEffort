@@ -1,12 +1,18 @@
 addpath('results\')
 
-m = matfile('run_2025-09-03_04-18-23.mat');
+%PSTH + VR 100ms
+%m = matfile('run_2025-09-11_20-28-42.mat');
+
+%PSTH only
+m = matfile('run_2025-09-05_22-19-39.mat');
+
 losses = m.losses;
 param_tracker = m.param_tracker;
+output = m.output;
 
 
-pc_axis1 = 9;
-pc_axis2 = 10;
+pc_axis1 = 1;
+pc_axis2 = 3;
 
 % A: [E × P × B]
 [E, P, B] = size(param_tracker);
@@ -30,6 +36,15 @@ xlabel(sprintf('pc_axis1 (%.1f%% var)', explained(pc_axis1)));
 ylabel(sprintf('pc_axis2 (%.1f%% var)', explained(pc_axis2)));
 title('PCA of Parameters across Epochs × Batches (colored by Loss)');
 axis equal; grid on;
+hold on;
+
+%Plot the convergent values
+f_index = 300:300:60000;
+f_scores = score(f_index,:);
+
+plot(f_scores(:,pc_axis1), f_scores(:,pc_axis2), 'go', 'LineWidth', 1.5, 'MarkerSize', 4);
+
+hold on;
 
 % Reshape scores back to [E × B × 2]
 score_eb2 = reshape(score(:,([pc_axis1,pc_axis2])), [E, B, 2]);
@@ -37,9 +52,9 @@ score_eb2 = reshape(score(:,([pc_axis1,pc_axis2])), [E, B, 2]);
 pc1_mean = squeeze(mean(score_eb2(:,:,1), 2));  % [E × 1]
 pc2_mean = squeeze(mean(score_eb2(:,:,2), 2));  % [E × 1]
 
-hold on;
+
 plot(pc1_mean, pc2_mean, '-o', 'LineWidth', 1.5, 'MarkerSize', 4);
-legend('Samples (colored by loss)', 'Epoch mean trajectory');
+legend('Samples (colored by loss)', 'Final Convergent value for each trial','Epoch mean trajectory');
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -89,5 +104,40 @@ axis equal tight; hold on;
 colormap(turbo); cb = colorbar; ylabel(cb,'Loss');
 xlabel('PC1'); ylabel('PC2'); title('PC space colored by nearest-loss field');
 
+hold on;
+plot(f_scores(:,pc_axis1), f_scores(:,pc_axis2), 'go', 'LineWidth', 1.5, 'MarkerSize', 4);
+hold on;
+
 K = convexHull(DT);                    % hull vertex order (counter-clockwise)
 plot(DT.Points(K,1), DT.Points(K,2), 'w-', 'LineWidth', 0.5);   % black edge on top
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%Visualize parameters with aheat map?
+% Example: 20 trials, 10 parameters
+nTrials = 300;
+nParams = 10;
+%X = randn(nTrials, nParams);  % replace with your solutions
+
+% Optional: normalize each parameter (z-score across trials)
+%Xz = (X - mean(X,1)) ./ std(X,[],1);
+
+% Parameter and trial labels
+paramNames = arrayfun(@(i) sprintf("p%d", i), 1:nParams, 'UniformOutput', false);
+trialLabels = arrayfun(@(i) sprintf("trial %d", i), 1:nTrials, 'UniformOutput', false);
+
+% Make the heatmap
+figure;
+
+%SORTING BY FIRST COLUMN (On-R1On)
+h = heatmap(sortrows(transpose(squeeze(param_tracker(300,:,:))),7));
+%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% Customize appearance
+h.Colormap = parula;
+h.ColorbarVisible = 'on';
+h.XLabel = 'Parameters';
+h.YLabel = 'Trials';
+h.Title = 'Parameter Solutions Heatmap';
