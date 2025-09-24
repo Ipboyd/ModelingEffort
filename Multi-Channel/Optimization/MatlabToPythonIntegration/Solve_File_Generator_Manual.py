@@ -12,6 +12,7 @@ import pdb
 import textwrap
 import numpy as np
 import math
+import re
 
 #Recursion definition for tracking gradient paths
 def recurse(cur_node, tracker,nodes,edges):
@@ -27,7 +28,7 @@ def recurse(cur_node, tracker,nodes,edges):
 
 
 
-def build_ODE(parameters):
+def build_ODE(parameters,batch_size):
 
     #--------------------------------------------------------        Connect to DynaSim Solve File        -----------------------------------------------------------------------#
 
@@ -95,9 +96,8 @@ def build_ODE(parameters):
     count_ps = 0
     for name, value in parameters.items():
         if "_gSYN" in name and "R2Off" not in name:
+            #Initialize our parameters with the values we inherit from the learning
             params += f"    {name} = ps[{count_ps}]\n"
-            #params += f"    {name} = ps[[0]]\n"
-            #params += f"    print(ps[0][{count_ps}])\n"
             count_ps += 1
         else:
             params += f"    {name} = {value}\n"
@@ -109,48 +109,45 @@ def build_ODE(parameters):
             
             post_node = name.split('_',-1)[0]
             pre_node = name.split('_',-1)[1]
+            
+            #Vectorize the gradient initializations.
+            params += f'    dGSYN{post_node}_{pre_node} = np.zeros(({batch_size}))\n'
 
-            params += f'    dGSYN{post_node}_{pre_node} = 0\n'
-            #params += f'    dGSYN{post_node}_{pre_node}_tracker = []\n'
+    #| For debugging gradients (tracking gradients over time) keep the following code
 
-    for k in range(len(update_vars)):
-        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
-            var = update_vars[k]
-            var_base = var[:-3]
-            params += f'    dspike_d{var_base}_tracker = []\n'
+    # for k in range(len(update_vars)):
+    #     if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+    #         var = update_vars[k]
+    #         var_base = var[:-3]
+    #         params += f'    dspike_d{var_base}_tracker = []\n'
 
-
-    params += f'    psc_derivative = []\n'
-    params += f'    voltage_derivative = []\n'
+    #Debug here
 
     #Bring in fixed params
     fixed_param_declaration = '\n    #Fixed Param Declaration\n'
     for k in range(len(lhs_list)):
         if (lhs_list[k] != 'On_On_IC_input' and lhs_list[k] != 'Off_Off_IC_input'):
-            fixed_param_declaration += f"    {lhs_list[k]} = {rhs_list[k]}\n"
+            #if rhs_list[k].contains('ones'):
+            np_version = re.sub(r'ones\(\s*1\s*,\s*([^)]+)\)',r'np.ones((1,\1))',rhs_list[k])
+            fixed_param_declaration += f"    {lhs_list[k]} = {np_version}\n"            
+            #else:
+            #    fixed_param_declaration += f"    {lhs_list[k]} = {rhs_list[k]}\n"
 
-    #Bring in T, helper, and grad
-    #Mind the 2*dt line
-    #Tspan reports the length of the stimulus in ms. np.arange is 0 index and exclusive which requires 1 more index. 
-    #7/28 Not using t-1 anymore? Can we just push the sim from 0 to T instea of 1 to T?
+       
+
+    #Tspan reports the length of the stimulus in ms. np.arange is 0 index and exclusive which requires 1 more index compared to the matlab implemention
     T_and_Helper_declaration = '\n    T = len(np.arange(tspan[0],tspan[1]+(dt),dt))\n    helper = np.arange(tspan[0],tspan[1]+(dt),dt)\n'
-
-    #Add Gradients
-    for k in range(len(update_vars)):
-        if "Off_V" in update_vars[k] or "On_V" in update_vars[k]:
-            var = update_vars[k]
-            var_base = var[:-3]
-            var_name = var[:-5]
-            T_and_Helper_declaration += f'    grad_{var_base} = 0\n'
-
    
+
+    #| Outdated due to multicore parralelization
+
     #Bring in Spikes Holders
-    spike_holder_string = '\n    #Spikes Holders\n'
-    for k in range(len(monitor_vars)):
-        if "V_spikes" in monitor_vars[k]:
-            spike_holder_string += f"    {monitor_vars[k]} = []\n"
+    # spike_holder_string = '\n    #Spikes Holders\n'
+    # for k in range(len(monitor_vars)):
+    #     if "V_spikes" in monitor_vars[k]:
+    #         spike_holder_string += f"    {monitor_vars[k]} = []\n"
     
-    generated_code = import_string + forwards_loop_header + params + fixed_param_declaration + T_and_Helper_declaration + spike_holder_string
+    generated_code = import_string + forwards_loop_header + params + fixed_param_declaration + T_and_Helper_declaration #+ spike_holder_string
     
 
     #----Initilize variables that get reset per trial
@@ -160,15 +157,33 @@ def build_ODE(parameters):
     #Bring in State vars
     state_vars_string = '\n    #State Variable Declaration\n'
     for k in range(len(state_vars)):
-        state_vars_string += f"    {state_vars[k]} = {State_variable_Identifier.replace_ones_zeros(state_vals[k])}\n"
+        state_vars_string += f"    {state_vars[k]} = np.ones(({batch_size},2)) * {State_variable_Identifier.replace_ones_zeros(state_vals[k])}\n"
 
     #Bring in Monitors
     monitor_string = '\n    #Monitor Declaration\n'
     for k in range(len(monitor_vars)):
+
+        #print(monitor_vars[k])
+
         if "V_spikes" in monitor_vars[k]:
             monitor_string += f"    {monitor_vars[k]}_holder = []\n"
-        else:  
-            monitor_string += f"    {monitor_vars[k]} = {monitor_vals[k]}\n"
+        elif 'syn' in monitor_vars[k]:
+            monitor_string += f"    {monitor_vars[k]} = 0\n" #
+        elif 'IC_' in monitor_vars[k]:
+            monitor_string += f"    {monitor_vars[k]} = 0\n" #
+        else:
+            #If you move to multiple populations you will have to deal with the 1 here. It will need to be replaced by xx_Npop to be compatible with dynasim
+            np_version_ones = re.sub(r'ones\s*\(\s*5\s*,\s*([^)]+)\s*\)',rf'np.ones(({batch_size}, 5, \1))',monitor_vals[k])
+            np_version_second_check = re.sub(r'ones\s*\(\s*1\s*,\s*([^)]+)\s*\)',rf'np.ones(({batch_size}))',np_version_ones)
+            np_version_zeros = re.sub(r'zeros\(\s*nsamp\s*,\s*([^)]+)\)',r'np.zeros((T,\1))',np_version_second_check)
+
+            monitor_string += f"    {monitor_vars[k]} = {np_version_zeros}\n"
+
+            #if 'tspike' in monitor_vars[k]:
+            #    monitor_string += f"    {monitor_vars[k]} = {np_version_zeros} * np.ones(({batch_size},5,1))\n"
+            #if 'buffer' in monitor_vars[k]:
+            #    monitor_string += f"    {monitor_vars[k]} = {np_version_zeros} * np.ones(({batch_size},1,1))\n"
+
 
     #Declare Inputs
     inputs_header = "\n    #Delcare Inputs\n    On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)\n    Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec,scale_factor)\n"
@@ -184,7 +199,7 @@ def build_ODE(parameters):
     ode_string = '\n        #ODEs\n'
     for k in range(len(pairs)):
         rhs_ode = FormatODEs_Ns.reformat_input_time_indexing(FormatODEs_Ns.reformat_discrete_time_indexing(pairs[k][1]))
-        rhs_ode_rpl = rhs_ode.replace("[t-1]", "[-1]")
+        rhs_ode_rpl = rhs_ode.replace("[t-1]", "[:,-1]")
         ode_string += f"        {pairs[k][0]} = {rhs_ode_rpl}\n"
         
    
@@ -192,9 +207,9 @@ def build_ODE(parameters):
     update_eulers = '\n        #Update Eulers\n'
 
     for k in range(len(update_vars)):
-        rep_val = update_vals[k].replace("[t-1]", "[-1]")
-        update_eulers += f"        {update_vars[k][:-3]}[-2] = {update_vars[k][:-3]}[-1]\n"
-        update_eulers += f"        {update_vars[k][:-3]}[-1] = {rep_val}\n"
+        rep_val = update_vals[k].replace("[t-1]", "[:,-1]")
+        update_eulers += f"        {update_vars[k][:-3]}[:,-2] = {update_vars[k][:-3]}[:,-1]\n"
+        update_eulers += f"        {update_vars[k][:-3]}[:,-1] = {rep_val}\n"
 
     #Spiking Behavior
     test1_string = '\n        #Spiking and conditional actions\n'
@@ -205,12 +220,21 @@ def build_ODE(parameters):
             var = update_vars[k]
             var_base = var[:-3]
             var_name = var[:-5]
-            var_prev = var.replace("[t]", "[-2]")
+            var_prev = var.replace("[t]", "[:,-2]")
             var_thresh = f"{var.replace('[t]', '_thresh')}"
-            test1_string += f"        {var_base}_spikes_holder.append(int((({var_base}[-1] >= {var_thresh}) and ({var_prev} < {var_thresh}))))\n"
-            test1_string += f"        if {var_base}_spikes_holder[-1]:\n"       
-            test1_string += f"            {var_name}_tspike[int({var_name}_buffer_index)-1] = helper[t]\n"
-            test1_string += f"            {var_name}_buffer_index = ({var_name}_buffer_index % 5) + 1\n"
+            test1_string += f"        mask = (({var_base}[:,-1] >= {var_thresh}) & ({var_prev} < {var_thresh})).astype(np.int8).tolist()\n"
+            test1_string += f"        {var_base}_spikes_holder.append(mask)\n"
+            test1_string += f"        if np.any(mask):\n"   
+            test1_string += f"            spikers = np.flatnonzero(mask)\n"
+            #test1_string += f"            cols = ({var_name}_buffer_index[spikers].astype(np.int8)-1)\n"
+            #test1_string += f"            print(mask)\n"
+            #test1_string += f"            print(spikers)\n"
+            #test1_string += f"            print({var_name}_buffer_index)\n"
+            test1_string += f"            {var_name}_tspike[spikers, {var_name}_buffer_index[spikers].astype(np.int8)-1] = helper[t]\n"
+            #test1_string += f"            print({var_name}_tspike)\n"
+            #test1_string += f"            print(spikers)\n"             
+            #test1_string += f"            print({var_name}_buffer_index)\n"
+            test1_string += f"            {var_name}_buffer_index[spikers] = ({var_name}_buffer_index[spikers] % 5) + 1\n"
             
 
     #Test 2 (Voltage reset and adaptation) 
@@ -224,16 +248,21 @@ def build_ODE(parameters):
             var_reset = f"{var.replace('[t]', '_reset')}"
             var_adapt = f"{var.replace('V[t]', 'g_ad[t]')}"
             var_inc = f"{var.replace('V[t]', 'g_inc')}"
-            test2_string += f"        {var_base}_test2a = {var_base}[-1] > {var_thresh}\n"
-            test2_string += f"        if {var_base}_test2a:\n"
-            test2_string += f"            {var[:-3]}[-2] = {var[:-3]}[-1] \n"
-            test2_string += f"            {var[:-3]}[-1] = {var_reset} \n"
-            test2_string += f"            {var_adapt[:-3]}[-2] = {var_adapt[:-3]}[-1]\n"
-            test2_string += f"            {var_adapt[:-3]}[-1] = {var_adapt[:-3]}[-1] + {var_inc}\n"
-            test2_string += f"        {var_base}_test2b = np.any(helper[t] <= {var_name}_tspike + {var_name}_t_ref)\n"
-            test2_string += f"        if {var_base}_test2b:\n"
-            test2_string += f"            {var[:-3]}[-2] = {var[:-3]}[-1]\n"
-            test2_string += f"            {var[:-3]}[-1] = {var_reset}\n"
+            test2_string += f"        mask = ({var_base}[:,-1] > {var_thresh})\n"#.astype(np.int8).tolist()\n"
+            #test2_string += f"        {var_base}_test2a = {var_base}[-1] > {var_thresh}\n"
+            test2_string += f"        if np.any(mask):\n"
+            test2_string += f"            spikers = np.flatnonzero(mask) \n"
+            test2_string += f"            {var[:-3]}[spikers,-2] = {var[:-3]}[spikers,-1] \n"
+            test2_string += f"            {var[:-3]}[spikers,-1] = {var_reset} \n"
+            test2_string += f"            {var_adapt[:-3]}[spikers,-2] = {var_adapt[:-3]}[spikers,-1]\n"
+            test2_string += f"            {var_adapt[:-3]}[spikers,-1] = {var_adapt[:-3]}[spikers,-1] + {var_inc}\n"
+            #test2_string += f"        print((helper[t] <= ({var_name}_tspike + {var_name}_t_ref)))\n"
+            test2_string += f"        mask = np.any((helper[t] <= ({var_name}_tspike + {var_name}_t_ref)), axis = 1)\n"#.astype(np.int8).tolist()\n"
+            #test2_string += f"        {var_base}_test2b = np.any(helper[t] <= {var_name}_tspike + {var_name}_t_ref)\n"
+            test2_string += f"        if np.any(mask):\n"
+            test2_string += f"            spikers = np.flatnonzero(mask) \n"
+            test2_string += f"            {var[:-3]}[spikers,-2] = {var[:-3]}[spikers,-1]\n"
+            test2_string += f"            {var[:-3]}[spikers,-1] = {var_reset}\n"
 
     #Test 3 (Update PSC vars) 
     test3_string = '\n            #Update PSC vars\n'
@@ -250,16 +279,18 @@ def build_ODE(parameters):
         var_max = f"{var.replace('delay', 'maxF')}"
         var_fP = f"{var.replace('delay', 'fP')}"
 
-        test3_string += f"        {var_base}_test3 = np.any(helper[t] == {statement_pairs[k][0]} + {statement_pairs[k][1]})\n"  
-        test3_string += f"        if {var_base}_test3:\n"  
-        test3_string += f"            {var_x}[-2] = {var_x}[-1]\n"
-        test3_string += f"            {var_q}[-2] = {var_F}[-1]\n"
-        test3_string += f"            {var_F}[-2] = {var_F}[-1]\n"
-        test3_string += f"            {var_P}[-2] = {var_P}[-1]\n"
-        test3_string += f"            {var_x}[-1] = {var_x}[-1] + {var_q}[-1]\n"
-        test3_string += f"            {var_q}[-1] = {var_F}[-1] * {var_P}[-1]\n"
-        test3_string += f"            {var_F}[-1] = {var_F}[-1] + {var_fF}*({var_max}-{var_F}[-1])\n"
-        test3_string += f"            {var_P}[-1] = {var_P}[-1] * (1 - {var_fP})\n"
+        test3_string += f"        mask = np.any((helper[t] == ({statement_pairs[k][0]} + {statement_pairs[k][1]})),axis = 1)\n"#".astype(np.int8).tolist()\n"  
+        #test3_string += f"        {var_base}_test3 = np.any(helper[t] == {statement_pairs[k][0]} + {statement_pairs[k][1]})\n"  
+        test3_string += f"        if np.any(mask):\n"  
+        test3_string += f"            spikers = np.flatnonzero(mask) \n"
+        test3_string += f"            {var_x}[spikers,-2] = {var_x}[spikers,-1]\n"
+        test3_string += f"            {var_q}[spikers,-2] = {var_F}[spikers,-1]\n"
+        test3_string += f"            {var_F}[spikers,-2] = {var_F}[spikers,-1]\n"
+        test3_string += f"            {var_P}[spikers,-2] = {var_P}[spikers,-1]\n"
+        test3_string += f"            {var_x}[spikers,-1] = {var_x}[spikers,-1] + {var_q}[spikers,-1]\n"
+        test3_string += f"            {var_q}[spikers,-1] = {var_F}[spikers,-1] * {var_P}[spikers,-1]\n"
+        test3_string += f"            {var_F}[spikers,-1] = {var_F}[spikers,-1] + {var_fF}*({var_max}-{var_F}[spikers,-1])\n"
+        test3_string += f"            {var_P}[spikers,-1] = {var_P}[spikers,-1] * (1 - {var_fP})\n"
 
     generated_code = generated_code + ODE_loop_Declaration + ode_string + update_eulers + test1_string + test2_string + test3_string
     
@@ -276,13 +307,17 @@ def build_ODE(parameters):
     #Current issue: This can go to infinity for some reason
 
     grad_string += '\n\n        #Surrogate Spike Related Derivates\n'
+
     for k in range(len(update_vars)):
         if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
             var = update_vars[k]
             var_base = var[:-3]
-            grad_string += f'        dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[-1] - {var_base}_thresh)))**2))/500\n'  #Nominally 500
+            #grad_string += f'        print(\'here2\')\n' 
 
-            grad_string += f'        dspike_d{var_base}_tracker.append({var_base}_thresh)\n'
+            grad_string += f'        dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[:,-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[:,-1] - {var_base}_thresh)))**2))/500\n'  #Nominally 500
+            #Incorrect dims
+            #grad_string += f'        print(\'spikewrtV\')\n'
+            #grad_string += f'        print(dspike_d{var_base})\n'
 
 
             #Instead of normalizing with a constant you could track the derivatives at every time step for each trial and then divide by the maximum (initialized to 1?)
@@ -299,23 +334,33 @@ def build_ODE(parameters):
             pre_cell = name.split('_', -1)[1]
 
             #grad_string += f'            print(helper[t])\n'
-
-            grad_string += f'        dv_d{name} = -(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/15\n' #Nominally 15
-
-            #grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
             
+            grad_string += f'        dv_d{name} = np.squeeze(-(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[:,-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[:,-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/15)\n' #Nominally 15
+            
+            #grad_string += f'            dv_d{name} = -dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau\n'
+            #Incorrect dims
+            #grad_string += f'        print(\'vwrtparam\')\n'
+            #grad_string += f'        print(dv_d{name})\n'
             #if "R2On" in name and "R1On" in name:
 
             
             #grad_string += f'            print(dv_d{name})\n'
+
+            #Make sure you are summing accross the correct dimention
             
-            grad_string += f'        d{post_cell}_{pre_cell}_PSC_dUk = -((dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[-1]+{post_cell}_{pre_cell}_PSC_q[-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2)))/2500\n' #Nominally 2500
+            grad_string += f'        d{post_cell}_{pre_cell}_PSC_dUk = np.squeeze(-((dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[:,-1]+{post_cell}_{pre_cell}_PSC_q[:,-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*np.squeeze(np.sum(((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2)),axis=1)))/2500)\n' #Nominally 2500
+            
+            #Wrong Dims
             #grad_string += f'            d{post_cell}_{pre_cell}_PSC_dUk = -(dt*{post_cell}_{pre_cell}_PSC_scale*2/{post_cell}_{pre_cell}_PSC_tauR)*helper[t]*sum((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2))\n'
-            
+            #grad_string += f'        print(\'pscwrtspike\')\n'
+            #grad_string += f'        print(np.squeeze(np.sum(((({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])*np.exp(-1*(({pre_cell}_tspike+{post_cell}_{pre_cell}_PSC_delay)-helper[t])**2)),axis=1)))\n'
+            #grad_string += f'        print(-(dt*{post_cell}_{pre_cell}_PSC_scale*2*({post_cell}_{pre_cell}_PSC_x[:,-1]+{post_cell}_{pre_cell}_PSC_q[:,-1])/{post_cell}_{pre_cell}_PSC_tauR)*helper[t])\n'
             #grad_string += f'            print(d{post_cell}_{pre_cell}_PSC_dUk)\n'
-            grad_string += f'        dv_d{post_cell}_{pre_cell}_PSC = -(dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/10\n' #Nominally 10
+            grad_string += f'        dv_d{post_cell}_{pre_cell}_PSC = np.squeeze(-(dt*{post_cell}_R*{name}*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[:,-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau)/10)\n' #Nominally 10
             #grad_string += f'            print(dv_d{post_cell}_{pre_cell}_PSC)\n'
-            
+            #Incorrect Dims
+            #grad_string += f'        print(\'vwrtpsc\')\n'
+            #grad_string += f'        print(dv_d{post_cell}_{pre_cell}_PSC)\n'
             #print('cells')
             #print(pre_cell)
             #print(post_cell)
@@ -497,9 +542,13 @@ def build_ODE(parameters):
 
                     cur_divs.append(deriv)
 
+
+
+
             
             #Construct the actual gradient that will be in the script
             grad_string += '        dGSYN' + post_node + '_' + pre_node +' += ' 
+            
             #Check to make sure that each path you are putting in is unique and not a duplicate path (duplicate sub-paths are find)
             for un_divs in np.unique(cur_divs):
                 grad_string += f'{un_divs}+'

@@ -1,8 +1,32 @@
-figure(1);
-subplot(2,1,1)
-plot(param_tracker)
-subplot(2,1,2)
-plot(losses(:,1))
+%figure(1);
+%subplot(2,1,1)
+%plot(param_tracker)
+%subplot(2,1,2)
+%plot(losses(:,1))
 
-figure(2);
-spy(output)
+%figure(2);
+%spy(output)
+
+%Check to see if we are converging on average
+avg_across_all_inits = mean(losses,3);
+
+figure(50);
+subplot(2,1,1)
+plot(avg_across_all_inits(:,1))
+title('L2')
+subplot(2,1,2)
+plot(avg_across_all_inits(:,2))
+title('ISI Score')
+
+sgtitle('Average Convergence across all initializations')
+
+%Look at best output
+[val,idx] = min(losses);
+[val2,idx2] = min(squeeze(val),[],2);
+
+figure;
+
+b_num = 12;
+spy(output(:,:,b_num))
+
+params = param_tracker(300,:,b_num)

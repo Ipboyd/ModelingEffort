@@ -261,23 +261,16 @@ def main(trial_number,ps,scale_factor):
     ROn_X_PSC3_netcon = 1
     ROn_SOnOff_PSC3_netcon = 1
     C_ROn_PSC3_netcon = 1
-    dGSYNR1On_On = 0
-    dGSYNS1OnOff_On = 0
-    dGSYNR1On_S1OnOff = 0
-    dGSYNR1Off_S1OnOff = 0
-    dGSYNR1Off_Off = 0
-    dGSYNS1OnOff_Off = 0
-    dGSYNR2On_R1On = 0
-    dGSYNS2OnOff_R1On = 0
-    dGSYNR2On_S2OnOff = 0
-    dGSYNS2OnOff_R1Off = 0
-    dspike_dR1On_V_tracker = []
-    dspike_dR1Off_V_tracker = []
-    dspike_dS1OnOff_V_tracker = []
-    dspike_dR2On_V_tracker = []
-    dspike_dS2OnOff_V_tracker = []
-    psc_derivative = []
-    voltage_derivative = []
+    dGSYNR1On_On = np.zeros((200))
+    dGSYNS1OnOff_On = np.zeros((200))
+    dGSYNR1On_S1OnOff = np.zeros((200))
+    dGSYNR1Off_S1OnOff = np.zeros((200))
+    dGSYNR1Off_Off = np.zeros((200))
+    dGSYNS1OnOff_Off = np.zeros((200))
+    dGSYNR2On_R1On = np.zeros((200))
+    dGSYNS2OnOff_R1On = np.zeros((200))
+    dGSYNR2On_S2OnOff = np.zeros((200))
+    dGSYNS2OnOff_R1Off = np.zeros((200))
 
     #Fixed Param Declaration
     On_R = 1/On_g_L
@@ -336,144 +329,126 @@ def main(trial_number,ps,scale_factor):
 
     T = len(np.arange(tspan[0],tspan[1]+(dt),dt))
     helper = np.arange(tspan[0],tspan[1]+(dt),dt)
-    grad_On_V = 0
-    grad_Off_V = 0
-    grad_R1On_V = 0
-    grad_R1Off_V = 0
-    grad_S1OnOff_V = 0
-    grad_R2On_V = 0
-    grad_R2Off_V = 0
-    grad_S2OnOff_V = 0
-
-    #Spikes Holders
-    On_V_spikes = []
-    Off_V_spikes = []
-    R1On_V_spikes = []
-    R1Off_V_spikes = []
-    S1OnOff_V_spikes = []
-    R2On_V_spikes = []
-    R2Off_V_spikes = []
-    S2OnOff_V_spikes = []
 
     #State Variable Declaration
-    On_V = [On_E_L, On_E_L]
-    On_g_ad = [0,0]
-    Off_V = [Off_E_L, Off_E_L]
-    Off_g_ad = [0,0]
-    R1On_V = [R1On_E_L, R1On_E_L]
-    R1On_g_ad = [0,0]
-    R1Off_V = [R1Off_E_L, R1Off_E_L]
-    R1Off_g_ad = [0,0]
-    S1OnOff_V = [S1OnOff_E_L, S1OnOff_E_L]
-    S1OnOff_g_ad = [0,0]
-    R2On_V = [R2On_E_L, R2On_E_L]
-    R2On_g_ad = [0,0]
-    R2Off_V = [R2Off_E_L, R2Off_E_L]
-    R2Off_g_ad = [0,0]
-    S2OnOff_V = [S2OnOff_E_L, S2OnOff_E_L]
-    S2OnOff_g_ad = [0,0]
-    R1On_On_PSC_s = [0,0]
-    R1On_On_PSC_x = [0,0]
-    R1On_On_PSC_F = [1,1]
-    R1On_On_PSC_P = [1,1]
-    R1On_On_PSC_q = [1,1]
-    S1OnOff_On_PSC_s = [0,0]
-    S1OnOff_On_PSC_x = [0,0]
-    S1OnOff_On_PSC_F = [1,1]
-    S1OnOff_On_PSC_P = [1,1]
-    S1OnOff_On_PSC_q = [1,1]
-    R1On_S1OnOff_PSC_s = [0,0]
-    R1On_S1OnOff_PSC_x = [0,0]
-    R1On_S1OnOff_PSC_F = [1,1]
-    R1On_S1OnOff_PSC_P = [1,1]
-    R1On_S1OnOff_PSC_q = [1,1]
-    R1Off_S1OnOff_PSC_s = [0,0]
-    R1Off_S1OnOff_PSC_x = [0,0]
-    R1Off_S1OnOff_PSC_F = [1,1]
-    R1Off_S1OnOff_PSC_P = [1,1]
-    R1Off_S1OnOff_PSC_q = [1,1]
-    R1Off_Off_PSC_s = [0,0]
-    R1Off_Off_PSC_x = [0,0]
-    R1Off_Off_PSC_F = [1,1]
-    R1Off_Off_PSC_P = [1,1]
-    R1Off_Off_PSC_q = [1,1]
-    S1OnOff_Off_PSC_s = [0,0]
-    S1OnOff_Off_PSC_x = [0,0]
-    S1OnOff_Off_PSC_F = [1,1]
-    S1OnOff_Off_PSC_P = [1,1]
-    S1OnOff_Off_PSC_q = [1,1]
-    R2On_R1On_PSC_s = [0,0]
-    R2On_R1On_PSC_x = [0,0]
-    R2On_R1On_PSC_F = [1,1]
-    R2On_R1On_PSC_P = [1,1]
-    R2On_R1On_PSC_q = [1,1]
-    S2OnOff_R1On_PSC_s = [0,0]
-    S2OnOff_R1On_PSC_x = [0,0]
-    S2OnOff_R1On_PSC_F = [1,1]
-    S2OnOff_R1On_PSC_P = [1,1]
-    S2OnOff_R1On_PSC_q = [1,1]
-    R2On_S2OnOff_PSC_s = [0,0]
-    R2On_S2OnOff_PSC_x = [0,0]
-    R2On_S2OnOff_PSC_F = [1,1]
-    R2On_S2OnOff_PSC_P = [1,1]
-    R2On_S2OnOff_PSC_q = [1,1]
-    R2Off_S2OnOff_PSC_s = [0,0]
-    R2Off_S2OnOff_PSC_x = [0,0]
-    R2Off_S2OnOff_PSC_F = [1,1]
-    R2Off_S2OnOff_PSC_P = [1,1]
-    R2Off_S2OnOff_PSC_q = [1,1]
-    R2Off_R1Off_PSC_s = [0,0]
-    R2Off_R1Off_PSC_x = [0,0]
-    R2Off_R1Off_PSC_F = [1,1]
-    R2Off_R1Off_PSC_P = [1,1]
-    R2Off_R1Off_PSC_q = [1,1]
-    S2OnOff_R1Off_PSC_s = [0,0]
-    S2OnOff_R1Off_PSC_x = [0,0]
-    S2OnOff_R1Off_PSC_F = [1,1]
-    S2OnOff_R1Off_PSC_P = [1,1]
-    S2OnOff_R1Off_PSC_q = [1,1]
-    R2On_R2On_iNoise_V3_sn = [0, 0]
-    R2On_R2On_iNoise_V3_xn = [0, 0]
+    On_V = np.ones((200,2)) * [On_E_L, On_E_L]
+    On_g_ad = np.ones((200,2)) * [0,0]
+    Off_V = np.ones((200,2)) * [Off_E_L, Off_E_L]
+    Off_g_ad = np.ones((200,2)) * [0,0]
+    R1On_V = np.ones((200,2)) * [R1On_E_L, R1On_E_L]
+    R1On_g_ad = np.ones((200,2)) * [0,0]
+    R1Off_V = np.ones((200,2)) * [R1Off_E_L, R1Off_E_L]
+    R1Off_g_ad = np.ones((200,2)) * [0,0]
+    S1OnOff_V = np.ones((200,2)) * [S1OnOff_E_L, S1OnOff_E_L]
+    S1OnOff_g_ad = np.ones((200,2)) * [0,0]
+    R2On_V = np.ones((200,2)) * [R2On_E_L, R2On_E_L]
+    R2On_g_ad = np.ones((200,2)) * [0,0]
+    R2Off_V = np.ones((200,2)) * [R2Off_E_L, R2Off_E_L]
+    R2Off_g_ad = np.ones((200,2)) * [0,0]
+    S2OnOff_V = np.ones((200,2)) * [S2OnOff_E_L, S2OnOff_E_L]
+    S2OnOff_g_ad = np.ones((200,2)) * [0,0]
+    R1On_On_PSC_s = np.ones((200,2)) * [0,0]
+    R1On_On_PSC_x = np.ones((200,2)) * [0,0]
+    R1On_On_PSC_F = np.ones((200,2)) * [1,1]
+    R1On_On_PSC_P = np.ones((200,2)) * [1,1]
+    R1On_On_PSC_q = np.ones((200,2)) * [1,1]
+    S1OnOff_On_PSC_s = np.ones((200,2)) * [0,0]
+    S1OnOff_On_PSC_x = np.ones((200,2)) * [0,0]
+    S1OnOff_On_PSC_F = np.ones((200,2)) * [1,1]
+    S1OnOff_On_PSC_P = np.ones((200,2)) * [1,1]
+    S1OnOff_On_PSC_q = np.ones((200,2)) * [1,1]
+    R1On_S1OnOff_PSC_s = np.ones((200,2)) * [0,0]
+    R1On_S1OnOff_PSC_x = np.ones((200,2)) * [0,0]
+    R1On_S1OnOff_PSC_F = np.ones((200,2)) * [1,1]
+    R1On_S1OnOff_PSC_P = np.ones((200,2)) * [1,1]
+    R1On_S1OnOff_PSC_q = np.ones((200,2)) * [1,1]
+    R1Off_S1OnOff_PSC_s = np.ones((200,2)) * [0,0]
+    R1Off_S1OnOff_PSC_x = np.ones((200,2)) * [0,0]
+    R1Off_S1OnOff_PSC_F = np.ones((200,2)) * [1,1]
+    R1Off_S1OnOff_PSC_P = np.ones((200,2)) * [1,1]
+    R1Off_S1OnOff_PSC_q = np.ones((200,2)) * [1,1]
+    R1Off_Off_PSC_s = np.ones((200,2)) * [0,0]
+    R1Off_Off_PSC_x = np.ones((200,2)) * [0,0]
+    R1Off_Off_PSC_F = np.ones((200,2)) * [1,1]
+    R1Off_Off_PSC_P = np.ones((200,2)) * [1,1]
+    R1Off_Off_PSC_q = np.ones((200,2)) * [1,1]
+    S1OnOff_Off_PSC_s = np.ones((200,2)) * [0,0]
+    S1OnOff_Off_PSC_x = np.ones((200,2)) * [0,0]
+    S1OnOff_Off_PSC_F = np.ones((200,2)) * [1,1]
+    S1OnOff_Off_PSC_P = np.ones((200,2)) * [1,1]
+    S1OnOff_Off_PSC_q = np.ones((200,2)) * [1,1]
+    R2On_R1On_PSC_s = np.ones((200,2)) * [0,0]
+    R2On_R1On_PSC_x = np.ones((200,2)) * [0,0]
+    R2On_R1On_PSC_F = np.ones((200,2)) * [1,1]
+    R2On_R1On_PSC_P = np.ones((200,2)) * [1,1]
+    R2On_R1On_PSC_q = np.ones((200,2)) * [1,1]
+    S2OnOff_R1On_PSC_s = np.ones((200,2)) * [0,0]
+    S2OnOff_R1On_PSC_x = np.ones((200,2)) * [0,0]
+    S2OnOff_R1On_PSC_F = np.ones((200,2)) * [1,1]
+    S2OnOff_R1On_PSC_P = np.ones((200,2)) * [1,1]
+    S2OnOff_R1On_PSC_q = np.ones((200,2)) * [1,1]
+    R2On_S2OnOff_PSC_s = np.ones((200,2)) * [0,0]
+    R2On_S2OnOff_PSC_x = np.ones((200,2)) * [0,0]
+    R2On_S2OnOff_PSC_F = np.ones((200,2)) * [1,1]
+    R2On_S2OnOff_PSC_P = np.ones((200,2)) * [1,1]
+    R2On_S2OnOff_PSC_q = np.ones((200,2)) * [1,1]
+    R2Off_S2OnOff_PSC_s = np.ones((200,2)) * [0,0]
+    R2Off_S2OnOff_PSC_x = np.ones((200,2)) * [0,0]
+    R2Off_S2OnOff_PSC_F = np.ones((200,2)) * [1,1]
+    R2Off_S2OnOff_PSC_P = np.ones((200,2)) * [1,1]
+    R2Off_S2OnOff_PSC_q = np.ones((200,2)) * [1,1]
+    R2Off_R1Off_PSC_s = np.ones((200,2)) * [0,0]
+    R2Off_R1Off_PSC_x = np.ones((200,2)) * [0,0]
+    R2Off_R1Off_PSC_F = np.ones((200,2)) * [1,1]
+    R2Off_R1Off_PSC_P = np.ones((200,2)) * [1,1]
+    R2Off_R1Off_PSC_q = np.ones((200,2)) * [1,1]
+    S2OnOff_R1Off_PSC_s = np.ones((200,2)) * [0,0]
+    S2OnOff_R1Off_PSC_x = np.ones((200,2)) * [0,0]
+    S2OnOff_R1Off_PSC_F = np.ones((200,2)) * [1,1]
+    S2OnOff_R1Off_PSC_P = np.ones((200,2)) * [1,1]
+    S2OnOff_R1Off_PSC_q = np.ones((200,2)) * [1,1]
+    R2On_R2On_iNoise_V3_sn = np.ones((200,2)) * [0, 0]
+    R2On_R2On_iNoise_V3_xn = np.ones((200,2)) * [0, 0]
 
     #Monitor Declaration
-    On_tspike = -1e32*np.ones((5,On_Npop))
-    On_buffer_index = np.ones((1,On_Npop))
+    On_tspike = -1e32*np.ones((200, 5, On_Npop))
+    On_buffer_index = np.ones((200))
     On_V_spikes_holder = []
-    Off_tspike = -1e32*np.ones((5,Off_Npop))
-    Off_buffer_index = np.ones((1,Off_Npop))
+    Off_tspike = -1e32*np.ones((200, 5, Off_Npop))
+    Off_buffer_index = np.ones((200))
     Off_V_spikes_holder = []
-    R1On_tspike = -1e32*np.ones((5,R1On_Npop))
-    R1On_buffer_index = np.ones((1,R1On_Npop))
+    R1On_tspike = -1e32*np.ones((200, 5, R1On_Npop))
+    R1On_buffer_index = np.ones((200))
     R1On_V_spikes_holder = []
-    R1Off_tspike = -1e32*np.ones((5,R1Off_Npop))
-    R1Off_buffer_index = np.ones((1,R1Off_Npop))
+    R1Off_tspike = -1e32*np.ones((200, 5, R1Off_Npop))
+    R1Off_buffer_index = np.ones((200))
     R1Off_V_spikes_holder = []
-    S1OnOff_tspike = -1e32*np.ones((5,S1OnOff_Npop))
-    S1OnOff_buffer_index = np.ones((1,S1OnOff_Npop))
+    S1OnOff_tspike = -1e32*np.ones((200, 5, S1OnOff_Npop))
+    S1OnOff_buffer_index = np.ones((200))
     S1OnOff_V_spikes_holder = []
-    R2On_tspike = -1e32*np.ones((5,R2On_Npop))
-    R2On_buffer_index = np.ones((1,R2On_Npop))
+    R2On_tspike = -1e32*np.ones((200, 5, R2On_Npop))
+    R2On_buffer_index = np.ones((200))
     R2On_V_spikes_holder = []
-    R2Off_tspike = -1e32*np.ones((5,R2Off_Npop))
-    R2Off_buffer_index = np.ones((1,R2Off_Npop))
+    R2Off_tspike = -1e32*np.ones((200, 5, R2Off_Npop))
+    R2Off_buffer_index = np.ones((200))
     R2Off_V_spikes_holder = []
-    S2OnOff_tspike = -1e32*np.ones((5,S2OnOff_Npop))
-    S2OnOff_buffer_index = np.ones((1,S2OnOff_Npop))
+    S2OnOff_tspike = -1e32*np.ones((200, 5, S2OnOff_Npop))
+    S2OnOff_buffer_index = np.ones((200))
     S2OnOff_V_spikes_holder = []
-    On_On_IC_iIC = np.zeros((T, On_Npop))
-    Off_Off_IC_iIC = np.zeros((T, Off_Npop))
-    R1On_On_PSC_syn = np.zeros((T, R1On_Npop))
-    S1OnOff_On_PSC_syn = np.zeros((T, S1OnOff_Npop))
-    R1On_S1OnOff_PSC_syn = np.zeros((T, R1On_Npop))
-    R1Off_S1OnOff_PSC_syn = np.zeros((T, R1Off_Npop))
-    R1Off_Off_PSC_syn = np.zeros((T, R1Off_Npop))
-    S1OnOff_Off_PSC_syn = np.zeros((T, S1OnOff_Npop))
-    R2On_R1On_PSC_syn = np.zeros((T, R2On_Npop))
-    S2OnOff_R1On_PSC_syn = np.zeros((T, S2OnOff_Npop))
-    R2On_S2OnOff_PSC_syn = np.zeros((T, R2On_Npop))
-    R2Off_S2OnOff_PSC_syn = np.zeros((T, R2Off_Npop))
-    R2Off_R1Off_PSC_syn = np.zeros((T, R2Off_Npop))
-    S2OnOff_R1Off_PSC_syn = np.zeros((T, S2OnOff_Npop))
+    On_On_IC_iIC = 0
+    Off_Off_IC_iIC = 0
+    R1On_On_PSC_syn = 0
+    S1OnOff_On_PSC_syn = 0
+    R1On_S1OnOff_PSC_syn = 0
+    R1Off_S1OnOff_PSC_syn = 0
+    R1Off_Off_PSC_syn = 0
+    S1OnOff_Off_PSC_syn = 0
+    R2On_R1On_PSC_syn = 0
+    S2OnOff_R1On_PSC_syn = 0
+    R2On_S2OnOff_PSC_syn = 0
+    R2Off_S2OnOff_PSC_syn = 0
+    R2Off_R1Off_PSC_syn = 0
+    S2OnOff_R1Off_PSC_syn = 0
 
     #Delcare Inputs
     On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)
@@ -482,528 +457,567 @@ def main(trial_number,ps,scale_factor):
     for t in range(0,T):
 
         #ODEs
-        On_V_k1 = ( (On_E_L-On_V[-1]) - On_R*On_g_ad[-1]*(On_V[-1]-On_E_k) - On_R*((((On_On_IC_g_postIC*(On_On_IC_input[t]*On_On_IC_netcon)*(On_V[-1]-On_On_IC_E_exc))))) + On_R*On_Itonic*On_Imask  ) / On_tau
-        On_g_ad_k1 = -On_g_ad[-1] / On_tau_ad
-        Off_V_k1 = ( (Off_E_L-Off_V[-1]) - Off_R*Off_g_ad[-1]*(Off_V[-1]-Off_E_k) - Off_R*((((Off_Off_IC_g_postIC*(Off_Off_IC_input[t]*Off_Off_IC_netcon)*(Off_V[-1]-Off_Off_IC_E_exc))))) + Off_R*Off_Itonic*Off_Imask  ) / Off_tau
-        Off_g_ad_k1 = -Off_g_ad[-1] / Off_tau_ad
-        R1On_V_k1 = ( (R1On_E_L-R1On_V[-1]) - R1On_R*R1On_g_ad[-1]*(R1On_V[-1]-R1On_E_k) - R1On_R*((((R1On_On_PSC_gSYN*(R1On_On_PSC_s[-1]*R1On_On_PSC_netcon)*(R1On_V[-1]-R1On_On_PSC_ESYN))))+((((R1On_S1OnOff_PSC_gSYN*(R1On_S1OnOff_PSC_s[-1]*R1On_S1OnOff_PSC_netcon)*(R1On_V[-1]-R1On_S1OnOff_PSC_ESYN)))))) + R1On_R*R1On_Itonic*R1On_Imask  ) / R1On_tau
-        R1On_g_ad_k1 = -R1On_g_ad[-1] / R1On_tau_ad
-        R1Off_V_k1 = ( (R1Off_E_L-R1Off_V[-1]) - R1Off_R*R1Off_g_ad[-1]*(R1Off_V[-1]-R1Off_E_k) - R1Off_R*((((R1Off_S1OnOff_PSC_gSYN*(R1Off_S1OnOff_PSC_s[-1]*R1Off_S1OnOff_PSC_netcon)*(R1Off_V[-1]-R1Off_S1OnOff_PSC_ESYN))))+((((R1Off_Off_PSC_gSYN*(R1Off_Off_PSC_s[-1]*R1Off_Off_PSC_netcon)*(R1Off_V[-1]-R1Off_Off_PSC_ESYN)))))) + R1Off_R*R1Off_Itonic*R1Off_Imask  ) / R1Off_tau
-        R1Off_g_ad_k1 = -R1Off_g_ad[-1] / R1Off_tau_ad
-        S1OnOff_V_k1 = ( (S1OnOff_E_L-S1OnOff_V[-1]) - S1OnOff_R*S1OnOff_g_ad[-1]*(S1OnOff_V[-1]-S1OnOff_E_k) - S1OnOff_R*((((S1OnOff_On_PSC_gSYN*(S1OnOff_On_PSC_s[-1]*S1OnOff_On_PSC_netcon)*(S1OnOff_V[-1]-S1OnOff_On_PSC_ESYN))))+((((S1OnOff_Off_PSC_gSYN*(S1OnOff_Off_PSC_s[-1]*S1OnOff_Off_PSC_netcon)*(S1OnOff_V[-1]-S1OnOff_Off_PSC_ESYN)))))) + S1OnOff_R*S1OnOff_Itonic*S1OnOff_Imask  ) / S1OnOff_tau
-        S1OnOff_g_ad_k1 = -S1OnOff_g_ad[-1] / S1OnOff_tau_ad
-        R2On_V_k1 = ( (R2On_E_L-R2On_V[-1]) - R2On_R*R2On_g_ad[-1]*(R2On_V[-1]-R2On_E_k) - R2On_R*((((R2On_R1On_PSC_gSYN*(R2On_R1On_PSC_s[-1]*R2On_R1On_PSC_netcon)*(R2On_V[-1]-R2On_R1On_PSC_ESYN))))+((((R2On_S2OnOff_PSC_gSYN*(R2On_S2OnOff_PSC_s[-1]*R2On_S2OnOff_PSC_netcon)*(R2On_V[-1]-R2On_S2OnOff_PSC_ESYN))))+((((R2On_R2On_iNoise_V3_nSYN*(R2On_R2On_iNoise_V3_sn[-1]*R2On_R2On_iNoise_V3_netcon)*(R2On_V[-1]-R2On_R2On_iNoise_V3_E_exc))))))) + R2On_R*R2On_Itonic*R2On_Imask  ) / R2On_tau
-        R2On_g_ad_k1 = -R2On_g_ad[-1] / R2On_tau_ad
-        R2Off_V_k1 = ( (R2Off_E_L-R2Off_V[-1]) - R2Off_R*R2Off_g_ad[-1]*(R2Off_V[-1]-R2Off_E_k) - R2Off_R*((((R2Off_S2OnOff_PSC_gSYN*(R2Off_S2OnOff_PSC_s[-1]*R2Off_S2OnOff_PSC_netcon)*(R2Off_V[-1]-R2Off_S2OnOff_PSC_ESYN))))+((((R2Off_R1Off_PSC_gSYN*(R2Off_R1Off_PSC_s[-1]*R2Off_R1Off_PSC_netcon)*(R2Off_V[-1]-R2Off_R1Off_PSC_ESYN)))))) + R2Off_R*R2Off_Itonic*R2Off_Imask  ) / R2Off_tau
-        R2Off_g_ad_k1 = -R2Off_g_ad[-1] / R2Off_tau_ad
-        S2OnOff_V_k1 = ( (S2OnOff_E_L-S2OnOff_V[-1]) - S2OnOff_R*S2OnOff_g_ad[-1]*(S2OnOff_V[-1]-S2OnOff_E_k) - S2OnOff_R*((((S2OnOff_R1On_PSC_gSYN*(S2OnOff_R1On_PSC_s[-1]*S2OnOff_R1On_PSC_netcon)*(S2OnOff_V[-1]-S2OnOff_R1On_PSC_ESYN))))+((((S2OnOff_R1Off_PSC_gSYN*(S2OnOff_R1Off_PSC_s[-1]*S2OnOff_R1Off_PSC_netcon)*(S2OnOff_V[-1]-S2OnOff_R1Off_PSC_ESYN)))))) + S2OnOff_R*S2OnOff_Itonic*S2OnOff_Imask  ) / S2OnOff_tau
-        S2OnOff_g_ad_k1 = -S2OnOff_g_ad[-1] / S2OnOff_tau_ad
-        R1On_On_PSC_s_k1 = ( R1On_On_PSC_scale * R1On_On_PSC_x[-1] - R1On_On_PSC_s[-1] )/R1On_On_PSC_tauR
-        R1On_On_PSC_x_k1 = -R1On_On_PSC_x[-1]/R1On_On_PSC_tauD
-        R1On_On_PSC_F_k1 = (1 - R1On_On_PSC_F[-1])/R1On_On_PSC_tauF
-        R1On_On_PSC_P_k1 = (1 - R1On_On_PSC_P[-1])/R1On_On_PSC_tauP
+        On_V_k1 = ( (On_E_L-On_V[:,-1]) - On_R*On_g_ad[:,-1]*(On_V[:,-1]-On_E_k) - On_R*((((On_On_IC_g_postIC*(On_On_IC_input[t]*On_On_IC_netcon)*(On_V[:,-1]-On_On_IC_E_exc))))) + On_R*On_Itonic*On_Imask  ) / On_tau
+        On_g_ad_k1 = -On_g_ad[:,-1] / On_tau_ad
+        Off_V_k1 = ( (Off_E_L-Off_V[:,-1]) - Off_R*Off_g_ad[:,-1]*(Off_V[:,-1]-Off_E_k) - Off_R*((((Off_Off_IC_g_postIC*(Off_Off_IC_input[t]*Off_Off_IC_netcon)*(Off_V[:,-1]-Off_Off_IC_E_exc))))) + Off_R*Off_Itonic*Off_Imask  ) / Off_tau
+        Off_g_ad_k1 = -Off_g_ad[:,-1] / Off_tau_ad
+        R1On_V_k1 = ( (R1On_E_L-R1On_V[:,-1]) - R1On_R*R1On_g_ad[:,-1]*(R1On_V[:,-1]-R1On_E_k) - R1On_R*((((R1On_On_PSC_gSYN*(R1On_On_PSC_s[:,-1]*R1On_On_PSC_netcon)*(R1On_V[:,-1]-R1On_On_PSC_ESYN))))+((((R1On_S1OnOff_PSC_gSYN*(R1On_S1OnOff_PSC_s[:,-1]*R1On_S1OnOff_PSC_netcon)*(R1On_V[:,-1]-R1On_S1OnOff_PSC_ESYN)))))) + R1On_R*R1On_Itonic*R1On_Imask  ) / R1On_tau
+        R1On_g_ad_k1 = -R1On_g_ad[:,-1] / R1On_tau_ad
+        R1Off_V_k1 = ( (R1Off_E_L-R1Off_V[:,-1]) - R1Off_R*R1Off_g_ad[:,-1]*(R1Off_V[:,-1]-R1Off_E_k) - R1Off_R*((((R1Off_S1OnOff_PSC_gSYN*(R1Off_S1OnOff_PSC_s[:,-1]*R1Off_S1OnOff_PSC_netcon)*(R1Off_V[:,-1]-R1Off_S1OnOff_PSC_ESYN))))+((((R1Off_Off_PSC_gSYN*(R1Off_Off_PSC_s[:,-1]*R1Off_Off_PSC_netcon)*(R1Off_V[:,-1]-R1Off_Off_PSC_ESYN)))))) + R1Off_R*R1Off_Itonic*R1Off_Imask  ) / R1Off_tau
+        R1Off_g_ad_k1 = -R1Off_g_ad[:,-1] / R1Off_tau_ad
+        S1OnOff_V_k1 = ( (S1OnOff_E_L-S1OnOff_V[:,-1]) - S1OnOff_R*S1OnOff_g_ad[:,-1]*(S1OnOff_V[:,-1]-S1OnOff_E_k) - S1OnOff_R*((((S1OnOff_On_PSC_gSYN*(S1OnOff_On_PSC_s[:,-1]*S1OnOff_On_PSC_netcon)*(S1OnOff_V[:,-1]-S1OnOff_On_PSC_ESYN))))+((((S1OnOff_Off_PSC_gSYN*(S1OnOff_Off_PSC_s[:,-1]*S1OnOff_Off_PSC_netcon)*(S1OnOff_V[:,-1]-S1OnOff_Off_PSC_ESYN)))))) + S1OnOff_R*S1OnOff_Itonic*S1OnOff_Imask  ) / S1OnOff_tau
+        S1OnOff_g_ad_k1 = -S1OnOff_g_ad[:,-1] / S1OnOff_tau_ad
+        R2On_V_k1 = ( (R2On_E_L-R2On_V[:,-1]) - R2On_R*R2On_g_ad[:,-1]*(R2On_V[:,-1]-R2On_E_k) - R2On_R*((((R2On_R1On_PSC_gSYN*(R2On_R1On_PSC_s[:,-1]*R2On_R1On_PSC_netcon)*(R2On_V[:,-1]-R2On_R1On_PSC_ESYN))))+((((R2On_S2OnOff_PSC_gSYN*(R2On_S2OnOff_PSC_s[:,-1]*R2On_S2OnOff_PSC_netcon)*(R2On_V[:,-1]-R2On_S2OnOff_PSC_ESYN))))+((((R2On_R2On_iNoise_V3_nSYN*(R2On_R2On_iNoise_V3_sn[:,-1]*R2On_R2On_iNoise_V3_netcon)*(R2On_V[:,-1]-R2On_R2On_iNoise_V3_E_exc))))))) + R2On_R*R2On_Itonic*R2On_Imask  ) / R2On_tau
+        R2On_g_ad_k1 = -R2On_g_ad[:,-1] / R2On_tau_ad
+        R2Off_V_k1 = ( (R2Off_E_L-R2Off_V[:,-1]) - R2Off_R*R2Off_g_ad[:,-1]*(R2Off_V[:,-1]-R2Off_E_k) - R2Off_R*((((R2Off_S2OnOff_PSC_gSYN*(R2Off_S2OnOff_PSC_s[:,-1]*R2Off_S2OnOff_PSC_netcon)*(R2Off_V[:,-1]-R2Off_S2OnOff_PSC_ESYN))))+((((R2Off_R1Off_PSC_gSYN*(R2Off_R1Off_PSC_s[:,-1]*R2Off_R1Off_PSC_netcon)*(R2Off_V[:,-1]-R2Off_R1Off_PSC_ESYN)))))) + R2Off_R*R2Off_Itonic*R2Off_Imask  ) / R2Off_tau
+        R2Off_g_ad_k1 = -R2Off_g_ad[:,-1] / R2Off_tau_ad
+        S2OnOff_V_k1 = ( (S2OnOff_E_L-S2OnOff_V[:,-1]) - S2OnOff_R*S2OnOff_g_ad[:,-1]*(S2OnOff_V[:,-1]-S2OnOff_E_k) - S2OnOff_R*((((S2OnOff_R1On_PSC_gSYN*(S2OnOff_R1On_PSC_s[:,-1]*S2OnOff_R1On_PSC_netcon)*(S2OnOff_V[:,-1]-S2OnOff_R1On_PSC_ESYN))))+((((S2OnOff_R1Off_PSC_gSYN*(S2OnOff_R1Off_PSC_s[:,-1]*S2OnOff_R1Off_PSC_netcon)*(S2OnOff_V[:,-1]-S2OnOff_R1Off_PSC_ESYN)))))) + S2OnOff_R*S2OnOff_Itonic*S2OnOff_Imask  ) / S2OnOff_tau
+        S2OnOff_g_ad_k1 = -S2OnOff_g_ad[:,-1] / S2OnOff_tau_ad
+        R1On_On_PSC_s_k1 = ( R1On_On_PSC_scale * R1On_On_PSC_x[:,-1] - R1On_On_PSC_s[:,-1] )/R1On_On_PSC_tauR
+        R1On_On_PSC_x_k1 = -R1On_On_PSC_x[:,-1]/R1On_On_PSC_tauD
+        R1On_On_PSC_F_k1 = (1 - R1On_On_PSC_F[:,-1])/R1On_On_PSC_tauF
+        R1On_On_PSC_P_k1 = (1 - R1On_On_PSC_P[:,-1])/R1On_On_PSC_tauP
         R1On_On_PSC_q_k1 = 0
-        S1OnOff_On_PSC_s_k1 = ( S1OnOff_On_PSC_scale * S1OnOff_On_PSC_x[-1] - S1OnOff_On_PSC_s[-1] )/S1OnOff_On_PSC_tauR
-        S1OnOff_On_PSC_x_k1 = -S1OnOff_On_PSC_x[-1]/S1OnOff_On_PSC_tauD
-        S1OnOff_On_PSC_F_k1 = (1 - S1OnOff_On_PSC_F[-1])/S1OnOff_On_PSC_tauF
-        S1OnOff_On_PSC_P_k1 = (1 - S1OnOff_On_PSC_P[-1])/S1OnOff_On_PSC_tauP
+        S1OnOff_On_PSC_s_k1 = ( S1OnOff_On_PSC_scale * S1OnOff_On_PSC_x[:,-1] - S1OnOff_On_PSC_s[:,-1] )/S1OnOff_On_PSC_tauR
+        S1OnOff_On_PSC_x_k1 = -S1OnOff_On_PSC_x[:,-1]/S1OnOff_On_PSC_tauD
+        S1OnOff_On_PSC_F_k1 = (1 - S1OnOff_On_PSC_F[:,-1])/S1OnOff_On_PSC_tauF
+        S1OnOff_On_PSC_P_k1 = (1 - S1OnOff_On_PSC_P[:,-1])/S1OnOff_On_PSC_tauP
         S1OnOff_On_PSC_q_k1 = 0
-        R1On_S1OnOff_PSC_s_k1 = ( R1On_S1OnOff_PSC_scale * R1On_S1OnOff_PSC_x[-1] - R1On_S1OnOff_PSC_s[-1] )/R1On_S1OnOff_PSC_tauR
-        R1On_S1OnOff_PSC_x_k1 = -R1On_S1OnOff_PSC_x[-1]/R1On_S1OnOff_PSC_tauD
-        R1On_S1OnOff_PSC_F_k1 = (1 - R1On_S1OnOff_PSC_F[-1])/R1On_S1OnOff_PSC_tauF
-        R1On_S1OnOff_PSC_P_k1 = (1 - R1On_S1OnOff_PSC_P[-1])/R1On_S1OnOff_PSC_tauP
+        R1On_S1OnOff_PSC_s_k1 = ( R1On_S1OnOff_PSC_scale * R1On_S1OnOff_PSC_x[:,-1] - R1On_S1OnOff_PSC_s[:,-1] )/R1On_S1OnOff_PSC_tauR
+        R1On_S1OnOff_PSC_x_k1 = -R1On_S1OnOff_PSC_x[:,-1]/R1On_S1OnOff_PSC_tauD
+        R1On_S1OnOff_PSC_F_k1 = (1 - R1On_S1OnOff_PSC_F[:,-1])/R1On_S1OnOff_PSC_tauF
+        R1On_S1OnOff_PSC_P_k1 = (1 - R1On_S1OnOff_PSC_P[:,-1])/R1On_S1OnOff_PSC_tauP
         R1On_S1OnOff_PSC_q_k1 = 0
-        R1Off_S1OnOff_PSC_s_k1 = ( R1Off_S1OnOff_PSC_scale * R1Off_S1OnOff_PSC_x[-1] - R1Off_S1OnOff_PSC_s[-1] )/R1Off_S1OnOff_PSC_tauR
-        R1Off_S1OnOff_PSC_x_k1 = -R1Off_S1OnOff_PSC_x[-1]/R1Off_S1OnOff_PSC_tauD
-        R1Off_S1OnOff_PSC_F_k1 = (1 - R1Off_S1OnOff_PSC_F[-1])/R1Off_S1OnOff_PSC_tauF
-        R1Off_S1OnOff_PSC_P_k1 = (1 - R1Off_S1OnOff_PSC_P[-1])/R1Off_S1OnOff_PSC_tauP
+        R1Off_S1OnOff_PSC_s_k1 = ( R1Off_S1OnOff_PSC_scale * R1Off_S1OnOff_PSC_x[:,-1] - R1Off_S1OnOff_PSC_s[:,-1] )/R1Off_S1OnOff_PSC_tauR
+        R1Off_S1OnOff_PSC_x_k1 = -R1Off_S1OnOff_PSC_x[:,-1]/R1Off_S1OnOff_PSC_tauD
+        R1Off_S1OnOff_PSC_F_k1 = (1 - R1Off_S1OnOff_PSC_F[:,-1])/R1Off_S1OnOff_PSC_tauF
+        R1Off_S1OnOff_PSC_P_k1 = (1 - R1Off_S1OnOff_PSC_P[:,-1])/R1Off_S1OnOff_PSC_tauP
         R1Off_S1OnOff_PSC_q_k1 = 0
-        R1Off_Off_PSC_s_k1 = ( R1Off_Off_PSC_scale * R1Off_Off_PSC_x[-1] - R1Off_Off_PSC_s[-1] )/R1Off_Off_PSC_tauR
-        R1Off_Off_PSC_x_k1 = -R1Off_Off_PSC_x[-1]/R1Off_Off_PSC_tauD
-        R1Off_Off_PSC_F_k1 = (1 - R1Off_Off_PSC_F[-1])/R1Off_Off_PSC_tauF
-        R1Off_Off_PSC_P_k1 = (1 - R1Off_Off_PSC_P[-1])/R1Off_Off_PSC_tauP
+        R1Off_Off_PSC_s_k1 = ( R1Off_Off_PSC_scale * R1Off_Off_PSC_x[:,-1] - R1Off_Off_PSC_s[:,-1] )/R1Off_Off_PSC_tauR
+        R1Off_Off_PSC_x_k1 = -R1Off_Off_PSC_x[:,-1]/R1Off_Off_PSC_tauD
+        R1Off_Off_PSC_F_k1 = (1 - R1Off_Off_PSC_F[:,-1])/R1Off_Off_PSC_tauF
+        R1Off_Off_PSC_P_k1 = (1 - R1Off_Off_PSC_P[:,-1])/R1Off_Off_PSC_tauP
         R1Off_Off_PSC_q_k1 = 0
-        S1OnOff_Off_PSC_s_k1 = ( S1OnOff_Off_PSC_scale * S1OnOff_Off_PSC_x[-1] - S1OnOff_Off_PSC_s[-1] )/S1OnOff_Off_PSC_tauR
-        S1OnOff_Off_PSC_x_k1 = -S1OnOff_Off_PSC_x[-1]/S1OnOff_Off_PSC_tauD
-        S1OnOff_Off_PSC_F_k1 = (1 - S1OnOff_Off_PSC_F[-1])/S1OnOff_Off_PSC_tauF
-        S1OnOff_Off_PSC_P_k1 = (1 - S1OnOff_Off_PSC_P[-1])/S1OnOff_Off_PSC_tauP
+        S1OnOff_Off_PSC_s_k1 = ( S1OnOff_Off_PSC_scale * S1OnOff_Off_PSC_x[:,-1] - S1OnOff_Off_PSC_s[:,-1] )/S1OnOff_Off_PSC_tauR
+        S1OnOff_Off_PSC_x_k1 = -S1OnOff_Off_PSC_x[:,-1]/S1OnOff_Off_PSC_tauD
+        S1OnOff_Off_PSC_F_k1 = (1 - S1OnOff_Off_PSC_F[:,-1])/S1OnOff_Off_PSC_tauF
+        S1OnOff_Off_PSC_P_k1 = (1 - S1OnOff_Off_PSC_P[:,-1])/S1OnOff_Off_PSC_tauP
         S1OnOff_Off_PSC_q_k1 = 0
-        R2On_R1On_PSC_s_k1 = ( R2On_R1On_PSC_scale * R2On_R1On_PSC_x[-1] - R2On_R1On_PSC_s[-1] )/R2On_R1On_PSC_tauR
-        R2On_R1On_PSC_x_k1 = -R2On_R1On_PSC_x[-1]/R2On_R1On_PSC_tauD
-        R2On_R1On_PSC_F_k1 = (1 - R2On_R1On_PSC_F[-1])/R2On_R1On_PSC_tauF
-        R2On_R1On_PSC_P_k1 = (1 - R2On_R1On_PSC_P[-1])/R2On_R1On_PSC_tauP
+        R2On_R1On_PSC_s_k1 = ( R2On_R1On_PSC_scale * R2On_R1On_PSC_x[:,-1] - R2On_R1On_PSC_s[:,-1] )/R2On_R1On_PSC_tauR
+        R2On_R1On_PSC_x_k1 = -R2On_R1On_PSC_x[:,-1]/R2On_R1On_PSC_tauD
+        R2On_R1On_PSC_F_k1 = (1 - R2On_R1On_PSC_F[:,-1])/R2On_R1On_PSC_tauF
+        R2On_R1On_PSC_P_k1 = (1 - R2On_R1On_PSC_P[:,-1])/R2On_R1On_PSC_tauP
         R2On_R1On_PSC_q_k1 = 0
-        S2OnOff_R1On_PSC_s_k1 = ( S2OnOff_R1On_PSC_scale * S2OnOff_R1On_PSC_x[-1] - S2OnOff_R1On_PSC_s[-1] )/S2OnOff_R1On_PSC_tauR
-        S2OnOff_R1On_PSC_x_k1 = -S2OnOff_R1On_PSC_x[-1]/S2OnOff_R1On_PSC_tauD
-        S2OnOff_R1On_PSC_F_k1 = (1 - S2OnOff_R1On_PSC_F[-1])/S2OnOff_R1On_PSC_tauF
-        S2OnOff_R1On_PSC_P_k1 = (1 - S2OnOff_R1On_PSC_P[-1])/S2OnOff_R1On_PSC_tauP
+        S2OnOff_R1On_PSC_s_k1 = ( S2OnOff_R1On_PSC_scale * S2OnOff_R1On_PSC_x[:,-1] - S2OnOff_R1On_PSC_s[:,-1] )/S2OnOff_R1On_PSC_tauR
+        S2OnOff_R1On_PSC_x_k1 = -S2OnOff_R1On_PSC_x[:,-1]/S2OnOff_R1On_PSC_tauD
+        S2OnOff_R1On_PSC_F_k1 = (1 - S2OnOff_R1On_PSC_F[:,-1])/S2OnOff_R1On_PSC_tauF
+        S2OnOff_R1On_PSC_P_k1 = (1 - S2OnOff_R1On_PSC_P[:,-1])/S2OnOff_R1On_PSC_tauP
         S2OnOff_R1On_PSC_q_k1 = 0
-        R2On_S2OnOff_PSC_s_k1 = ( R2On_S2OnOff_PSC_scale * R2On_S2OnOff_PSC_x[-1] - R2On_S2OnOff_PSC_s[-1] )/R2On_S2OnOff_PSC_tauR
-        R2On_S2OnOff_PSC_x_k1 = -R2On_S2OnOff_PSC_x[-1]/R2On_S2OnOff_PSC_tauD
-        R2On_S2OnOff_PSC_F_k1 = (1 - R2On_S2OnOff_PSC_F[-1])/R2On_S2OnOff_PSC_tauF
-        R2On_S2OnOff_PSC_P_k1 = (1 - R2On_S2OnOff_PSC_P[-1])/R2On_S2OnOff_PSC_tauP
+        R2On_S2OnOff_PSC_s_k1 = ( R2On_S2OnOff_PSC_scale * R2On_S2OnOff_PSC_x[:,-1] - R2On_S2OnOff_PSC_s[:,-1] )/R2On_S2OnOff_PSC_tauR
+        R2On_S2OnOff_PSC_x_k1 = -R2On_S2OnOff_PSC_x[:,-1]/R2On_S2OnOff_PSC_tauD
+        R2On_S2OnOff_PSC_F_k1 = (1 - R2On_S2OnOff_PSC_F[:,-1])/R2On_S2OnOff_PSC_tauF
+        R2On_S2OnOff_PSC_P_k1 = (1 - R2On_S2OnOff_PSC_P[:,-1])/R2On_S2OnOff_PSC_tauP
         R2On_S2OnOff_PSC_q_k1 = 0
-        R2Off_S2OnOff_PSC_s_k1 = ( R2Off_S2OnOff_PSC_scale * R2Off_S2OnOff_PSC_x[-1] - R2Off_S2OnOff_PSC_s[-1] )/R2Off_S2OnOff_PSC_tauR
-        R2Off_S2OnOff_PSC_x_k1 = -R2Off_S2OnOff_PSC_x[-1]/R2Off_S2OnOff_PSC_tauD
-        R2Off_S2OnOff_PSC_F_k1 = (1 - R2Off_S2OnOff_PSC_F[-1])/R2Off_S2OnOff_PSC_tauF
-        R2Off_S2OnOff_PSC_P_k1 = (1 - R2Off_S2OnOff_PSC_P[-1])/R2Off_S2OnOff_PSC_tauP
+        R2Off_S2OnOff_PSC_s_k1 = ( R2Off_S2OnOff_PSC_scale * R2Off_S2OnOff_PSC_x[:,-1] - R2Off_S2OnOff_PSC_s[:,-1] )/R2Off_S2OnOff_PSC_tauR
+        R2Off_S2OnOff_PSC_x_k1 = -R2Off_S2OnOff_PSC_x[:,-1]/R2Off_S2OnOff_PSC_tauD
+        R2Off_S2OnOff_PSC_F_k1 = (1 - R2Off_S2OnOff_PSC_F[:,-1])/R2Off_S2OnOff_PSC_tauF
+        R2Off_S2OnOff_PSC_P_k1 = (1 - R2Off_S2OnOff_PSC_P[:,-1])/R2Off_S2OnOff_PSC_tauP
         R2Off_S2OnOff_PSC_q_k1 = 0
-        R2Off_R1Off_PSC_s_k1 = ( R2Off_R1Off_PSC_scale * R2Off_R1Off_PSC_x[-1] - R2Off_R1Off_PSC_s[-1] )/R2Off_R1Off_PSC_tauR
-        R2Off_R1Off_PSC_x_k1 = -R2Off_R1Off_PSC_x[-1]/R2Off_R1Off_PSC_tauD
-        R2Off_R1Off_PSC_F_k1 = (1 - R2Off_R1Off_PSC_F[-1])/R2Off_R1Off_PSC_tauF
-        R2Off_R1Off_PSC_P_k1 = (1 - R2Off_R1Off_PSC_P[-1])/R2Off_R1Off_PSC_tauP
+        R2Off_R1Off_PSC_s_k1 = ( R2Off_R1Off_PSC_scale * R2Off_R1Off_PSC_x[:,-1] - R2Off_R1Off_PSC_s[:,-1] )/R2Off_R1Off_PSC_tauR
+        R2Off_R1Off_PSC_x_k1 = -R2Off_R1Off_PSC_x[:,-1]/R2Off_R1Off_PSC_tauD
+        R2Off_R1Off_PSC_F_k1 = (1 - R2Off_R1Off_PSC_F[:,-1])/R2Off_R1Off_PSC_tauF
+        R2Off_R1Off_PSC_P_k1 = (1 - R2Off_R1Off_PSC_P[:,-1])/R2Off_R1Off_PSC_tauP
         R2Off_R1Off_PSC_q_k1 = 0
-        S2OnOff_R1Off_PSC_s_k1 = ( S2OnOff_R1Off_PSC_scale * S2OnOff_R1Off_PSC_x[-1] - S2OnOff_R1Off_PSC_s[-1] )/S2OnOff_R1Off_PSC_tauR
-        S2OnOff_R1Off_PSC_x_k1 = -S2OnOff_R1Off_PSC_x[-1]/S2OnOff_R1Off_PSC_tauD
-        S2OnOff_R1Off_PSC_F_k1 = (1 - S2OnOff_R1Off_PSC_F[-1])/S2OnOff_R1Off_PSC_tauF
-        S2OnOff_R1Off_PSC_P_k1 = (1 - S2OnOff_R1Off_PSC_P[-1])/S2OnOff_R1Off_PSC_tauP
+        S2OnOff_R1Off_PSC_s_k1 = ( S2OnOff_R1Off_PSC_scale * S2OnOff_R1Off_PSC_x[:,-1] - S2OnOff_R1Off_PSC_s[:,-1] )/S2OnOff_R1Off_PSC_tauR
+        S2OnOff_R1Off_PSC_x_k1 = -S2OnOff_R1Off_PSC_x[:,-1]/S2OnOff_R1Off_PSC_tauD
+        S2OnOff_R1Off_PSC_F_k1 = (1 - S2OnOff_R1Off_PSC_F[:,-1])/S2OnOff_R1Off_PSC_tauF
+        S2OnOff_R1Off_PSC_P_k1 = (1 - S2OnOff_R1Off_PSC_P[:,-1])/S2OnOff_R1Off_PSC_tauP
         S2OnOff_R1Off_PSC_q_k1 = 0
-        R2On_R2On_iNoise_V3_sn_k1 = ( R2On_R2On_iNoise_V3_scale * R2On_R2On_iNoise_V3_xn[-1] - R2On_R2On_iNoise_V3_sn[-1] )/R2On_R2On_iNoise_V3_tauR_N
-        R2On_R2On_iNoise_V3_xn_k1 = -R2On_R2On_iNoise_V3_xn[-1]/R2On_R2On_iNoise_V3_tauD_N + R2On_R2On_iNoise_V3_token[t]/R2On_R2On_iNoise_V3_dt
+        R2On_R2On_iNoise_V3_sn_k1 = ( R2On_R2On_iNoise_V3_scale * R2On_R2On_iNoise_V3_xn[:,-1] - R2On_R2On_iNoise_V3_sn[:,-1] )/R2On_R2On_iNoise_V3_tauR_N
+        R2On_R2On_iNoise_V3_xn_k1 = -R2On_R2On_iNoise_V3_xn[:,-1]/R2On_R2On_iNoise_V3_tauD_N + R2On_R2On_iNoise_V3_token[t]/R2On_R2On_iNoise_V3_dt
 
         #Update Eulers
-        On_V[-2] = On_V[-1]
-        On_V[-1] = On_V[-1]+dt*On_V_k1
-        On_g_ad[-2] = On_g_ad[-1]
-        On_g_ad[-1] = On_g_ad[-1]+dt*On_g_ad_k1
-        Off_V[-2] = Off_V[-1]
-        Off_V[-1] = Off_V[-1]+dt*Off_V_k1
-        Off_g_ad[-2] = Off_g_ad[-1]
-        Off_g_ad[-1] = Off_g_ad[-1]+dt*Off_g_ad_k1
-        R1On_V[-2] = R1On_V[-1]
-        R1On_V[-1] = R1On_V[-1]+dt*R1On_V_k1
-        R1On_g_ad[-2] = R1On_g_ad[-1]
-        R1On_g_ad[-1] = R1On_g_ad[-1]+dt*R1On_g_ad_k1
-        R1Off_V[-2] = R1Off_V[-1]
-        R1Off_V[-1] = R1Off_V[-1]+dt*R1Off_V_k1
-        R1Off_g_ad[-2] = R1Off_g_ad[-1]
-        R1Off_g_ad[-1] = R1Off_g_ad[-1]+dt*R1Off_g_ad_k1
-        S1OnOff_V[-2] = S1OnOff_V[-1]
-        S1OnOff_V[-1] = S1OnOff_V[-1]+dt*S1OnOff_V_k1
-        S1OnOff_g_ad[-2] = S1OnOff_g_ad[-1]
-        S1OnOff_g_ad[-1] = S1OnOff_g_ad[-1]+dt*S1OnOff_g_ad_k1
-        R2On_V[-2] = R2On_V[-1]
-        R2On_V[-1] = R2On_V[-1]+dt*R2On_V_k1
-        R2On_g_ad[-2] = R2On_g_ad[-1]
-        R2On_g_ad[-1] = R2On_g_ad[-1]+dt*R2On_g_ad_k1
-        R2Off_V[-2] = R2Off_V[-1]
-        R2Off_V[-1] = R2Off_V[-1]+dt*R2Off_V_k1
-        R2Off_g_ad[-2] = R2Off_g_ad[-1]
-        R2Off_g_ad[-1] = R2Off_g_ad[-1]+dt*R2Off_g_ad_k1
-        S2OnOff_V[-2] = S2OnOff_V[-1]
-        S2OnOff_V[-1] = S2OnOff_V[-1]+dt*S2OnOff_V_k1
-        S2OnOff_g_ad[-2] = S2OnOff_g_ad[-1]
-        S2OnOff_g_ad[-1] = S2OnOff_g_ad[-1]+dt*S2OnOff_g_ad_k1
-        R1On_On_PSC_s[-2] = R1On_On_PSC_s[-1]
-        R1On_On_PSC_s[-1] = R1On_On_PSC_s[-1]+dt*R1On_On_PSC_s_k1
-        R1On_On_PSC_x[-2] = R1On_On_PSC_x[-1]
-        R1On_On_PSC_x[-1] = R1On_On_PSC_x[-1]+dt*R1On_On_PSC_x_k1
-        R1On_On_PSC_F[-2] = R1On_On_PSC_F[-1]
-        R1On_On_PSC_F[-1] = R1On_On_PSC_F[-1]+dt*R1On_On_PSC_F_k1
-        R1On_On_PSC_P[-2] = R1On_On_PSC_P[-1]
-        R1On_On_PSC_P[-1] = R1On_On_PSC_P[-1]+dt*R1On_On_PSC_P_k1
-        R1On_On_PSC_q[-2] = R1On_On_PSC_q[-1]
-        R1On_On_PSC_q[-1] = R1On_On_PSC_q[-1]+dt*R1On_On_PSC_q_k1
-        S1OnOff_On_PSC_s[-2] = S1OnOff_On_PSC_s[-1]
-        S1OnOff_On_PSC_s[-1] = S1OnOff_On_PSC_s[-1]+dt*S1OnOff_On_PSC_s_k1
-        S1OnOff_On_PSC_x[-2] = S1OnOff_On_PSC_x[-1]
-        S1OnOff_On_PSC_x[-1] = S1OnOff_On_PSC_x[-1]+dt*S1OnOff_On_PSC_x_k1
-        S1OnOff_On_PSC_F[-2] = S1OnOff_On_PSC_F[-1]
-        S1OnOff_On_PSC_F[-1] = S1OnOff_On_PSC_F[-1]+dt*S1OnOff_On_PSC_F_k1
-        S1OnOff_On_PSC_P[-2] = S1OnOff_On_PSC_P[-1]
-        S1OnOff_On_PSC_P[-1] = S1OnOff_On_PSC_P[-1]+dt*S1OnOff_On_PSC_P_k1
-        S1OnOff_On_PSC_q[-2] = S1OnOff_On_PSC_q[-1]
-        S1OnOff_On_PSC_q[-1] = S1OnOff_On_PSC_q[-1]+dt*S1OnOff_On_PSC_q_k1
-        R1On_S1OnOff_PSC_s[-2] = R1On_S1OnOff_PSC_s[-1]
-        R1On_S1OnOff_PSC_s[-1] = R1On_S1OnOff_PSC_s[-1]+dt*R1On_S1OnOff_PSC_s_k1
-        R1On_S1OnOff_PSC_x[-2] = R1On_S1OnOff_PSC_x[-1]
-        R1On_S1OnOff_PSC_x[-1] = R1On_S1OnOff_PSC_x[-1]+dt*R1On_S1OnOff_PSC_x_k1
-        R1On_S1OnOff_PSC_F[-2] = R1On_S1OnOff_PSC_F[-1]
-        R1On_S1OnOff_PSC_F[-1] = R1On_S1OnOff_PSC_F[-1]+dt*R1On_S1OnOff_PSC_F_k1
-        R1On_S1OnOff_PSC_P[-2] = R1On_S1OnOff_PSC_P[-1]
-        R1On_S1OnOff_PSC_P[-1] = R1On_S1OnOff_PSC_P[-1]+dt*R1On_S1OnOff_PSC_P_k1
-        R1On_S1OnOff_PSC_q[-2] = R1On_S1OnOff_PSC_q[-1]
-        R1On_S1OnOff_PSC_q[-1] = R1On_S1OnOff_PSC_q[-1]+dt*R1On_S1OnOff_PSC_q_k1
-        R1Off_S1OnOff_PSC_s[-2] = R1Off_S1OnOff_PSC_s[-1]
-        R1Off_S1OnOff_PSC_s[-1] = R1Off_S1OnOff_PSC_s[-1]+dt*R1Off_S1OnOff_PSC_s_k1
-        R1Off_S1OnOff_PSC_x[-2] = R1Off_S1OnOff_PSC_x[-1]
-        R1Off_S1OnOff_PSC_x[-1] = R1Off_S1OnOff_PSC_x[-1]+dt*R1Off_S1OnOff_PSC_x_k1
-        R1Off_S1OnOff_PSC_F[-2] = R1Off_S1OnOff_PSC_F[-1]
-        R1Off_S1OnOff_PSC_F[-1] = R1Off_S1OnOff_PSC_F[-1]+dt*R1Off_S1OnOff_PSC_F_k1
-        R1Off_S1OnOff_PSC_P[-2] = R1Off_S1OnOff_PSC_P[-1]
-        R1Off_S1OnOff_PSC_P[-1] = R1Off_S1OnOff_PSC_P[-1]+dt*R1Off_S1OnOff_PSC_P_k1
-        R1Off_S1OnOff_PSC_q[-2] = R1Off_S1OnOff_PSC_q[-1]
-        R1Off_S1OnOff_PSC_q[-1] = R1Off_S1OnOff_PSC_q[-1]+dt*R1Off_S1OnOff_PSC_q_k1
-        R1Off_Off_PSC_s[-2] = R1Off_Off_PSC_s[-1]
-        R1Off_Off_PSC_s[-1] = R1Off_Off_PSC_s[-1]+dt*R1Off_Off_PSC_s_k1
-        R1Off_Off_PSC_x[-2] = R1Off_Off_PSC_x[-1]
-        R1Off_Off_PSC_x[-1] = R1Off_Off_PSC_x[-1]+dt*R1Off_Off_PSC_x_k1
-        R1Off_Off_PSC_F[-2] = R1Off_Off_PSC_F[-1]
-        R1Off_Off_PSC_F[-1] = R1Off_Off_PSC_F[-1]+dt*R1Off_Off_PSC_F_k1
-        R1Off_Off_PSC_P[-2] = R1Off_Off_PSC_P[-1]
-        R1Off_Off_PSC_P[-1] = R1Off_Off_PSC_P[-1]+dt*R1Off_Off_PSC_P_k1
-        R1Off_Off_PSC_q[-2] = R1Off_Off_PSC_q[-1]
-        R1Off_Off_PSC_q[-1] = R1Off_Off_PSC_q[-1]+dt*R1Off_Off_PSC_q_k1
-        S1OnOff_Off_PSC_s[-2] = S1OnOff_Off_PSC_s[-1]
-        S1OnOff_Off_PSC_s[-1] = S1OnOff_Off_PSC_s[-1]+dt*S1OnOff_Off_PSC_s_k1
-        S1OnOff_Off_PSC_x[-2] = S1OnOff_Off_PSC_x[-1]
-        S1OnOff_Off_PSC_x[-1] = S1OnOff_Off_PSC_x[-1]+dt*S1OnOff_Off_PSC_x_k1
-        S1OnOff_Off_PSC_F[-2] = S1OnOff_Off_PSC_F[-1]
-        S1OnOff_Off_PSC_F[-1] = S1OnOff_Off_PSC_F[-1]+dt*S1OnOff_Off_PSC_F_k1
-        S1OnOff_Off_PSC_P[-2] = S1OnOff_Off_PSC_P[-1]
-        S1OnOff_Off_PSC_P[-1] = S1OnOff_Off_PSC_P[-1]+dt*S1OnOff_Off_PSC_P_k1
-        S1OnOff_Off_PSC_q[-2] = S1OnOff_Off_PSC_q[-1]
-        S1OnOff_Off_PSC_q[-1] = S1OnOff_Off_PSC_q[-1]+dt*S1OnOff_Off_PSC_q_k1
-        R2On_R1On_PSC_s[-2] = R2On_R1On_PSC_s[-1]
-        R2On_R1On_PSC_s[-1] = R2On_R1On_PSC_s[-1]+dt*R2On_R1On_PSC_s_k1
-        R2On_R1On_PSC_x[-2] = R2On_R1On_PSC_x[-1]
-        R2On_R1On_PSC_x[-1] = R2On_R1On_PSC_x[-1]+dt*R2On_R1On_PSC_x_k1
-        R2On_R1On_PSC_F[-2] = R2On_R1On_PSC_F[-1]
-        R2On_R1On_PSC_F[-1] = R2On_R1On_PSC_F[-1]+dt*R2On_R1On_PSC_F_k1
-        R2On_R1On_PSC_P[-2] = R2On_R1On_PSC_P[-1]
-        R2On_R1On_PSC_P[-1] = R2On_R1On_PSC_P[-1]+dt*R2On_R1On_PSC_P_k1
-        R2On_R1On_PSC_q[-2] = R2On_R1On_PSC_q[-1]
-        R2On_R1On_PSC_q[-1] = R2On_R1On_PSC_q[-1]+dt*R2On_R1On_PSC_q_k1
-        S2OnOff_R1On_PSC_s[-2] = S2OnOff_R1On_PSC_s[-1]
-        S2OnOff_R1On_PSC_s[-1] = S2OnOff_R1On_PSC_s[-1]+dt*S2OnOff_R1On_PSC_s_k1
-        S2OnOff_R1On_PSC_x[-2] = S2OnOff_R1On_PSC_x[-1]
-        S2OnOff_R1On_PSC_x[-1] = S2OnOff_R1On_PSC_x[-1]+dt*S2OnOff_R1On_PSC_x_k1
-        S2OnOff_R1On_PSC_F[-2] = S2OnOff_R1On_PSC_F[-1]
-        S2OnOff_R1On_PSC_F[-1] = S2OnOff_R1On_PSC_F[-1]+dt*S2OnOff_R1On_PSC_F_k1
-        S2OnOff_R1On_PSC_P[-2] = S2OnOff_R1On_PSC_P[-1]
-        S2OnOff_R1On_PSC_P[-1] = S2OnOff_R1On_PSC_P[-1]+dt*S2OnOff_R1On_PSC_P_k1
-        S2OnOff_R1On_PSC_q[-2] = S2OnOff_R1On_PSC_q[-1]
-        S2OnOff_R1On_PSC_q[-1] = S2OnOff_R1On_PSC_q[-1]+dt*S2OnOff_R1On_PSC_q_k1
-        R2On_S2OnOff_PSC_s[-2] = R2On_S2OnOff_PSC_s[-1]
-        R2On_S2OnOff_PSC_s[-1] = R2On_S2OnOff_PSC_s[-1]+dt*R2On_S2OnOff_PSC_s_k1
-        R2On_S2OnOff_PSC_x[-2] = R2On_S2OnOff_PSC_x[-1]
-        R2On_S2OnOff_PSC_x[-1] = R2On_S2OnOff_PSC_x[-1]+dt*R2On_S2OnOff_PSC_x_k1
-        R2On_S2OnOff_PSC_F[-2] = R2On_S2OnOff_PSC_F[-1]
-        R2On_S2OnOff_PSC_F[-1] = R2On_S2OnOff_PSC_F[-1]+dt*R2On_S2OnOff_PSC_F_k1
-        R2On_S2OnOff_PSC_P[-2] = R2On_S2OnOff_PSC_P[-1]
-        R2On_S2OnOff_PSC_P[-1] = R2On_S2OnOff_PSC_P[-1]+dt*R2On_S2OnOff_PSC_P_k1
-        R2On_S2OnOff_PSC_q[-2] = R2On_S2OnOff_PSC_q[-1]
-        R2On_S2OnOff_PSC_q[-1] = R2On_S2OnOff_PSC_q[-1]+dt*R2On_S2OnOff_PSC_q_k1
-        R2Off_S2OnOff_PSC_s[-2] = R2Off_S2OnOff_PSC_s[-1]
-        R2Off_S2OnOff_PSC_s[-1] = R2Off_S2OnOff_PSC_s[-1]+dt*R2Off_S2OnOff_PSC_s_k1
-        R2Off_S2OnOff_PSC_x[-2] = R2Off_S2OnOff_PSC_x[-1]
-        R2Off_S2OnOff_PSC_x[-1] = R2Off_S2OnOff_PSC_x[-1]+dt*R2Off_S2OnOff_PSC_x_k1
-        R2Off_S2OnOff_PSC_F[-2] = R2Off_S2OnOff_PSC_F[-1]
-        R2Off_S2OnOff_PSC_F[-1] = R2Off_S2OnOff_PSC_F[-1]+dt*R2Off_S2OnOff_PSC_F_k1
-        R2Off_S2OnOff_PSC_P[-2] = R2Off_S2OnOff_PSC_P[-1]
-        R2Off_S2OnOff_PSC_P[-1] = R2Off_S2OnOff_PSC_P[-1]+dt*R2Off_S2OnOff_PSC_P_k1
-        R2Off_S2OnOff_PSC_q[-2] = R2Off_S2OnOff_PSC_q[-1]
-        R2Off_S2OnOff_PSC_q[-1] = R2Off_S2OnOff_PSC_q[-1]+dt*R2Off_S2OnOff_PSC_q_k1
-        R2Off_R1Off_PSC_s[-2] = R2Off_R1Off_PSC_s[-1]
-        R2Off_R1Off_PSC_s[-1] = R2Off_R1Off_PSC_s[-1]+dt*R2Off_R1Off_PSC_s_k1
-        R2Off_R1Off_PSC_x[-2] = R2Off_R1Off_PSC_x[-1]
-        R2Off_R1Off_PSC_x[-1] = R2Off_R1Off_PSC_x[-1]+dt*R2Off_R1Off_PSC_x_k1
-        R2Off_R1Off_PSC_F[-2] = R2Off_R1Off_PSC_F[-1]
-        R2Off_R1Off_PSC_F[-1] = R2Off_R1Off_PSC_F[-1]+dt*R2Off_R1Off_PSC_F_k1
-        R2Off_R1Off_PSC_P[-2] = R2Off_R1Off_PSC_P[-1]
-        R2Off_R1Off_PSC_P[-1] = R2Off_R1Off_PSC_P[-1]+dt*R2Off_R1Off_PSC_P_k1
-        R2Off_R1Off_PSC_q[-2] = R2Off_R1Off_PSC_q[-1]
-        R2Off_R1Off_PSC_q[-1] = R2Off_R1Off_PSC_q[-1]+dt*R2Off_R1Off_PSC_q_k1
-        S2OnOff_R1Off_PSC_s[-2] = S2OnOff_R1Off_PSC_s[-1]
-        S2OnOff_R1Off_PSC_s[-1] = S2OnOff_R1Off_PSC_s[-1]+dt*S2OnOff_R1Off_PSC_s_k1
-        S2OnOff_R1Off_PSC_x[-2] = S2OnOff_R1Off_PSC_x[-1]
-        S2OnOff_R1Off_PSC_x[-1] = S2OnOff_R1Off_PSC_x[-1]+dt*S2OnOff_R1Off_PSC_x_k1
-        S2OnOff_R1Off_PSC_F[-2] = S2OnOff_R1Off_PSC_F[-1]
-        S2OnOff_R1Off_PSC_F[-1] = S2OnOff_R1Off_PSC_F[-1]+dt*S2OnOff_R1Off_PSC_F_k1
-        S2OnOff_R1Off_PSC_P[-2] = S2OnOff_R1Off_PSC_P[-1]
-        S2OnOff_R1Off_PSC_P[-1] = S2OnOff_R1Off_PSC_P[-1]+dt*S2OnOff_R1Off_PSC_P_k1
-        S2OnOff_R1Off_PSC_q[-2] = S2OnOff_R1Off_PSC_q[-1]
-        S2OnOff_R1Off_PSC_q[-1] = S2OnOff_R1Off_PSC_q[-1]+dt*S2OnOff_R1Off_PSC_q_k1
-        R2On_R2On_iNoise_V3_sn[-2] = R2On_R2On_iNoise_V3_sn[-1]
-        R2On_R2On_iNoise_V3_sn[-1] = R2On_R2On_iNoise_V3_sn[-1]+dt*R2On_R2On_iNoise_V3_sn_k1
-        R2On_R2On_iNoise_V3_xn[-2] = R2On_R2On_iNoise_V3_xn[-1]
-        R2On_R2On_iNoise_V3_xn[-1] = R2On_R2On_iNoise_V3_xn[-1]+dt*R2On_R2On_iNoise_V3_xn_k1
+        On_V[:,-2] = On_V[:,-1]
+        On_V[:,-1] = On_V[:,-1]+dt*On_V_k1
+        On_g_ad[:,-2] = On_g_ad[:,-1]
+        On_g_ad[:,-1] = On_g_ad[:,-1]+dt*On_g_ad_k1
+        Off_V[:,-2] = Off_V[:,-1]
+        Off_V[:,-1] = Off_V[:,-1]+dt*Off_V_k1
+        Off_g_ad[:,-2] = Off_g_ad[:,-1]
+        Off_g_ad[:,-1] = Off_g_ad[:,-1]+dt*Off_g_ad_k1
+        R1On_V[:,-2] = R1On_V[:,-1]
+        R1On_V[:,-1] = R1On_V[:,-1]+dt*R1On_V_k1
+        R1On_g_ad[:,-2] = R1On_g_ad[:,-1]
+        R1On_g_ad[:,-1] = R1On_g_ad[:,-1]+dt*R1On_g_ad_k1
+        R1Off_V[:,-2] = R1Off_V[:,-1]
+        R1Off_V[:,-1] = R1Off_V[:,-1]+dt*R1Off_V_k1
+        R1Off_g_ad[:,-2] = R1Off_g_ad[:,-1]
+        R1Off_g_ad[:,-1] = R1Off_g_ad[:,-1]+dt*R1Off_g_ad_k1
+        S1OnOff_V[:,-2] = S1OnOff_V[:,-1]
+        S1OnOff_V[:,-1] = S1OnOff_V[:,-1]+dt*S1OnOff_V_k1
+        S1OnOff_g_ad[:,-2] = S1OnOff_g_ad[:,-1]
+        S1OnOff_g_ad[:,-1] = S1OnOff_g_ad[:,-1]+dt*S1OnOff_g_ad_k1
+        R2On_V[:,-2] = R2On_V[:,-1]
+        R2On_V[:,-1] = R2On_V[:,-1]+dt*R2On_V_k1
+        R2On_g_ad[:,-2] = R2On_g_ad[:,-1]
+        R2On_g_ad[:,-1] = R2On_g_ad[:,-1]+dt*R2On_g_ad_k1
+        R2Off_V[:,-2] = R2Off_V[:,-1]
+        R2Off_V[:,-1] = R2Off_V[:,-1]+dt*R2Off_V_k1
+        R2Off_g_ad[:,-2] = R2Off_g_ad[:,-1]
+        R2Off_g_ad[:,-1] = R2Off_g_ad[:,-1]+dt*R2Off_g_ad_k1
+        S2OnOff_V[:,-2] = S2OnOff_V[:,-1]
+        S2OnOff_V[:,-1] = S2OnOff_V[:,-1]+dt*S2OnOff_V_k1
+        S2OnOff_g_ad[:,-2] = S2OnOff_g_ad[:,-1]
+        S2OnOff_g_ad[:,-1] = S2OnOff_g_ad[:,-1]+dt*S2OnOff_g_ad_k1
+        R1On_On_PSC_s[:,-2] = R1On_On_PSC_s[:,-1]
+        R1On_On_PSC_s[:,-1] = R1On_On_PSC_s[:,-1]+dt*R1On_On_PSC_s_k1
+        R1On_On_PSC_x[:,-2] = R1On_On_PSC_x[:,-1]
+        R1On_On_PSC_x[:,-1] = R1On_On_PSC_x[:,-1]+dt*R1On_On_PSC_x_k1
+        R1On_On_PSC_F[:,-2] = R1On_On_PSC_F[:,-1]
+        R1On_On_PSC_F[:,-1] = R1On_On_PSC_F[:,-1]+dt*R1On_On_PSC_F_k1
+        R1On_On_PSC_P[:,-2] = R1On_On_PSC_P[:,-1]
+        R1On_On_PSC_P[:,-1] = R1On_On_PSC_P[:,-1]+dt*R1On_On_PSC_P_k1
+        R1On_On_PSC_q[:,-2] = R1On_On_PSC_q[:,-1]
+        R1On_On_PSC_q[:,-1] = R1On_On_PSC_q[:,-1]+dt*R1On_On_PSC_q_k1
+        S1OnOff_On_PSC_s[:,-2] = S1OnOff_On_PSC_s[:,-1]
+        S1OnOff_On_PSC_s[:,-1] = S1OnOff_On_PSC_s[:,-1]+dt*S1OnOff_On_PSC_s_k1
+        S1OnOff_On_PSC_x[:,-2] = S1OnOff_On_PSC_x[:,-1]
+        S1OnOff_On_PSC_x[:,-1] = S1OnOff_On_PSC_x[:,-1]+dt*S1OnOff_On_PSC_x_k1
+        S1OnOff_On_PSC_F[:,-2] = S1OnOff_On_PSC_F[:,-1]
+        S1OnOff_On_PSC_F[:,-1] = S1OnOff_On_PSC_F[:,-1]+dt*S1OnOff_On_PSC_F_k1
+        S1OnOff_On_PSC_P[:,-2] = S1OnOff_On_PSC_P[:,-1]
+        S1OnOff_On_PSC_P[:,-1] = S1OnOff_On_PSC_P[:,-1]+dt*S1OnOff_On_PSC_P_k1
+        S1OnOff_On_PSC_q[:,-2] = S1OnOff_On_PSC_q[:,-1]
+        S1OnOff_On_PSC_q[:,-1] = S1OnOff_On_PSC_q[:,-1]+dt*S1OnOff_On_PSC_q_k1
+        R1On_S1OnOff_PSC_s[:,-2] = R1On_S1OnOff_PSC_s[:,-1]
+        R1On_S1OnOff_PSC_s[:,-1] = R1On_S1OnOff_PSC_s[:,-1]+dt*R1On_S1OnOff_PSC_s_k1
+        R1On_S1OnOff_PSC_x[:,-2] = R1On_S1OnOff_PSC_x[:,-1]
+        R1On_S1OnOff_PSC_x[:,-1] = R1On_S1OnOff_PSC_x[:,-1]+dt*R1On_S1OnOff_PSC_x_k1
+        R1On_S1OnOff_PSC_F[:,-2] = R1On_S1OnOff_PSC_F[:,-1]
+        R1On_S1OnOff_PSC_F[:,-1] = R1On_S1OnOff_PSC_F[:,-1]+dt*R1On_S1OnOff_PSC_F_k1
+        R1On_S1OnOff_PSC_P[:,-2] = R1On_S1OnOff_PSC_P[:,-1]
+        R1On_S1OnOff_PSC_P[:,-1] = R1On_S1OnOff_PSC_P[:,-1]+dt*R1On_S1OnOff_PSC_P_k1
+        R1On_S1OnOff_PSC_q[:,-2] = R1On_S1OnOff_PSC_q[:,-1]
+        R1On_S1OnOff_PSC_q[:,-1] = R1On_S1OnOff_PSC_q[:,-1]+dt*R1On_S1OnOff_PSC_q_k1
+        R1Off_S1OnOff_PSC_s[:,-2] = R1Off_S1OnOff_PSC_s[:,-1]
+        R1Off_S1OnOff_PSC_s[:,-1] = R1Off_S1OnOff_PSC_s[:,-1]+dt*R1Off_S1OnOff_PSC_s_k1
+        R1Off_S1OnOff_PSC_x[:,-2] = R1Off_S1OnOff_PSC_x[:,-1]
+        R1Off_S1OnOff_PSC_x[:,-1] = R1Off_S1OnOff_PSC_x[:,-1]+dt*R1Off_S1OnOff_PSC_x_k1
+        R1Off_S1OnOff_PSC_F[:,-2] = R1Off_S1OnOff_PSC_F[:,-1]
+        R1Off_S1OnOff_PSC_F[:,-1] = R1Off_S1OnOff_PSC_F[:,-1]+dt*R1Off_S1OnOff_PSC_F_k1
+        R1Off_S1OnOff_PSC_P[:,-2] = R1Off_S1OnOff_PSC_P[:,-1]
+        R1Off_S1OnOff_PSC_P[:,-1] = R1Off_S1OnOff_PSC_P[:,-1]+dt*R1Off_S1OnOff_PSC_P_k1
+        R1Off_S1OnOff_PSC_q[:,-2] = R1Off_S1OnOff_PSC_q[:,-1]
+        R1Off_S1OnOff_PSC_q[:,-1] = R1Off_S1OnOff_PSC_q[:,-1]+dt*R1Off_S1OnOff_PSC_q_k1
+        R1Off_Off_PSC_s[:,-2] = R1Off_Off_PSC_s[:,-1]
+        R1Off_Off_PSC_s[:,-1] = R1Off_Off_PSC_s[:,-1]+dt*R1Off_Off_PSC_s_k1
+        R1Off_Off_PSC_x[:,-2] = R1Off_Off_PSC_x[:,-1]
+        R1Off_Off_PSC_x[:,-1] = R1Off_Off_PSC_x[:,-1]+dt*R1Off_Off_PSC_x_k1
+        R1Off_Off_PSC_F[:,-2] = R1Off_Off_PSC_F[:,-1]
+        R1Off_Off_PSC_F[:,-1] = R1Off_Off_PSC_F[:,-1]+dt*R1Off_Off_PSC_F_k1
+        R1Off_Off_PSC_P[:,-2] = R1Off_Off_PSC_P[:,-1]
+        R1Off_Off_PSC_P[:,-1] = R1Off_Off_PSC_P[:,-1]+dt*R1Off_Off_PSC_P_k1
+        R1Off_Off_PSC_q[:,-2] = R1Off_Off_PSC_q[:,-1]
+        R1Off_Off_PSC_q[:,-1] = R1Off_Off_PSC_q[:,-1]+dt*R1Off_Off_PSC_q_k1
+        S1OnOff_Off_PSC_s[:,-2] = S1OnOff_Off_PSC_s[:,-1]
+        S1OnOff_Off_PSC_s[:,-1] = S1OnOff_Off_PSC_s[:,-1]+dt*S1OnOff_Off_PSC_s_k1
+        S1OnOff_Off_PSC_x[:,-2] = S1OnOff_Off_PSC_x[:,-1]
+        S1OnOff_Off_PSC_x[:,-1] = S1OnOff_Off_PSC_x[:,-1]+dt*S1OnOff_Off_PSC_x_k1
+        S1OnOff_Off_PSC_F[:,-2] = S1OnOff_Off_PSC_F[:,-1]
+        S1OnOff_Off_PSC_F[:,-1] = S1OnOff_Off_PSC_F[:,-1]+dt*S1OnOff_Off_PSC_F_k1
+        S1OnOff_Off_PSC_P[:,-2] = S1OnOff_Off_PSC_P[:,-1]
+        S1OnOff_Off_PSC_P[:,-1] = S1OnOff_Off_PSC_P[:,-1]+dt*S1OnOff_Off_PSC_P_k1
+        S1OnOff_Off_PSC_q[:,-2] = S1OnOff_Off_PSC_q[:,-1]
+        S1OnOff_Off_PSC_q[:,-1] = S1OnOff_Off_PSC_q[:,-1]+dt*S1OnOff_Off_PSC_q_k1
+        R2On_R1On_PSC_s[:,-2] = R2On_R1On_PSC_s[:,-1]
+        R2On_R1On_PSC_s[:,-1] = R2On_R1On_PSC_s[:,-1]+dt*R2On_R1On_PSC_s_k1
+        R2On_R1On_PSC_x[:,-2] = R2On_R1On_PSC_x[:,-1]
+        R2On_R1On_PSC_x[:,-1] = R2On_R1On_PSC_x[:,-1]+dt*R2On_R1On_PSC_x_k1
+        R2On_R1On_PSC_F[:,-2] = R2On_R1On_PSC_F[:,-1]
+        R2On_R1On_PSC_F[:,-1] = R2On_R1On_PSC_F[:,-1]+dt*R2On_R1On_PSC_F_k1
+        R2On_R1On_PSC_P[:,-2] = R2On_R1On_PSC_P[:,-1]
+        R2On_R1On_PSC_P[:,-1] = R2On_R1On_PSC_P[:,-1]+dt*R2On_R1On_PSC_P_k1
+        R2On_R1On_PSC_q[:,-2] = R2On_R1On_PSC_q[:,-1]
+        R2On_R1On_PSC_q[:,-1] = R2On_R1On_PSC_q[:,-1]+dt*R2On_R1On_PSC_q_k1
+        S2OnOff_R1On_PSC_s[:,-2] = S2OnOff_R1On_PSC_s[:,-1]
+        S2OnOff_R1On_PSC_s[:,-1] = S2OnOff_R1On_PSC_s[:,-1]+dt*S2OnOff_R1On_PSC_s_k1
+        S2OnOff_R1On_PSC_x[:,-2] = S2OnOff_R1On_PSC_x[:,-1]
+        S2OnOff_R1On_PSC_x[:,-1] = S2OnOff_R1On_PSC_x[:,-1]+dt*S2OnOff_R1On_PSC_x_k1
+        S2OnOff_R1On_PSC_F[:,-2] = S2OnOff_R1On_PSC_F[:,-1]
+        S2OnOff_R1On_PSC_F[:,-1] = S2OnOff_R1On_PSC_F[:,-1]+dt*S2OnOff_R1On_PSC_F_k1
+        S2OnOff_R1On_PSC_P[:,-2] = S2OnOff_R1On_PSC_P[:,-1]
+        S2OnOff_R1On_PSC_P[:,-1] = S2OnOff_R1On_PSC_P[:,-1]+dt*S2OnOff_R1On_PSC_P_k1
+        S2OnOff_R1On_PSC_q[:,-2] = S2OnOff_R1On_PSC_q[:,-1]
+        S2OnOff_R1On_PSC_q[:,-1] = S2OnOff_R1On_PSC_q[:,-1]+dt*S2OnOff_R1On_PSC_q_k1
+        R2On_S2OnOff_PSC_s[:,-2] = R2On_S2OnOff_PSC_s[:,-1]
+        R2On_S2OnOff_PSC_s[:,-1] = R2On_S2OnOff_PSC_s[:,-1]+dt*R2On_S2OnOff_PSC_s_k1
+        R2On_S2OnOff_PSC_x[:,-2] = R2On_S2OnOff_PSC_x[:,-1]
+        R2On_S2OnOff_PSC_x[:,-1] = R2On_S2OnOff_PSC_x[:,-1]+dt*R2On_S2OnOff_PSC_x_k1
+        R2On_S2OnOff_PSC_F[:,-2] = R2On_S2OnOff_PSC_F[:,-1]
+        R2On_S2OnOff_PSC_F[:,-1] = R2On_S2OnOff_PSC_F[:,-1]+dt*R2On_S2OnOff_PSC_F_k1
+        R2On_S2OnOff_PSC_P[:,-2] = R2On_S2OnOff_PSC_P[:,-1]
+        R2On_S2OnOff_PSC_P[:,-1] = R2On_S2OnOff_PSC_P[:,-1]+dt*R2On_S2OnOff_PSC_P_k1
+        R2On_S2OnOff_PSC_q[:,-2] = R2On_S2OnOff_PSC_q[:,-1]
+        R2On_S2OnOff_PSC_q[:,-1] = R2On_S2OnOff_PSC_q[:,-1]+dt*R2On_S2OnOff_PSC_q_k1
+        R2Off_S2OnOff_PSC_s[:,-2] = R2Off_S2OnOff_PSC_s[:,-1]
+        R2Off_S2OnOff_PSC_s[:,-1] = R2Off_S2OnOff_PSC_s[:,-1]+dt*R2Off_S2OnOff_PSC_s_k1
+        R2Off_S2OnOff_PSC_x[:,-2] = R2Off_S2OnOff_PSC_x[:,-1]
+        R2Off_S2OnOff_PSC_x[:,-1] = R2Off_S2OnOff_PSC_x[:,-1]+dt*R2Off_S2OnOff_PSC_x_k1
+        R2Off_S2OnOff_PSC_F[:,-2] = R2Off_S2OnOff_PSC_F[:,-1]
+        R2Off_S2OnOff_PSC_F[:,-1] = R2Off_S2OnOff_PSC_F[:,-1]+dt*R2Off_S2OnOff_PSC_F_k1
+        R2Off_S2OnOff_PSC_P[:,-2] = R2Off_S2OnOff_PSC_P[:,-1]
+        R2Off_S2OnOff_PSC_P[:,-1] = R2Off_S2OnOff_PSC_P[:,-1]+dt*R2Off_S2OnOff_PSC_P_k1
+        R2Off_S2OnOff_PSC_q[:,-2] = R2Off_S2OnOff_PSC_q[:,-1]
+        R2Off_S2OnOff_PSC_q[:,-1] = R2Off_S2OnOff_PSC_q[:,-1]+dt*R2Off_S2OnOff_PSC_q_k1
+        R2Off_R1Off_PSC_s[:,-2] = R2Off_R1Off_PSC_s[:,-1]
+        R2Off_R1Off_PSC_s[:,-1] = R2Off_R1Off_PSC_s[:,-1]+dt*R2Off_R1Off_PSC_s_k1
+        R2Off_R1Off_PSC_x[:,-2] = R2Off_R1Off_PSC_x[:,-1]
+        R2Off_R1Off_PSC_x[:,-1] = R2Off_R1Off_PSC_x[:,-1]+dt*R2Off_R1Off_PSC_x_k1
+        R2Off_R1Off_PSC_F[:,-2] = R2Off_R1Off_PSC_F[:,-1]
+        R2Off_R1Off_PSC_F[:,-1] = R2Off_R1Off_PSC_F[:,-1]+dt*R2Off_R1Off_PSC_F_k1
+        R2Off_R1Off_PSC_P[:,-2] = R2Off_R1Off_PSC_P[:,-1]
+        R2Off_R1Off_PSC_P[:,-1] = R2Off_R1Off_PSC_P[:,-1]+dt*R2Off_R1Off_PSC_P_k1
+        R2Off_R1Off_PSC_q[:,-2] = R2Off_R1Off_PSC_q[:,-1]
+        R2Off_R1Off_PSC_q[:,-1] = R2Off_R1Off_PSC_q[:,-1]+dt*R2Off_R1Off_PSC_q_k1
+        S2OnOff_R1Off_PSC_s[:,-2] = S2OnOff_R1Off_PSC_s[:,-1]
+        S2OnOff_R1Off_PSC_s[:,-1] = S2OnOff_R1Off_PSC_s[:,-1]+dt*S2OnOff_R1Off_PSC_s_k1
+        S2OnOff_R1Off_PSC_x[:,-2] = S2OnOff_R1Off_PSC_x[:,-1]
+        S2OnOff_R1Off_PSC_x[:,-1] = S2OnOff_R1Off_PSC_x[:,-1]+dt*S2OnOff_R1Off_PSC_x_k1
+        S2OnOff_R1Off_PSC_F[:,-2] = S2OnOff_R1Off_PSC_F[:,-1]
+        S2OnOff_R1Off_PSC_F[:,-1] = S2OnOff_R1Off_PSC_F[:,-1]+dt*S2OnOff_R1Off_PSC_F_k1
+        S2OnOff_R1Off_PSC_P[:,-2] = S2OnOff_R1Off_PSC_P[:,-1]
+        S2OnOff_R1Off_PSC_P[:,-1] = S2OnOff_R1Off_PSC_P[:,-1]+dt*S2OnOff_R1Off_PSC_P_k1
+        S2OnOff_R1Off_PSC_q[:,-2] = S2OnOff_R1Off_PSC_q[:,-1]
+        S2OnOff_R1Off_PSC_q[:,-1] = S2OnOff_R1Off_PSC_q[:,-1]+dt*S2OnOff_R1Off_PSC_q_k1
+        R2On_R2On_iNoise_V3_sn[:,-2] = R2On_R2On_iNoise_V3_sn[:,-1]
+        R2On_R2On_iNoise_V3_sn[:,-1] = R2On_R2On_iNoise_V3_sn[:,-1]+dt*R2On_R2On_iNoise_V3_sn_k1
+        R2On_R2On_iNoise_V3_xn[:,-2] = R2On_R2On_iNoise_V3_xn[:,-1]
+        R2On_R2On_iNoise_V3_xn[:,-1] = R2On_R2On_iNoise_V3_xn[:,-1]+dt*R2On_R2On_iNoise_V3_xn_k1
 
         #Spiking and conditional actions
-        On_V_spikes_holder.append(int(((On_V[-1] >= On_V_thresh) and (On_V[-2] < On_V_thresh))))
-        if On_V_spikes_holder[-1]:
-            On_tspike[int(On_buffer_index)-1] = helper[t]
-            On_buffer_index = (On_buffer_index % 5) + 1
-        Off_V_spikes_holder.append(int(((Off_V[-1] >= Off_V_thresh) and (Off_V[-2] < Off_V_thresh))))
-        if Off_V_spikes_holder[-1]:
-            Off_tspike[int(Off_buffer_index)-1] = helper[t]
-            Off_buffer_index = (Off_buffer_index % 5) + 1
-        R1On_V_spikes_holder.append(int(((R1On_V[-1] >= R1On_V_thresh) and (R1On_V[-2] < R1On_V_thresh))))
-        if R1On_V_spikes_holder[-1]:
-            R1On_tspike[int(R1On_buffer_index)-1] = helper[t]
-            R1On_buffer_index = (R1On_buffer_index % 5) + 1
-        R1Off_V_spikes_holder.append(int(((R1Off_V[-1] >= R1Off_V_thresh) and (R1Off_V[-2] < R1Off_V_thresh))))
-        if R1Off_V_spikes_holder[-1]:
-            R1Off_tspike[int(R1Off_buffer_index)-1] = helper[t]
-            R1Off_buffer_index = (R1Off_buffer_index % 5) + 1
-        S1OnOff_V_spikes_holder.append(int(((S1OnOff_V[-1] >= S1OnOff_V_thresh) and (S1OnOff_V[-2] < S1OnOff_V_thresh))))
-        if S1OnOff_V_spikes_holder[-1]:
-            S1OnOff_tspike[int(S1OnOff_buffer_index)-1] = helper[t]
-            S1OnOff_buffer_index = (S1OnOff_buffer_index % 5) + 1
-        R2On_V_spikes_holder.append(int(((R2On_V[-1] >= R2On_V_thresh) and (R2On_V[-2] < R2On_V_thresh))))
-        if R2On_V_spikes_holder[-1]:
-            R2On_tspike[int(R2On_buffer_index)-1] = helper[t]
-            R2On_buffer_index = (R2On_buffer_index % 5) + 1
-        R2Off_V_spikes_holder.append(int(((R2Off_V[-1] >= R2Off_V_thresh) and (R2Off_V[-2] < R2Off_V_thresh))))
-        if R2Off_V_spikes_holder[-1]:
-            R2Off_tspike[int(R2Off_buffer_index)-1] = helper[t]
-            R2Off_buffer_index = (R2Off_buffer_index % 5) + 1
-        S2OnOff_V_spikes_holder.append(int(((S2OnOff_V[-1] >= S2OnOff_V_thresh) and (S2OnOff_V[-2] < S2OnOff_V_thresh))))
-        if S2OnOff_V_spikes_holder[-1]:
-            S2OnOff_tspike[int(S2OnOff_buffer_index)-1] = helper[t]
-            S2OnOff_buffer_index = (S2OnOff_buffer_index % 5) + 1
+        mask = ((On_V[:,-1] >= On_V_thresh) & (On_V[:,-2] < On_V_thresh)).astype(np.int8).tolist()
+        On_V_spikes_holder.append(mask)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask)
+            On_tspike[spikers, On_buffer_index[spikers].astype(np.int8)-1] = helper[t]
+            On_buffer_index[spikers] = (On_buffer_index[spikers] % 5) + 1
+        mask = ((Off_V[:,-1] >= Off_V_thresh) & (Off_V[:,-2] < Off_V_thresh)).astype(np.int8).tolist()
+        Off_V_spikes_holder.append(mask)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask)
+            Off_tspike[spikers, Off_buffer_index[spikers].astype(np.int8)-1] = helper[t]
+            Off_buffer_index[spikers] = (Off_buffer_index[spikers] % 5) + 1
+        mask = ((R1On_V[:,-1] >= R1On_V_thresh) & (R1On_V[:,-2] < R1On_V_thresh)).astype(np.int8).tolist()
+        R1On_V_spikes_holder.append(mask)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask)
+            R1On_tspike[spikers, R1On_buffer_index[spikers].astype(np.int8)-1] = helper[t]
+            R1On_buffer_index[spikers] = (R1On_buffer_index[spikers] % 5) + 1
+        mask = ((R1Off_V[:,-1] >= R1Off_V_thresh) & (R1Off_V[:,-2] < R1Off_V_thresh)).astype(np.int8).tolist()
+        R1Off_V_spikes_holder.append(mask)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask)
+            R1Off_tspike[spikers, R1Off_buffer_index[spikers].astype(np.int8)-1] = helper[t]
+            R1Off_buffer_index[spikers] = (R1Off_buffer_index[spikers] % 5) + 1
+        mask = ((S1OnOff_V[:,-1] >= S1OnOff_V_thresh) & (S1OnOff_V[:,-2] < S1OnOff_V_thresh)).astype(np.int8).tolist()
+        S1OnOff_V_spikes_holder.append(mask)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask)
+            S1OnOff_tspike[spikers, S1OnOff_buffer_index[spikers].astype(np.int8)-1] = helper[t]
+            S1OnOff_buffer_index[spikers] = (S1OnOff_buffer_index[spikers] % 5) + 1
+        mask = ((R2On_V[:,-1] >= R2On_V_thresh) & (R2On_V[:,-2] < R2On_V_thresh)).astype(np.int8).tolist()
+        R2On_V_spikes_holder.append(mask)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask)
+            R2On_tspike[spikers, R2On_buffer_index[spikers].astype(np.int8)-1] = helper[t]
+            R2On_buffer_index[spikers] = (R2On_buffer_index[spikers] % 5) + 1
+        mask = ((R2Off_V[:,-1] >= R2Off_V_thresh) & (R2Off_V[:,-2] < R2Off_V_thresh)).astype(np.int8).tolist()
+        R2Off_V_spikes_holder.append(mask)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask)
+            R2Off_tspike[spikers, R2Off_buffer_index[spikers].astype(np.int8)-1] = helper[t]
+            R2Off_buffer_index[spikers] = (R2Off_buffer_index[spikers] % 5) + 1
+        mask = ((S2OnOff_V[:,-1] >= S2OnOff_V_thresh) & (S2OnOff_V[:,-2] < S2OnOff_V_thresh)).astype(np.int8).tolist()
+        S2OnOff_V_spikes_holder.append(mask)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask)
+            S2OnOff_tspike[spikers, S2OnOff_buffer_index[spikers].astype(np.int8)-1] = helper[t]
+            S2OnOff_buffer_index[spikers] = (S2OnOff_buffer_index[spikers] % 5) + 1
 
             #Voltage reset and adaptation
-        On_V_test2a = On_V[-1] > On_V_thresh
-        if On_V_test2a:
-            On_V[-2] = On_V[-1] 
-            On_V[-1] = On_V_reset 
-            On_g_ad[-2] = On_g_ad[-1]
-            On_g_ad[-1] = On_g_ad[-1] + On_g_inc
-        On_V_test2b = np.any(helper[t] <= On_tspike + On_t_ref)
-        if On_V_test2b:
-            On_V[-2] = On_V[-1]
-            On_V[-1] = On_V_reset
-        Off_V_test2a = Off_V[-1] > Off_V_thresh
-        if Off_V_test2a:
-            Off_V[-2] = Off_V[-1] 
-            Off_V[-1] = Off_V_reset 
-            Off_g_ad[-2] = Off_g_ad[-1]
-            Off_g_ad[-1] = Off_g_ad[-1] + Off_g_inc
-        Off_V_test2b = np.any(helper[t] <= Off_tspike + Off_t_ref)
-        if Off_V_test2b:
-            Off_V[-2] = Off_V[-1]
-            Off_V[-1] = Off_V_reset
-        R1On_V_test2a = R1On_V[-1] > R1On_V_thresh
-        if R1On_V_test2a:
-            R1On_V[-2] = R1On_V[-1] 
-            R1On_V[-1] = R1On_V_reset 
-            R1On_g_ad[-2] = R1On_g_ad[-1]
-            R1On_g_ad[-1] = R1On_g_ad[-1] + R1On_g_inc
-        R1On_V_test2b = np.any(helper[t] <= R1On_tspike + R1On_t_ref)
-        if R1On_V_test2b:
-            R1On_V[-2] = R1On_V[-1]
-            R1On_V[-1] = R1On_V_reset
-        R1Off_V_test2a = R1Off_V[-1] > R1Off_V_thresh
-        if R1Off_V_test2a:
-            R1Off_V[-2] = R1Off_V[-1] 
-            R1Off_V[-1] = R1Off_V_reset 
-            R1Off_g_ad[-2] = R1Off_g_ad[-1]
-            R1Off_g_ad[-1] = R1Off_g_ad[-1] + R1Off_g_inc
-        R1Off_V_test2b = np.any(helper[t] <= R1Off_tspike + R1Off_t_ref)
-        if R1Off_V_test2b:
-            R1Off_V[-2] = R1Off_V[-1]
-            R1Off_V[-1] = R1Off_V_reset
-        S1OnOff_V_test2a = S1OnOff_V[-1] > S1OnOff_V_thresh
-        if S1OnOff_V_test2a:
-            S1OnOff_V[-2] = S1OnOff_V[-1] 
-            S1OnOff_V[-1] = S1OnOff_V_reset 
-            S1OnOff_g_ad[-2] = S1OnOff_g_ad[-1]
-            S1OnOff_g_ad[-1] = S1OnOff_g_ad[-1] + S1OnOff_g_inc
-        S1OnOff_V_test2b = np.any(helper[t] <= S1OnOff_tspike + S1OnOff_t_ref)
-        if S1OnOff_V_test2b:
-            S1OnOff_V[-2] = S1OnOff_V[-1]
-            S1OnOff_V[-1] = S1OnOff_V_reset
-        R2On_V_test2a = R2On_V[-1] > R2On_V_thresh
-        if R2On_V_test2a:
-            R2On_V[-2] = R2On_V[-1] 
-            R2On_V[-1] = R2On_V_reset 
-            R2On_g_ad[-2] = R2On_g_ad[-1]
-            R2On_g_ad[-1] = R2On_g_ad[-1] + R2On_g_inc
-        R2On_V_test2b = np.any(helper[t] <= R2On_tspike + R2On_t_ref)
-        if R2On_V_test2b:
-            R2On_V[-2] = R2On_V[-1]
-            R2On_V[-1] = R2On_V_reset
-        R2Off_V_test2a = R2Off_V[-1] > R2Off_V_thresh
-        if R2Off_V_test2a:
-            R2Off_V[-2] = R2Off_V[-1] 
-            R2Off_V[-1] = R2Off_V_reset 
-            R2Off_g_ad[-2] = R2Off_g_ad[-1]
-            R2Off_g_ad[-1] = R2Off_g_ad[-1] + R2Off_g_inc
-        R2Off_V_test2b = np.any(helper[t] <= R2Off_tspike + R2Off_t_ref)
-        if R2Off_V_test2b:
-            R2Off_V[-2] = R2Off_V[-1]
-            R2Off_V[-1] = R2Off_V_reset
-        S2OnOff_V_test2a = S2OnOff_V[-1] > S2OnOff_V_thresh
-        if S2OnOff_V_test2a:
-            S2OnOff_V[-2] = S2OnOff_V[-1] 
-            S2OnOff_V[-1] = S2OnOff_V_reset 
-            S2OnOff_g_ad[-2] = S2OnOff_g_ad[-1]
-            S2OnOff_g_ad[-1] = S2OnOff_g_ad[-1] + S2OnOff_g_inc
-        S2OnOff_V_test2b = np.any(helper[t] <= S2OnOff_tspike + S2OnOff_t_ref)
-        if S2OnOff_V_test2b:
-            S2OnOff_V[-2] = S2OnOff_V[-1]
-            S2OnOff_V[-1] = S2OnOff_V_reset
+        mask = (On_V[:,-1] > On_V_thresh)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            On_V[spikers,-2] = On_V[spikers,-1] 
+            On_V[spikers,-1] = On_V_reset 
+            On_g_ad[spikers,-2] = On_g_ad[spikers,-1]
+            On_g_ad[spikers,-1] = On_g_ad[spikers,-1] + On_g_inc
+        mask = np.any((helper[t] <= (On_tspike + On_t_ref)), axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            On_V[spikers,-2] = On_V[spikers,-1]
+            On_V[spikers,-1] = On_V_reset
+        mask = (Off_V[:,-1] > Off_V_thresh)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            Off_V[spikers,-2] = Off_V[spikers,-1] 
+            Off_V[spikers,-1] = Off_V_reset 
+            Off_g_ad[spikers,-2] = Off_g_ad[spikers,-1]
+            Off_g_ad[spikers,-1] = Off_g_ad[spikers,-1] + Off_g_inc
+        mask = np.any((helper[t] <= (Off_tspike + Off_t_ref)), axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            Off_V[spikers,-2] = Off_V[spikers,-1]
+            Off_V[spikers,-1] = Off_V_reset
+        mask = (R1On_V[:,-1] > R1On_V_thresh)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R1On_V[spikers,-2] = R1On_V[spikers,-1] 
+            R1On_V[spikers,-1] = R1On_V_reset 
+            R1On_g_ad[spikers,-2] = R1On_g_ad[spikers,-1]
+            R1On_g_ad[spikers,-1] = R1On_g_ad[spikers,-1] + R1On_g_inc
+        mask = np.any((helper[t] <= (R1On_tspike + R1On_t_ref)), axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R1On_V[spikers,-2] = R1On_V[spikers,-1]
+            R1On_V[spikers,-1] = R1On_V_reset
+        mask = (R1Off_V[:,-1] > R1Off_V_thresh)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R1Off_V[spikers,-2] = R1Off_V[spikers,-1] 
+            R1Off_V[spikers,-1] = R1Off_V_reset 
+            R1Off_g_ad[spikers,-2] = R1Off_g_ad[spikers,-1]
+            R1Off_g_ad[spikers,-1] = R1Off_g_ad[spikers,-1] + R1Off_g_inc
+        mask = np.any((helper[t] <= (R1Off_tspike + R1Off_t_ref)), axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R1Off_V[spikers,-2] = R1Off_V[spikers,-1]
+            R1Off_V[spikers,-1] = R1Off_V_reset
+        mask = (S1OnOff_V[:,-1] > S1OnOff_V_thresh)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            S1OnOff_V[spikers,-2] = S1OnOff_V[spikers,-1] 
+            S1OnOff_V[spikers,-1] = S1OnOff_V_reset 
+            S1OnOff_g_ad[spikers,-2] = S1OnOff_g_ad[spikers,-1]
+            S1OnOff_g_ad[spikers,-1] = S1OnOff_g_ad[spikers,-1] + S1OnOff_g_inc
+        mask = np.any((helper[t] <= (S1OnOff_tspike + S1OnOff_t_ref)), axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            S1OnOff_V[spikers,-2] = S1OnOff_V[spikers,-1]
+            S1OnOff_V[spikers,-1] = S1OnOff_V_reset
+        mask = (R2On_V[:,-1] > R2On_V_thresh)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R2On_V[spikers,-2] = R2On_V[spikers,-1] 
+            R2On_V[spikers,-1] = R2On_V_reset 
+            R2On_g_ad[spikers,-2] = R2On_g_ad[spikers,-1]
+            R2On_g_ad[spikers,-1] = R2On_g_ad[spikers,-1] + R2On_g_inc
+        mask = np.any((helper[t] <= (R2On_tspike + R2On_t_ref)), axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R2On_V[spikers,-2] = R2On_V[spikers,-1]
+            R2On_V[spikers,-1] = R2On_V_reset
+        mask = (R2Off_V[:,-1] > R2Off_V_thresh)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R2Off_V[spikers,-2] = R2Off_V[spikers,-1] 
+            R2Off_V[spikers,-1] = R2Off_V_reset 
+            R2Off_g_ad[spikers,-2] = R2Off_g_ad[spikers,-1]
+            R2Off_g_ad[spikers,-1] = R2Off_g_ad[spikers,-1] + R2Off_g_inc
+        mask = np.any((helper[t] <= (R2Off_tspike + R2Off_t_ref)), axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R2Off_V[spikers,-2] = R2Off_V[spikers,-1]
+            R2Off_V[spikers,-1] = R2Off_V_reset
+        mask = (S2OnOff_V[:,-1] > S2OnOff_V_thresh)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            S2OnOff_V[spikers,-2] = S2OnOff_V[spikers,-1] 
+            S2OnOff_V[spikers,-1] = S2OnOff_V_reset 
+            S2OnOff_g_ad[spikers,-2] = S2OnOff_g_ad[spikers,-1]
+            S2OnOff_g_ad[spikers,-1] = S2OnOff_g_ad[spikers,-1] + S2OnOff_g_inc
+        mask = np.any((helper[t] <= (S2OnOff_tspike + S2OnOff_t_ref)), axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            S2OnOff_V[spikers,-2] = S2OnOff_V[spikers,-1]
+            S2OnOff_V[spikers,-1] = S2OnOff_V_reset
 
             #Update PSC vars
-        S2OnOff_V_test3 = np.any(helper[t] == On_tspike + R1On_On_PSC_delay)
-        if S2OnOff_V_test3:
-            R1On_On_PSC_x[-2] = R1On_On_PSC_x[-1]
-            R1On_On_PSC_q[-2] = R1On_On_PSC_F[-1]
-            R1On_On_PSC_F[-2] = R1On_On_PSC_F[-1]
-            R1On_On_PSC_P[-2] = R1On_On_PSC_P[-1]
-            R1On_On_PSC_x[-1] = R1On_On_PSC_x[-1] + R1On_On_PSC_q[-1]
-            R1On_On_PSC_q[-1] = R1On_On_PSC_F[-1] * R1On_On_PSC_P[-1]
-            R1On_On_PSC_F[-1] = R1On_On_PSC_F[-1] + R1On_On_PSC_fF*(R1On_On_PSC_maxF-R1On_On_PSC_F[-1])
-            R1On_On_PSC_P[-1] = R1On_On_PSC_P[-1] * (1 - R1On_On_PSC_fP)
-        R1On_On_PSC_de_test3 = np.any(helper[t] == On_tspike + S1OnOff_On_PSC_delay)
-        if R1On_On_PSC_de_test3:
-            S1OnOff_On_PSC_x[-2] = S1OnOff_On_PSC_x[-1]
-            S1OnOff_On_PSC_q[-2] = S1OnOff_On_PSC_F[-1]
-            S1OnOff_On_PSC_F[-2] = S1OnOff_On_PSC_F[-1]
-            S1OnOff_On_PSC_P[-2] = S1OnOff_On_PSC_P[-1]
-            S1OnOff_On_PSC_x[-1] = S1OnOff_On_PSC_x[-1] + S1OnOff_On_PSC_q[-1]
-            S1OnOff_On_PSC_q[-1] = S1OnOff_On_PSC_F[-1] * S1OnOff_On_PSC_P[-1]
-            S1OnOff_On_PSC_F[-1] = S1OnOff_On_PSC_F[-1] + S1OnOff_On_PSC_fF*(S1OnOff_On_PSC_maxF-S1OnOff_On_PSC_F[-1])
-            S1OnOff_On_PSC_P[-1] = S1OnOff_On_PSC_P[-1] * (1 - S1OnOff_On_PSC_fP)
-        S1OnOff_On_PSC_de_test3 = np.any(helper[t] == S1OnOff_tspike + R1On_S1OnOff_PSC_delay)
-        if S1OnOff_On_PSC_de_test3:
-            R1On_S1OnOff_PSC_x[-2] = R1On_S1OnOff_PSC_x[-1]
-            R1On_S1OnOff_PSC_q[-2] = R1On_S1OnOff_PSC_F[-1]
-            R1On_S1OnOff_PSC_F[-2] = R1On_S1OnOff_PSC_F[-1]
-            R1On_S1OnOff_PSC_P[-2] = R1On_S1OnOff_PSC_P[-1]
-            R1On_S1OnOff_PSC_x[-1] = R1On_S1OnOff_PSC_x[-1] + R1On_S1OnOff_PSC_q[-1]
-            R1On_S1OnOff_PSC_q[-1] = R1On_S1OnOff_PSC_F[-1] * R1On_S1OnOff_PSC_P[-1]
-            R1On_S1OnOff_PSC_F[-1] = R1On_S1OnOff_PSC_F[-1] + R1On_S1OnOff_PSC_fF*(R1On_S1OnOff_PSC_maxF-R1On_S1OnOff_PSC_F[-1])
-            R1On_S1OnOff_PSC_P[-1] = R1On_S1OnOff_PSC_P[-1] * (1 - R1On_S1OnOff_PSC_fP)
-        R1On_S1OnOff_PSC_de_test3 = np.any(helper[t] == S1OnOff_tspike + R1Off_S1OnOff_PSC_delay)
-        if R1On_S1OnOff_PSC_de_test3:
-            R1Off_S1OnOff_PSC_x[-2] = R1Off_S1OnOff_PSC_x[-1]
-            R1Off_S1OnOff_PSC_q[-2] = R1Off_S1OnOff_PSC_F[-1]
-            R1Off_S1OnOff_PSC_F[-2] = R1Off_S1OnOff_PSC_F[-1]
-            R1Off_S1OnOff_PSC_P[-2] = R1Off_S1OnOff_PSC_P[-1]
-            R1Off_S1OnOff_PSC_x[-1] = R1Off_S1OnOff_PSC_x[-1] + R1Off_S1OnOff_PSC_q[-1]
-            R1Off_S1OnOff_PSC_q[-1] = R1Off_S1OnOff_PSC_F[-1] * R1Off_S1OnOff_PSC_P[-1]
-            R1Off_S1OnOff_PSC_F[-1] = R1Off_S1OnOff_PSC_F[-1] + R1Off_S1OnOff_PSC_fF*(R1Off_S1OnOff_PSC_maxF-R1Off_S1OnOff_PSC_F[-1])
-            R1Off_S1OnOff_PSC_P[-1] = R1Off_S1OnOff_PSC_P[-1] * (1 - R1Off_S1OnOff_PSC_fP)
-        R1Off_S1OnOff_PSC_de_test3 = np.any(helper[t] == Off_tspike + R1Off_Off_PSC_delay)
-        if R1Off_S1OnOff_PSC_de_test3:
-            R1Off_Off_PSC_x[-2] = R1Off_Off_PSC_x[-1]
-            R1Off_Off_PSC_q[-2] = R1Off_Off_PSC_F[-1]
-            R1Off_Off_PSC_F[-2] = R1Off_Off_PSC_F[-1]
-            R1Off_Off_PSC_P[-2] = R1Off_Off_PSC_P[-1]
-            R1Off_Off_PSC_x[-1] = R1Off_Off_PSC_x[-1] + R1Off_Off_PSC_q[-1]
-            R1Off_Off_PSC_q[-1] = R1Off_Off_PSC_F[-1] * R1Off_Off_PSC_P[-1]
-            R1Off_Off_PSC_F[-1] = R1Off_Off_PSC_F[-1] + R1Off_Off_PSC_fF*(R1Off_Off_PSC_maxF-R1Off_Off_PSC_F[-1])
-            R1Off_Off_PSC_P[-1] = R1Off_Off_PSC_P[-1] * (1 - R1Off_Off_PSC_fP)
-        R1Off_Off_PSC_de_test3 = np.any(helper[t] == Off_tspike + S1OnOff_Off_PSC_delay)
-        if R1Off_Off_PSC_de_test3:
-            S1OnOff_Off_PSC_x[-2] = S1OnOff_Off_PSC_x[-1]
-            S1OnOff_Off_PSC_q[-2] = S1OnOff_Off_PSC_F[-1]
-            S1OnOff_Off_PSC_F[-2] = S1OnOff_Off_PSC_F[-1]
-            S1OnOff_Off_PSC_P[-2] = S1OnOff_Off_PSC_P[-1]
-            S1OnOff_Off_PSC_x[-1] = S1OnOff_Off_PSC_x[-1] + S1OnOff_Off_PSC_q[-1]
-            S1OnOff_Off_PSC_q[-1] = S1OnOff_Off_PSC_F[-1] * S1OnOff_Off_PSC_P[-1]
-            S1OnOff_Off_PSC_F[-1] = S1OnOff_Off_PSC_F[-1] + S1OnOff_Off_PSC_fF*(S1OnOff_Off_PSC_maxF-S1OnOff_Off_PSC_F[-1])
-            S1OnOff_Off_PSC_P[-1] = S1OnOff_Off_PSC_P[-1] * (1 - S1OnOff_Off_PSC_fP)
-        S1OnOff_Off_PSC_de_test3 = np.any(helper[t] == R1On_tspike + R2On_R1On_PSC_delay)
-        if S1OnOff_Off_PSC_de_test3:
-            R2On_R1On_PSC_x[-2] = R2On_R1On_PSC_x[-1]
-            R2On_R1On_PSC_q[-2] = R2On_R1On_PSC_F[-1]
-            R2On_R1On_PSC_F[-2] = R2On_R1On_PSC_F[-1]
-            R2On_R1On_PSC_P[-2] = R2On_R1On_PSC_P[-1]
-            R2On_R1On_PSC_x[-1] = R2On_R1On_PSC_x[-1] + R2On_R1On_PSC_q[-1]
-            R2On_R1On_PSC_q[-1] = R2On_R1On_PSC_F[-1] * R2On_R1On_PSC_P[-1]
-            R2On_R1On_PSC_F[-1] = R2On_R1On_PSC_F[-1] + R2On_R1On_PSC_fF*(R2On_R1On_PSC_maxF-R2On_R1On_PSC_F[-1])
-            R2On_R1On_PSC_P[-1] = R2On_R1On_PSC_P[-1] * (1 - R2On_R1On_PSC_fP)
-        R2On_R1On_PSC_de_test3 = np.any(helper[t] == R1On_tspike + S2OnOff_R1On_PSC_delay)
-        if R2On_R1On_PSC_de_test3:
-            S2OnOff_R1On_PSC_x[-2] = S2OnOff_R1On_PSC_x[-1]
-            S2OnOff_R1On_PSC_q[-2] = S2OnOff_R1On_PSC_F[-1]
-            S2OnOff_R1On_PSC_F[-2] = S2OnOff_R1On_PSC_F[-1]
-            S2OnOff_R1On_PSC_P[-2] = S2OnOff_R1On_PSC_P[-1]
-            S2OnOff_R1On_PSC_x[-1] = S2OnOff_R1On_PSC_x[-1] + S2OnOff_R1On_PSC_q[-1]
-            S2OnOff_R1On_PSC_q[-1] = S2OnOff_R1On_PSC_F[-1] * S2OnOff_R1On_PSC_P[-1]
-            S2OnOff_R1On_PSC_F[-1] = S2OnOff_R1On_PSC_F[-1] + S2OnOff_R1On_PSC_fF*(S2OnOff_R1On_PSC_maxF-S2OnOff_R1On_PSC_F[-1])
-            S2OnOff_R1On_PSC_P[-1] = S2OnOff_R1On_PSC_P[-1] * (1 - S2OnOff_R1On_PSC_fP)
-        S2OnOff_R1On_PSC_de_test3 = np.any(helper[t] == S2OnOff_tspike + R2On_S2OnOff_PSC_delay)
-        if S2OnOff_R1On_PSC_de_test3:
-            R2On_S2OnOff_PSC_x[-2] = R2On_S2OnOff_PSC_x[-1]
-            R2On_S2OnOff_PSC_q[-2] = R2On_S2OnOff_PSC_F[-1]
-            R2On_S2OnOff_PSC_F[-2] = R2On_S2OnOff_PSC_F[-1]
-            R2On_S2OnOff_PSC_P[-2] = R2On_S2OnOff_PSC_P[-1]
-            R2On_S2OnOff_PSC_x[-1] = R2On_S2OnOff_PSC_x[-1] + R2On_S2OnOff_PSC_q[-1]
-            R2On_S2OnOff_PSC_q[-1] = R2On_S2OnOff_PSC_F[-1] * R2On_S2OnOff_PSC_P[-1]
-            R2On_S2OnOff_PSC_F[-1] = R2On_S2OnOff_PSC_F[-1] + R2On_S2OnOff_PSC_fF*(R2On_S2OnOff_PSC_maxF-R2On_S2OnOff_PSC_F[-1])
-            R2On_S2OnOff_PSC_P[-1] = R2On_S2OnOff_PSC_P[-1] * (1 - R2On_S2OnOff_PSC_fP)
-        R2On_S2OnOff_PSC_de_test3 = np.any(helper[t] == S2OnOff_tspike + R2Off_S2OnOff_PSC_delay)
-        if R2On_S2OnOff_PSC_de_test3:
-            R2Off_S2OnOff_PSC_x[-2] = R2Off_S2OnOff_PSC_x[-1]
-            R2Off_S2OnOff_PSC_q[-2] = R2Off_S2OnOff_PSC_F[-1]
-            R2Off_S2OnOff_PSC_F[-2] = R2Off_S2OnOff_PSC_F[-1]
-            R2Off_S2OnOff_PSC_P[-2] = R2Off_S2OnOff_PSC_P[-1]
-            R2Off_S2OnOff_PSC_x[-1] = R2Off_S2OnOff_PSC_x[-1] + R2Off_S2OnOff_PSC_q[-1]
-            R2Off_S2OnOff_PSC_q[-1] = R2Off_S2OnOff_PSC_F[-1] * R2Off_S2OnOff_PSC_P[-1]
-            R2Off_S2OnOff_PSC_F[-1] = R2Off_S2OnOff_PSC_F[-1] + R2Off_S2OnOff_PSC_fF*(R2Off_S2OnOff_PSC_maxF-R2Off_S2OnOff_PSC_F[-1])
-            R2Off_S2OnOff_PSC_P[-1] = R2Off_S2OnOff_PSC_P[-1] * (1 - R2Off_S2OnOff_PSC_fP)
-        R2Off_S2OnOff_PSC_de_test3 = np.any(helper[t] == R1Off_tspike + R2Off_R1Off_PSC_delay)
-        if R2Off_S2OnOff_PSC_de_test3:
-            R2Off_R1Off_PSC_x[-2] = R2Off_R1Off_PSC_x[-1]
-            R2Off_R1Off_PSC_q[-2] = R2Off_R1Off_PSC_F[-1]
-            R2Off_R1Off_PSC_F[-2] = R2Off_R1Off_PSC_F[-1]
-            R2Off_R1Off_PSC_P[-2] = R2Off_R1Off_PSC_P[-1]
-            R2Off_R1Off_PSC_x[-1] = R2Off_R1Off_PSC_x[-1] + R2Off_R1Off_PSC_q[-1]
-            R2Off_R1Off_PSC_q[-1] = R2Off_R1Off_PSC_F[-1] * R2Off_R1Off_PSC_P[-1]
-            R2Off_R1Off_PSC_F[-1] = R2Off_R1Off_PSC_F[-1] + R2Off_R1Off_PSC_fF*(R2Off_R1Off_PSC_maxF-R2Off_R1Off_PSC_F[-1])
-            R2Off_R1Off_PSC_P[-1] = R2Off_R1Off_PSC_P[-1] * (1 - R2Off_R1Off_PSC_fP)
-        R2Off_R1Off_PSC_de_test3 = np.any(helper[t] == R1Off_tspike + S2OnOff_R1Off_PSC_delay)
-        if R2Off_R1Off_PSC_de_test3:
-            S2OnOff_R1Off_PSC_x[-2] = S2OnOff_R1Off_PSC_x[-1]
-            S2OnOff_R1Off_PSC_q[-2] = S2OnOff_R1Off_PSC_F[-1]
-            S2OnOff_R1Off_PSC_F[-2] = S2OnOff_R1Off_PSC_F[-1]
-            S2OnOff_R1Off_PSC_P[-2] = S2OnOff_R1Off_PSC_P[-1]
-            S2OnOff_R1Off_PSC_x[-1] = S2OnOff_R1Off_PSC_x[-1] + S2OnOff_R1Off_PSC_q[-1]
-            S2OnOff_R1Off_PSC_q[-1] = S2OnOff_R1Off_PSC_F[-1] * S2OnOff_R1Off_PSC_P[-1]
-            S2OnOff_R1Off_PSC_F[-1] = S2OnOff_R1Off_PSC_F[-1] + S2OnOff_R1Off_PSC_fF*(S2OnOff_R1Off_PSC_maxF-S2OnOff_R1Off_PSC_F[-1])
-            S2OnOff_R1Off_PSC_P[-1] = S2OnOff_R1Off_PSC_P[-1] * (1 - S2OnOff_R1Off_PSC_fP)
+        mask = np.any((helper[t] == (On_tspike + R1On_On_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R1On_On_PSC_x[spikers,-2] = R1On_On_PSC_x[spikers,-1]
+            R1On_On_PSC_q[spikers,-2] = R1On_On_PSC_F[spikers,-1]
+            R1On_On_PSC_F[spikers,-2] = R1On_On_PSC_F[spikers,-1]
+            R1On_On_PSC_P[spikers,-2] = R1On_On_PSC_P[spikers,-1]
+            R1On_On_PSC_x[spikers,-1] = R1On_On_PSC_x[spikers,-1] + R1On_On_PSC_q[spikers,-1]
+            R1On_On_PSC_q[spikers,-1] = R1On_On_PSC_F[spikers,-1] * R1On_On_PSC_P[spikers,-1]
+            R1On_On_PSC_F[spikers,-1] = R1On_On_PSC_F[spikers,-1] + R1On_On_PSC_fF*(R1On_On_PSC_maxF-R1On_On_PSC_F[spikers,-1])
+            R1On_On_PSC_P[spikers,-1] = R1On_On_PSC_P[spikers,-1] * (1 - R1On_On_PSC_fP)
+        mask = np.any((helper[t] == (On_tspike + S1OnOff_On_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            S1OnOff_On_PSC_x[spikers,-2] = S1OnOff_On_PSC_x[spikers,-1]
+            S1OnOff_On_PSC_q[spikers,-2] = S1OnOff_On_PSC_F[spikers,-1]
+            S1OnOff_On_PSC_F[spikers,-2] = S1OnOff_On_PSC_F[spikers,-1]
+            S1OnOff_On_PSC_P[spikers,-2] = S1OnOff_On_PSC_P[spikers,-1]
+            S1OnOff_On_PSC_x[spikers,-1] = S1OnOff_On_PSC_x[spikers,-1] + S1OnOff_On_PSC_q[spikers,-1]
+            S1OnOff_On_PSC_q[spikers,-1] = S1OnOff_On_PSC_F[spikers,-1] * S1OnOff_On_PSC_P[spikers,-1]
+            S1OnOff_On_PSC_F[spikers,-1] = S1OnOff_On_PSC_F[spikers,-1] + S1OnOff_On_PSC_fF*(S1OnOff_On_PSC_maxF-S1OnOff_On_PSC_F[spikers,-1])
+            S1OnOff_On_PSC_P[spikers,-1] = S1OnOff_On_PSC_P[spikers,-1] * (1 - S1OnOff_On_PSC_fP)
+        mask = np.any((helper[t] == (S1OnOff_tspike + R1On_S1OnOff_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R1On_S1OnOff_PSC_x[spikers,-2] = R1On_S1OnOff_PSC_x[spikers,-1]
+            R1On_S1OnOff_PSC_q[spikers,-2] = R1On_S1OnOff_PSC_F[spikers,-1]
+            R1On_S1OnOff_PSC_F[spikers,-2] = R1On_S1OnOff_PSC_F[spikers,-1]
+            R1On_S1OnOff_PSC_P[spikers,-2] = R1On_S1OnOff_PSC_P[spikers,-1]
+            R1On_S1OnOff_PSC_x[spikers,-1] = R1On_S1OnOff_PSC_x[spikers,-1] + R1On_S1OnOff_PSC_q[spikers,-1]
+            R1On_S1OnOff_PSC_q[spikers,-1] = R1On_S1OnOff_PSC_F[spikers,-1] * R1On_S1OnOff_PSC_P[spikers,-1]
+            R1On_S1OnOff_PSC_F[spikers,-1] = R1On_S1OnOff_PSC_F[spikers,-1] + R1On_S1OnOff_PSC_fF*(R1On_S1OnOff_PSC_maxF-R1On_S1OnOff_PSC_F[spikers,-1])
+            R1On_S1OnOff_PSC_P[spikers,-1] = R1On_S1OnOff_PSC_P[spikers,-1] * (1 - R1On_S1OnOff_PSC_fP)
+        mask = np.any((helper[t] == (S1OnOff_tspike + R1Off_S1OnOff_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R1Off_S1OnOff_PSC_x[spikers,-2] = R1Off_S1OnOff_PSC_x[spikers,-1]
+            R1Off_S1OnOff_PSC_q[spikers,-2] = R1Off_S1OnOff_PSC_F[spikers,-1]
+            R1Off_S1OnOff_PSC_F[spikers,-2] = R1Off_S1OnOff_PSC_F[spikers,-1]
+            R1Off_S1OnOff_PSC_P[spikers,-2] = R1Off_S1OnOff_PSC_P[spikers,-1]
+            R1Off_S1OnOff_PSC_x[spikers,-1] = R1Off_S1OnOff_PSC_x[spikers,-1] + R1Off_S1OnOff_PSC_q[spikers,-1]
+            R1Off_S1OnOff_PSC_q[spikers,-1] = R1Off_S1OnOff_PSC_F[spikers,-1] * R1Off_S1OnOff_PSC_P[spikers,-1]
+            R1Off_S1OnOff_PSC_F[spikers,-1] = R1Off_S1OnOff_PSC_F[spikers,-1] + R1Off_S1OnOff_PSC_fF*(R1Off_S1OnOff_PSC_maxF-R1Off_S1OnOff_PSC_F[spikers,-1])
+            R1Off_S1OnOff_PSC_P[spikers,-1] = R1Off_S1OnOff_PSC_P[spikers,-1] * (1 - R1Off_S1OnOff_PSC_fP)
+        mask = np.any((helper[t] == (Off_tspike + R1Off_Off_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R1Off_Off_PSC_x[spikers,-2] = R1Off_Off_PSC_x[spikers,-1]
+            R1Off_Off_PSC_q[spikers,-2] = R1Off_Off_PSC_F[spikers,-1]
+            R1Off_Off_PSC_F[spikers,-2] = R1Off_Off_PSC_F[spikers,-1]
+            R1Off_Off_PSC_P[spikers,-2] = R1Off_Off_PSC_P[spikers,-1]
+            R1Off_Off_PSC_x[spikers,-1] = R1Off_Off_PSC_x[spikers,-1] + R1Off_Off_PSC_q[spikers,-1]
+            R1Off_Off_PSC_q[spikers,-1] = R1Off_Off_PSC_F[spikers,-1] * R1Off_Off_PSC_P[spikers,-1]
+            R1Off_Off_PSC_F[spikers,-1] = R1Off_Off_PSC_F[spikers,-1] + R1Off_Off_PSC_fF*(R1Off_Off_PSC_maxF-R1Off_Off_PSC_F[spikers,-1])
+            R1Off_Off_PSC_P[spikers,-1] = R1Off_Off_PSC_P[spikers,-1] * (1 - R1Off_Off_PSC_fP)
+        mask = np.any((helper[t] == (Off_tspike + S1OnOff_Off_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            S1OnOff_Off_PSC_x[spikers,-2] = S1OnOff_Off_PSC_x[spikers,-1]
+            S1OnOff_Off_PSC_q[spikers,-2] = S1OnOff_Off_PSC_F[spikers,-1]
+            S1OnOff_Off_PSC_F[spikers,-2] = S1OnOff_Off_PSC_F[spikers,-1]
+            S1OnOff_Off_PSC_P[spikers,-2] = S1OnOff_Off_PSC_P[spikers,-1]
+            S1OnOff_Off_PSC_x[spikers,-1] = S1OnOff_Off_PSC_x[spikers,-1] + S1OnOff_Off_PSC_q[spikers,-1]
+            S1OnOff_Off_PSC_q[spikers,-1] = S1OnOff_Off_PSC_F[spikers,-1] * S1OnOff_Off_PSC_P[spikers,-1]
+            S1OnOff_Off_PSC_F[spikers,-1] = S1OnOff_Off_PSC_F[spikers,-1] + S1OnOff_Off_PSC_fF*(S1OnOff_Off_PSC_maxF-S1OnOff_Off_PSC_F[spikers,-1])
+            S1OnOff_Off_PSC_P[spikers,-1] = S1OnOff_Off_PSC_P[spikers,-1] * (1 - S1OnOff_Off_PSC_fP)
+        mask = np.any((helper[t] == (R1On_tspike + R2On_R1On_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R2On_R1On_PSC_x[spikers,-2] = R2On_R1On_PSC_x[spikers,-1]
+            R2On_R1On_PSC_q[spikers,-2] = R2On_R1On_PSC_F[spikers,-1]
+            R2On_R1On_PSC_F[spikers,-2] = R2On_R1On_PSC_F[spikers,-1]
+            R2On_R1On_PSC_P[spikers,-2] = R2On_R1On_PSC_P[spikers,-1]
+            R2On_R1On_PSC_x[spikers,-1] = R2On_R1On_PSC_x[spikers,-1] + R2On_R1On_PSC_q[spikers,-1]
+            R2On_R1On_PSC_q[spikers,-1] = R2On_R1On_PSC_F[spikers,-1] * R2On_R1On_PSC_P[spikers,-1]
+            R2On_R1On_PSC_F[spikers,-1] = R2On_R1On_PSC_F[spikers,-1] + R2On_R1On_PSC_fF*(R2On_R1On_PSC_maxF-R2On_R1On_PSC_F[spikers,-1])
+            R2On_R1On_PSC_P[spikers,-1] = R2On_R1On_PSC_P[spikers,-1] * (1 - R2On_R1On_PSC_fP)
+        mask = np.any((helper[t] == (R1On_tspike + S2OnOff_R1On_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            S2OnOff_R1On_PSC_x[spikers,-2] = S2OnOff_R1On_PSC_x[spikers,-1]
+            S2OnOff_R1On_PSC_q[spikers,-2] = S2OnOff_R1On_PSC_F[spikers,-1]
+            S2OnOff_R1On_PSC_F[spikers,-2] = S2OnOff_R1On_PSC_F[spikers,-1]
+            S2OnOff_R1On_PSC_P[spikers,-2] = S2OnOff_R1On_PSC_P[spikers,-1]
+            S2OnOff_R1On_PSC_x[spikers,-1] = S2OnOff_R1On_PSC_x[spikers,-1] + S2OnOff_R1On_PSC_q[spikers,-1]
+            S2OnOff_R1On_PSC_q[spikers,-1] = S2OnOff_R1On_PSC_F[spikers,-1] * S2OnOff_R1On_PSC_P[spikers,-1]
+            S2OnOff_R1On_PSC_F[spikers,-1] = S2OnOff_R1On_PSC_F[spikers,-1] + S2OnOff_R1On_PSC_fF*(S2OnOff_R1On_PSC_maxF-S2OnOff_R1On_PSC_F[spikers,-1])
+            S2OnOff_R1On_PSC_P[spikers,-1] = S2OnOff_R1On_PSC_P[spikers,-1] * (1 - S2OnOff_R1On_PSC_fP)
+        mask = np.any((helper[t] == (S2OnOff_tspike + R2On_S2OnOff_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R2On_S2OnOff_PSC_x[spikers,-2] = R2On_S2OnOff_PSC_x[spikers,-1]
+            R2On_S2OnOff_PSC_q[spikers,-2] = R2On_S2OnOff_PSC_F[spikers,-1]
+            R2On_S2OnOff_PSC_F[spikers,-2] = R2On_S2OnOff_PSC_F[spikers,-1]
+            R2On_S2OnOff_PSC_P[spikers,-2] = R2On_S2OnOff_PSC_P[spikers,-1]
+            R2On_S2OnOff_PSC_x[spikers,-1] = R2On_S2OnOff_PSC_x[spikers,-1] + R2On_S2OnOff_PSC_q[spikers,-1]
+            R2On_S2OnOff_PSC_q[spikers,-1] = R2On_S2OnOff_PSC_F[spikers,-1] * R2On_S2OnOff_PSC_P[spikers,-1]
+            R2On_S2OnOff_PSC_F[spikers,-1] = R2On_S2OnOff_PSC_F[spikers,-1] + R2On_S2OnOff_PSC_fF*(R2On_S2OnOff_PSC_maxF-R2On_S2OnOff_PSC_F[spikers,-1])
+            R2On_S2OnOff_PSC_P[spikers,-1] = R2On_S2OnOff_PSC_P[spikers,-1] * (1 - R2On_S2OnOff_PSC_fP)
+        mask = np.any((helper[t] == (S2OnOff_tspike + R2Off_S2OnOff_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R2Off_S2OnOff_PSC_x[spikers,-2] = R2Off_S2OnOff_PSC_x[spikers,-1]
+            R2Off_S2OnOff_PSC_q[spikers,-2] = R2Off_S2OnOff_PSC_F[spikers,-1]
+            R2Off_S2OnOff_PSC_F[spikers,-2] = R2Off_S2OnOff_PSC_F[spikers,-1]
+            R2Off_S2OnOff_PSC_P[spikers,-2] = R2Off_S2OnOff_PSC_P[spikers,-1]
+            R2Off_S2OnOff_PSC_x[spikers,-1] = R2Off_S2OnOff_PSC_x[spikers,-1] + R2Off_S2OnOff_PSC_q[spikers,-1]
+            R2Off_S2OnOff_PSC_q[spikers,-1] = R2Off_S2OnOff_PSC_F[spikers,-1] * R2Off_S2OnOff_PSC_P[spikers,-1]
+            R2Off_S2OnOff_PSC_F[spikers,-1] = R2Off_S2OnOff_PSC_F[spikers,-1] + R2Off_S2OnOff_PSC_fF*(R2Off_S2OnOff_PSC_maxF-R2Off_S2OnOff_PSC_F[spikers,-1])
+            R2Off_S2OnOff_PSC_P[spikers,-1] = R2Off_S2OnOff_PSC_P[spikers,-1] * (1 - R2Off_S2OnOff_PSC_fP)
+        mask = np.any((helper[t] == (R1Off_tspike + R2Off_R1Off_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            R2Off_R1Off_PSC_x[spikers,-2] = R2Off_R1Off_PSC_x[spikers,-1]
+            R2Off_R1Off_PSC_q[spikers,-2] = R2Off_R1Off_PSC_F[spikers,-1]
+            R2Off_R1Off_PSC_F[spikers,-2] = R2Off_R1Off_PSC_F[spikers,-1]
+            R2Off_R1Off_PSC_P[spikers,-2] = R2Off_R1Off_PSC_P[spikers,-1]
+            R2Off_R1Off_PSC_x[spikers,-1] = R2Off_R1Off_PSC_x[spikers,-1] + R2Off_R1Off_PSC_q[spikers,-1]
+            R2Off_R1Off_PSC_q[spikers,-1] = R2Off_R1Off_PSC_F[spikers,-1] * R2Off_R1Off_PSC_P[spikers,-1]
+            R2Off_R1Off_PSC_F[spikers,-1] = R2Off_R1Off_PSC_F[spikers,-1] + R2Off_R1Off_PSC_fF*(R2Off_R1Off_PSC_maxF-R2Off_R1Off_PSC_F[spikers,-1])
+            R2Off_R1Off_PSC_P[spikers,-1] = R2Off_R1Off_PSC_P[spikers,-1] * (1 - R2Off_R1Off_PSC_fP)
+        mask = np.any((helper[t] == (R1Off_tspike + S2OnOff_R1Off_PSC_delay)),axis = 1)
+        if np.any(mask):
+            spikers = np.flatnonzero(mask) 
+            S2OnOff_R1Off_PSC_x[spikers,-2] = S2OnOff_R1Off_PSC_x[spikers,-1]
+            S2OnOff_R1Off_PSC_q[spikers,-2] = S2OnOff_R1Off_PSC_F[spikers,-1]
+            S2OnOff_R1Off_PSC_F[spikers,-2] = S2OnOff_R1Off_PSC_F[spikers,-1]
+            S2OnOff_R1Off_PSC_P[spikers,-2] = S2OnOff_R1Off_PSC_P[spikers,-1]
+            S2OnOff_R1Off_PSC_x[spikers,-1] = S2OnOff_R1Off_PSC_x[spikers,-1] + S2OnOff_R1Off_PSC_q[spikers,-1]
+            S2OnOff_R1Off_PSC_q[spikers,-1] = S2OnOff_R1Off_PSC_F[spikers,-1] * S2OnOff_R1Off_PSC_P[spikers,-1]
+            S2OnOff_R1Off_PSC_F[spikers,-1] = S2OnOff_R1Off_PSC_F[spikers,-1] + S2OnOff_R1Off_PSC_fF*(S2OnOff_R1Off_PSC_maxF-S2OnOff_R1Off_PSC_F[spikers,-1])
+            S2OnOff_R1Off_PSC_P[spikers,-1] = S2OnOff_R1Off_PSC_P[spikers,-1] * (1 - S2OnOff_R1Off_PSC_fP)
 
         #Grad Calculations
 
 
         #Surrogate Spike Related Derivates
-        dspike_dR1On_V = (((10*np.exp(-(0.1)*(R1On_V[-1] - R1On_V_thresh)))/(1+np.exp(-(0.1)*(R1On_V[-1] - R1On_V_thresh)))**2))/500
-        dspike_dR1On_V_tracker.append(R1On_V_thresh)
-        dspike_dR1Off_V = (((10*np.exp(-(0.1)*(R1Off_V[-1] - R1Off_V_thresh)))/(1+np.exp(-(0.1)*(R1Off_V[-1] - R1Off_V_thresh)))**2))/500
-        dspike_dR1Off_V_tracker.append(R1Off_V_thresh)
-        dspike_dS1OnOff_V = (((10*np.exp(-(0.1)*(S1OnOff_V[-1] - S1OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S1OnOff_V[-1] - S1OnOff_V_thresh)))**2))/500
-        dspike_dS1OnOff_V_tracker.append(S1OnOff_V_thresh)
-        dspike_dR2On_V = (((10*np.exp(-(0.1)*(R2On_V[-1] - R2On_V_thresh)))/(1+np.exp(-(0.1)*(R2On_V[-1] - R2On_V_thresh)))**2))/500
-        dspike_dR2On_V_tracker.append(R2On_V_thresh)
-        dspike_dS2OnOff_V = (((10*np.exp(-(0.1)*(S2OnOff_V[-1] - S2OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S2OnOff_V[-1] - S2OnOff_V_thresh)))**2))/500
-        dspike_dS2OnOff_V_tracker.append(S2OnOff_V_thresh)
+        dspike_dR1On_V = (((10*np.exp(-(0.1)*(R1On_V[:,-1] - R1On_V_thresh)))/(1+np.exp(-(0.1)*(R1On_V[:,-1] - R1On_V_thresh)))**2))/500
+        dspike_dR1Off_V = (((10*np.exp(-(0.1)*(R1Off_V[:,-1] - R1Off_V_thresh)))/(1+np.exp(-(0.1)*(R1Off_V[:,-1] - R1Off_V_thresh)))**2))/500
+        dspike_dS1OnOff_V = (((10*np.exp(-(0.1)*(S1OnOff_V[:,-1] - S1OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S1OnOff_V[:,-1] - S1OnOff_V_thresh)))**2))/500
+        dspike_dR2On_V = (((10*np.exp(-(0.1)*(R2On_V[:,-1] - R2On_V_thresh)))/(1+np.exp(-(0.1)*(R2On_V[:,-1] - R2On_V_thresh)))**2))/500
+        dspike_dS2OnOff_V = (((10*np.exp(-(0.1)*(S2OnOff_V[:,-1] - S2OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S2OnOff_V[:,-1] - S2OnOff_V_thresh)))**2))/500
 
 
         #PSC & Parameter Related Derivates
-        dv_dR1On_On_PSC_gSYN = -(dt*R1On_R*R1On_On_PSC_s[-1]*R1On_On_PSC_netcon*(R1On_V[-1]-R1On_On_PSC_ESYN)/R1On_tau)/15
-        dR1On_On_PSC_dUk = -((dt*R1On_On_PSC_scale*2*(R1On_On_PSC_x[-1]+R1On_On_PSC_q[-1])/R1On_On_PSC_tauR)*helper[t]*sum(((On_tspike+R1On_On_PSC_delay)-helper[t])*np.exp(-1*((On_tspike+R1On_On_PSC_delay)-helper[t])**2)))/2500
-        dv_dR1On_On_PSC = -(dt*R1On_R*R1On_On_PSC_gSYN*R1On_On_PSC_netcon*(R1On_V[-1]-R1On_On_PSC_ESYN)/R1On_tau)/10
-        dv_dS1OnOff_On_PSC_gSYN = -(dt*S1OnOff_R*S1OnOff_On_PSC_s[-1]*S1OnOff_On_PSC_netcon*(S1OnOff_V[-1]-S1OnOff_On_PSC_ESYN)/S1OnOff_tau)/15
-        dS1OnOff_On_PSC_dUk = -((dt*S1OnOff_On_PSC_scale*2*(S1OnOff_On_PSC_x[-1]+S1OnOff_On_PSC_q[-1])/S1OnOff_On_PSC_tauR)*helper[t]*sum(((On_tspike+S1OnOff_On_PSC_delay)-helper[t])*np.exp(-1*((On_tspike+S1OnOff_On_PSC_delay)-helper[t])**2)))/2500
-        dv_dS1OnOff_On_PSC = -(dt*S1OnOff_R*S1OnOff_On_PSC_gSYN*S1OnOff_On_PSC_netcon*(S1OnOff_V[-1]-S1OnOff_On_PSC_ESYN)/S1OnOff_tau)/10
-        dv_dR1On_S1OnOff_PSC_gSYN = -(dt*R1On_R*R1On_S1OnOff_PSC_s[-1]*R1On_S1OnOff_PSC_netcon*(R1On_V[-1]-R1On_S1OnOff_PSC_ESYN)/R1On_tau)/15
-        dR1On_S1OnOff_PSC_dUk = -((dt*R1On_S1OnOff_PSC_scale*2*(R1On_S1OnOff_PSC_x[-1]+R1On_S1OnOff_PSC_q[-1])/R1On_S1OnOff_PSC_tauR)*helper[t]*sum(((S1OnOff_tspike+R1On_S1OnOff_PSC_delay)-helper[t])*np.exp(-1*((S1OnOff_tspike+R1On_S1OnOff_PSC_delay)-helper[t])**2)))/2500
-        dv_dR1On_S1OnOff_PSC = -(dt*R1On_R*R1On_S1OnOff_PSC_gSYN*R1On_S1OnOff_PSC_netcon*(R1On_V[-1]-R1On_S1OnOff_PSC_ESYN)/R1On_tau)/10
-        dv_dR1Off_S1OnOff_PSC_gSYN = -(dt*R1Off_R*R1Off_S1OnOff_PSC_s[-1]*R1Off_S1OnOff_PSC_netcon*(R1Off_V[-1]-R1Off_S1OnOff_PSC_ESYN)/R1Off_tau)/15
-        dR1Off_S1OnOff_PSC_dUk = -((dt*R1Off_S1OnOff_PSC_scale*2*(R1Off_S1OnOff_PSC_x[-1]+R1Off_S1OnOff_PSC_q[-1])/R1Off_S1OnOff_PSC_tauR)*helper[t]*sum(((S1OnOff_tspike+R1Off_S1OnOff_PSC_delay)-helper[t])*np.exp(-1*((S1OnOff_tspike+R1Off_S1OnOff_PSC_delay)-helper[t])**2)))/2500
-        dv_dR1Off_S1OnOff_PSC = -(dt*R1Off_R*R1Off_S1OnOff_PSC_gSYN*R1Off_S1OnOff_PSC_netcon*(R1Off_V[-1]-R1Off_S1OnOff_PSC_ESYN)/R1Off_tau)/10
-        dv_dR1Off_Off_PSC_gSYN = -(dt*R1Off_R*R1Off_Off_PSC_s[-1]*R1Off_Off_PSC_netcon*(R1Off_V[-1]-R1Off_Off_PSC_ESYN)/R1Off_tau)/15
-        dR1Off_Off_PSC_dUk = -((dt*R1Off_Off_PSC_scale*2*(R1Off_Off_PSC_x[-1]+R1Off_Off_PSC_q[-1])/R1Off_Off_PSC_tauR)*helper[t]*sum(((Off_tspike+R1Off_Off_PSC_delay)-helper[t])*np.exp(-1*((Off_tspike+R1Off_Off_PSC_delay)-helper[t])**2)))/2500
-        dv_dR1Off_Off_PSC = -(dt*R1Off_R*R1Off_Off_PSC_gSYN*R1Off_Off_PSC_netcon*(R1Off_V[-1]-R1Off_Off_PSC_ESYN)/R1Off_tau)/10
-        dv_dS1OnOff_Off_PSC_gSYN = -(dt*S1OnOff_R*S1OnOff_Off_PSC_s[-1]*S1OnOff_Off_PSC_netcon*(S1OnOff_V[-1]-S1OnOff_Off_PSC_ESYN)/S1OnOff_tau)/15
-        dS1OnOff_Off_PSC_dUk = -((dt*S1OnOff_Off_PSC_scale*2*(S1OnOff_Off_PSC_x[-1]+S1OnOff_Off_PSC_q[-1])/S1OnOff_Off_PSC_tauR)*helper[t]*sum(((Off_tspike+S1OnOff_Off_PSC_delay)-helper[t])*np.exp(-1*((Off_tspike+S1OnOff_Off_PSC_delay)-helper[t])**2)))/2500
-        dv_dS1OnOff_Off_PSC = -(dt*S1OnOff_R*S1OnOff_Off_PSC_gSYN*S1OnOff_Off_PSC_netcon*(S1OnOff_V[-1]-S1OnOff_Off_PSC_ESYN)/S1OnOff_tau)/10
-        dv_dR2On_R1On_PSC_gSYN = -(dt*R2On_R*R2On_R1On_PSC_s[-1]*R2On_R1On_PSC_netcon*(R2On_V[-1]-R2On_R1On_PSC_ESYN)/R2On_tau)/15
-        dR2On_R1On_PSC_dUk = -((dt*R2On_R1On_PSC_scale*2*(R2On_R1On_PSC_x[-1]+R2On_R1On_PSC_q[-1])/R2On_R1On_PSC_tauR)*helper[t]*sum(((R1On_tspike+R2On_R1On_PSC_delay)-helper[t])*np.exp(-1*((R1On_tspike+R2On_R1On_PSC_delay)-helper[t])**2)))/2500
-        dv_dR2On_R1On_PSC = -(dt*R2On_R*R2On_R1On_PSC_gSYN*R2On_R1On_PSC_netcon*(R2On_V[-1]-R2On_R1On_PSC_ESYN)/R2On_tau)/10
-        dv_dS2OnOff_R1On_PSC_gSYN = -(dt*S2OnOff_R*S2OnOff_R1On_PSC_s[-1]*S2OnOff_R1On_PSC_netcon*(S2OnOff_V[-1]-S2OnOff_R1On_PSC_ESYN)/S2OnOff_tau)/15
-        dS2OnOff_R1On_PSC_dUk = -((dt*S2OnOff_R1On_PSC_scale*2*(S2OnOff_R1On_PSC_x[-1]+S2OnOff_R1On_PSC_q[-1])/S2OnOff_R1On_PSC_tauR)*helper[t]*sum(((R1On_tspike+S2OnOff_R1On_PSC_delay)-helper[t])*np.exp(-1*((R1On_tspike+S2OnOff_R1On_PSC_delay)-helper[t])**2)))/2500
-        dv_dS2OnOff_R1On_PSC = -(dt*S2OnOff_R*S2OnOff_R1On_PSC_gSYN*S2OnOff_R1On_PSC_netcon*(S2OnOff_V[-1]-S2OnOff_R1On_PSC_ESYN)/S2OnOff_tau)/10
-        dv_dR2On_S2OnOff_PSC_gSYN = -(dt*R2On_R*R2On_S2OnOff_PSC_s[-1]*R2On_S2OnOff_PSC_netcon*(R2On_V[-1]-R2On_S2OnOff_PSC_ESYN)/R2On_tau)/15
-        dR2On_S2OnOff_PSC_dUk = -((dt*R2On_S2OnOff_PSC_scale*2*(R2On_S2OnOff_PSC_x[-1]+R2On_S2OnOff_PSC_q[-1])/R2On_S2OnOff_PSC_tauR)*helper[t]*sum(((S2OnOff_tspike+R2On_S2OnOff_PSC_delay)-helper[t])*np.exp(-1*((S2OnOff_tspike+R2On_S2OnOff_PSC_delay)-helper[t])**2)))/2500
-        dv_dR2On_S2OnOff_PSC = -(dt*R2On_R*R2On_S2OnOff_PSC_gSYN*R2On_S2OnOff_PSC_netcon*(R2On_V[-1]-R2On_S2OnOff_PSC_ESYN)/R2On_tau)/10
-        dv_dS2OnOff_R1Off_PSC_gSYN = -(dt*S2OnOff_R*S2OnOff_R1Off_PSC_s[-1]*S2OnOff_R1Off_PSC_netcon*(S2OnOff_V[-1]-S2OnOff_R1Off_PSC_ESYN)/S2OnOff_tau)/15
-        dS2OnOff_R1Off_PSC_dUk = -((dt*S2OnOff_R1Off_PSC_scale*2*(S2OnOff_R1Off_PSC_x[-1]+S2OnOff_R1Off_PSC_q[-1])/S2OnOff_R1Off_PSC_tauR)*helper[t]*sum(((R1Off_tspike+S2OnOff_R1Off_PSC_delay)-helper[t])*np.exp(-1*((R1Off_tspike+S2OnOff_R1Off_PSC_delay)-helper[t])**2)))/2500
-        dv_dS2OnOff_R1Off_PSC = -(dt*S2OnOff_R*S2OnOff_R1Off_PSC_gSYN*S2OnOff_R1Off_PSC_netcon*(S2OnOff_V[-1]-S2OnOff_R1Off_PSC_ESYN)/S2OnOff_tau)/10
+        dv_dR1On_On_PSC_gSYN = np.squeeze(-(dt*R1On_R*R1On_On_PSC_s[:,-1]*R1On_On_PSC_netcon*(R1On_V[:,-1]-R1On_On_PSC_ESYN)/R1On_tau)/15)
+        dR1On_On_PSC_dUk = np.squeeze(-((dt*R1On_On_PSC_scale*2*(R1On_On_PSC_x[:,-1]+R1On_On_PSC_q[:,-1])/R1On_On_PSC_tauR)*helper[t]*np.squeeze(np.sum((((On_tspike+R1On_On_PSC_delay)-helper[t])*np.exp(-1*((On_tspike+R1On_On_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dR1On_On_PSC = np.squeeze(-(dt*R1On_R*R1On_On_PSC_gSYN*R1On_On_PSC_netcon*(R1On_V[:,-1]-R1On_On_PSC_ESYN)/R1On_tau)/10)
+        dv_dS1OnOff_On_PSC_gSYN = np.squeeze(-(dt*S1OnOff_R*S1OnOff_On_PSC_s[:,-1]*S1OnOff_On_PSC_netcon*(S1OnOff_V[:,-1]-S1OnOff_On_PSC_ESYN)/S1OnOff_tau)/15)
+        dS1OnOff_On_PSC_dUk = np.squeeze(-((dt*S1OnOff_On_PSC_scale*2*(S1OnOff_On_PSC_x[:,-1]+S1OnOff_On_PSC_q[:,-1])/S1OnOff_On_PSC_tauR)*helper[t]*np.squeeze(np.sum((((On_tspike+S1OnOff_On_PSC_delay)-helper[t])*np.exp(-1*((On_tspike+S1OnOff_On_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dS1OnOff_On_PSC = np.squeeze(-(dt*S1OnOff_R*S1OnOff_On_PSC_gSYN*S1OnOff_On_PSC_netcon*(S1OnOff_V[:,-1]-S1OnOff_On_PSC_ESYN)/S1OnOff_tau)/10)
+        dv_dR1On_S1OnOff_PSC_gSYN = np.squeeze(-(dt*R1On_R*R1On_S1OnOff_PSC_s[:,-1]*R1On_S1OnOff_PSC_netcon*(R1On_V[:,-1]-R1On_S1OnOff_PSC_ESYN)/R1On_tau)/15)
+        dR1On_S1OnOff_PSC_dUk = np.squeeze(-((dt*R1On_S1OnOff_PSC_scale*2*(R1On_S1OnOff_PSC_x[:,-1]+R1On_S1OnOff_PSC_q[:,-1])/R1On_S1OnOff_PSC_tauR)*helper[t]*np.squeeze(np.sum((((S1OnOff_tspike+R1On_S1OnOff_PSC_delay)-helper[t])*np.exp(-1*((S1OnOff_tspike+R1On_S1OnOff_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dR1On_S1OnOff_PSC = np.squeeze(-(dt*R1On_R*R1On_S1OnOff_PSC_gSYN*R1On_S1OnOff_PSC_netcon*(R1On_V[:,-1]-R1On_S1OnOff_PSC_ESYN)/R1On_tau)/10)
+        dv_dR1Off_S1OnOff_PSC_gSYN = np.squeeze(-(dt*R1Off_R*R1Off_S1OnOff_PSC_s[:,-1]*R1Off_S1OnOff_PSC_netcon*(R1Off_V[:,-1]-R1Off_S1OnOff_PSC_ESYN)/R1Off_tau)/15)
+        dR1Off_S1OnOff_PSC_dUk = np.squeeze(-((dt*R1Off_S1OnOff_PSC_scale*2*(R1Off_S1OnOff_PSC_x[:,-1]+R1Off_S1OnOff_PSC_q[:,-1])/R1Off_S1OnOff_PSC_tauR)*helper[t]*np.squeeze(np.sum((((S1OnOff_tspike+R1Off_S1OnOff_PSC_delay)-helper[t])*np.exp(-1*((S1OnOff_tspike+R1Off_S1OnOff_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dR1Off_S1OnOff_PSC = np.squeeze(-(dt*R1Off_R*R1Off_S1OnOff_PSC_gSYN*R1Off_S1OnOff_PSC_netcon*(R1Off_V[:,-1]-R1Off_S1OnOff_PSC_ESYN)/R1Off_tau)/10)
+        dv_dR1Off_Off_PSC_gSYN = np.squeeze(-(dt*R1Off_R*R1Off_Off_PSC_s[:,-1]*R1Off_Off_PSC_netcon*(R1Off_V[:,-1]-R1Off_Off_PSC_ESYN)/R1Off_tau)/15)
+        dR1Off_Off_PSC_dUk = np.squeeze(-((dt*R1Off_Off_PSC_scale*2*(R1Off_Off_PSC_x[:,-1]+R1Off_Off_PSC_q[:,-1])/R1Off_Off_PSC_tauR)*helper[t]*np.squeeze(np.sum((((Off_tspike+R1Off_Off_PSC_delay)-helper[t])*np.exp(-1*((Off_tspike+R1Off_Off_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dR1Off_Off_PSC = np.squeeze(-(dt*R1Off_R*R1Off_Off_PSC_gSYN*R1Off_Off_PSC_netcon*(R1Off_V[:,-1]-R1Off_Off_PSC_ESYN)/R1Off_tau)/10)
+        dv_dS1OnOff_Off_PSC_gSYN = np.squeeze(-(dt*S1OnOff_R*S1OnOff_Off_PSC_s[:,-1]*S1OnOff_Off_PSC_netcon*(S1OnOff_V[:,-1]-S1OnOff_Off_PSC_ESYN)/S1OnOff_tau)/15)
+        dS1OnOff_Off_PSC_dUk = np.squeeze(-((dt*S1OnOff_Off_PSC_scale*2*(S1OnOff_Off_PSC_x[:,-1]+S1OnOff_Off_PSC_q[:,-1])/S1OnOff_Off_PSC_tauR)*helper[t]*np.squeeze(np.sum((((Off_tspike+S1OnOff_Off_PSC_delay)-helper[t])*np.exp(-1*((Off_tspike+S1OnOff_Off_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dS1OnOff_Off_PSC = np.squeeze(-(dt*S1OnOff_R*S1OnOff_Off_PSC_gSYN*S1OnOff_Off_PSC_netcon*(S1OnOff_V[:,-1]-S1OnOff_Off_PSC_ESYN)/S1OnOff_tau)/10)
+        dv_dR2On_R1On_PSC_gSYN = np.squeeze(-(dt*R2On_R*R2On_R1On_PSC_s[:,-1]*R2On_R1On_PSC_netcon*(R2On_V[:,-1]-R2On_R1On_PSC_ESYN)/R2On_tau)/15)
+        dR2On_R1On_PSC_dUk = np.squeeze(-((dt*R2On_R1On_PSC_scale*2*(R2On_R1On_PSC_x[:,-1]+R2On_R1On_PSC_q[:,-1])/R2On_R1On_PSC_tauR)*helper[t]*np.squeeze(np.sum((((R1On_tspike+R2On_R1On_PSC_delay)-helper[t])*np.exp(-1*((R1On_tspike+R2On_R1On_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dR2On_R1On_PSC = np.squeeze(-(dt*R2On_R*R2On_R1On_PSC_gSYN*R2On_R1On_PSC_netcon*(R2On_V[:,-1]-R2On_R1On_PSC_ESYN)/R2On_tau)/10)
+        dv_dS2OnOff_R1On_PSC_gSYN = np.squeeze(-(dt*S2OnOff_R*S2OnOff_R1On_PSC_s[:,-1]*S2OnOff_R1On_PSC_netcon*(S2OnOff_V[:,-1]-S2OnOff_R1On_PSC_ESYN)/S2OnOff_tau)/15)
+        dS2OnOff_R1On_PSC_dUk = np.squeeze(-((dt*S2OnOff_R1On_PSC_scale*2*(S2OnOff_R1On_PSC_x[:,-1]+S2OnOff_R1On_PSC_q[:,-1])/S2OnOff_R1On_PSC_tauR)*helper[t]*np.squeeze(np.sum((((R1On_tspike+S2OnOff_R1On_PSC_delay)-helper[t])*np.exp(-1*((R1On_tspike+S2OnOff_R1On_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dS2OnOff_R1On_PSC = np.squeeze(-(dt*S2OnOff_R*S2OnOff_R1On_PSC_gSYN*S2OnOff_R1On_PSC_netcon*(S2OnOff_V[:,-1]-S2OnOff_R1On_PSC_ESYN)/S2OnOff_tau)/10)
+        dv_dR2On_S2OnOff_PSC_gSYN = np.squeeze(-(dt*R2On_R*R2On_S2OnOff_PSC_s[:,-1]*R2On_S2OnOff_PSC_netcon*(R2On_V[:,-1]-R2On_S2OnOff_PSC_ESYN)/R2On_tau)/15)
+        dR2On_S2OnOff_PSC_dUk = np.squeeze(-((dt*R2On_S2OnOff_PSC_scale*2*(R2On_S2OnOff_PSC_x[:,-1]+R2On_S2OnOff_PSC_q[:,-1])/R2On_S2OnOff_PSC_tauR)*helper[t]*np.squeeze(np.sum((((S2OnOff_tspike+R2On_S2OnOff_PSC_delay)-helper[t])*np.exp(-1*((S2OnOff_tspike+R2On_S2OnOff_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dR2On_S2OnOff_PSC = np.squeeze(-(dt*R2On_R*R2On_S2OnOff_PSC_gSYN*R2On_S2OnOff_PSC_netcon*(R2On_V[:,-1]-R2On_S2OnOff_PSC_ESYN)/R2On_tau)/10)
+        dv_dS2OnOff_R1Off_PSC_gSYN = np.squeeze(-(dt*S2OnOff_R*S2OnOff_R1Off_PSC_s[:,-1]*S2OnOff_R1Off_PSC_netcon*(S2OnOff_V[:,-1]-S2OnOff_R1Off_PSC_ESYN)/S2OnOff_tau)/15)
+        dS2OnOff_R1Off_PSC_dUk = np.squeeze(-((dt*S2OnOff_R1Off_PSC_scale*2*(S2OnOff_R1Off_PSC_x[:,-1]+S2OnOff_R1Off_PSC_q[:,-1])/S2OnOff_R1Off_PSC_tauR)*helper[t]*np.squeeze(np.sum((((R1Off_tspike+S2OnOff_R1Off_PSC_delay)-helper[t])*np.exp(-1*((R1Off_tspike+S2OnOff_R1Off_PSC_delay)-helper[t])**2)),axis=1)))/2500)
+        dv_dS2OnOff_R1Off_PSC = np.squeeze(-(dt*S2OnOff_R*S2OnOff_R1Off_PSC_gSYN*S2OnOff_R1Off_PSC_netcon*(S2OnOff_V[:,-1]-S2OnOff_R1Off_PSC_ESYN)/S2OnOff_tau)/10)
 
         #Build derivs
         dGSYNR1On_On += dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN

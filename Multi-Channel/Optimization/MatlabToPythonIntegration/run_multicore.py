@@ -14,6 +14,7 @@ from scipy.io import loadmat
 
 import Calc_output_grad
 import Update_params
+import Init_Params
 
 from datetime import datetime
 from pathlib import Path
@@ -94,7 +95,7 @@ def save_run(results_dict, out_dir="results"):
 def run():
 
     # Inputs that were going to forwards()
-    ps = np.array([1,1,1,1,1,1,1,1,1,1])*0.025          
+    #ps = np.array([1,1,1,1,1,1,1,1,1,1])*0.025          
     scale_factor = 1.0    # whatever you were using
 
     TRIALS = 10
@@ -128,26 +129,42 @@ def run():
 
     # --- Build ODEs (same as: ParamsReturned = py.Solve_File_Generator_Manual.build_ODE(p); ) ---
     # If build_ODE returns something you need later, capture it.
+
+    batch_size = 200
+
     
-    ParamsReturned = modules["Solve_File_Generator_Manual"].build_ODE(p)
+    ParamsReturned = modules["Solve_File_Generator_Manual"].build_ODE(p,batch_size)
 
     generated2 = _import_and_reload("generated2")
 
 
     from generated2_wrapper import _single_trial
 
-    num_epochs = 50
-    #p = np.array([1,1,1,1,1,1,1,1,1,1])*0.025
-    p = np.array([0.018998357,	0.028920915,	0.030998280,	0.018925373,	0.031662147,	0.027822275,	0.018823540, 0.031477317,	0.031293292,	0.031775046])
+    num_epochs = 300
+    num_params = 10
+    
+    #Warning! Make sure params are using Init_Params
+
+    p = Init_Params.pinit(batch_size,num_params,load_from_file=False);
+
+
+    #p = np.transpose(np.array([[0.0014,0.078,0.0609,0.0592,0.0261,0.0125,0.0332,0.0734,0,0.0197],[0.0561,0.0332,0.0613,0.0772,0.0109,0.0499,0.0117,0.0301,0.0449,0.0371]]))
+
+    #p = np.ones((10,batch_size))*np.array([0.025,0.03])#np.array([1,1,1,1,1,1,1,1,1,1])*0.025
+
+    #print(p)
+    #p = np.array([0.018998357,	0.028920915,	0.030998280,	0.018925373,	0.031662147,	0.027822275,	0.018823540, 0.031477317,	0.031293292,	0.031775046])
     
 
     #Initilze Adam Parameters
-    m = np.zeros((10))
-    v = np.zeros((10))
-    beta1, beta2 = 0.9, 0.999   #Nominally 0.92, 0.9995
+    m = np.zeros((10,batch_size))
+    v = np.zeros((10,batch_size))
+    beta1, beta2 = 0.99, 0.9995   #Nominally 0.92, 0.9995
     eps = 1e-6
     t = 0
-    lr = 1e-6
+    lr = 5e-4
+
+    #print(p)
 
     #There was an issue where at 1e-7 it looked like the spiking derivative wrt the voltage was misbehaving
 
@@ -166,7 +183,7 @@ def run():
 
 
         output = []
-        grads = np.zeros((10))
+        grads = np.zeros((10,batch_size))
 
         with mp.get_context("spawn").Pool(processes=N_PROCS) as pool:
             # Build an argument tuple for each trial
@@ -177,16 +194,30 @@ def run():
 
 
         #[]trial[]output/grad[]gradselection/output indicy
+
+        #Trial dimention get appeneded at this level. We should see the results be batch x length
            
         for k in range(len(results)):
             #print(k)
             #print(grads)
-            grads += np.array(results[k][1])[:,0,0]
-                
-            if len(output) == 0:
-                output.append(results[k][0])
-            else:
-                output = np.vstack((output, results[k][0]))
+
+            #print(np.array(results[k][1]))
+
+            grads += np.array(results[k][1])
+
+            #print(np.shape(results[k][0]))
+            
+            #print(results[k][0])
+
+            #if len(output) == 0:
+            output.append(np.array(results[k][0]))
+            #else:
+            #    output = np.stack((output, results[k][0]), axis=0))
+        
+        output = np.stack(output, axis=0)
+
+
+        #print(grads)
 
         
 
@@ -234,7 +265,7 @@ def run():
         #    - spike l2 distance /wip
         #    - van rossum distance (spike level) /wip
 
-        out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "spikeL2")
+        out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "PSTH_VR")
 
         #Calculate parameter updates using Adam Optimizer
         #---
@@ -252,8 +283,10 @@ def run():
         #print(f"[epoch {epoch}] starmap: {t_pool:.3f}s   postproc: {t_post:.3f}s   postgrad: {t_post2:.3f}s")
 
         losses.append(loss)
+
+        #print(losses)
         
-        print(f"Epoch {epoch}: L2 Loss = {loss[0]}: Vr Loss = {loss[1]}",flush=True) 
+        print(f"Epoch {epoch}: Mean L2 Loss = {np.mean(loss[0])}: Mean ISI Loss = {np.mean(loss[1])}",flush=True) 
         #print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
 
     t_post = time.perf_counter() - t0  

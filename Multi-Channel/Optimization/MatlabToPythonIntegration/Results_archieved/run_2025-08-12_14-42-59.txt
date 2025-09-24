@@ -1,0 +1,2 @@
+This run used a batch size 20 and ran for 20 epochs with lr 1e-4, beta 1 = 0.9, beta 2= 0.999
+At this point we had just gotten vectorized parallelization working.
