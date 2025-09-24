@@ -22,7 +22,7 @@ def gen_poisson_times(N_pop, dt, FR, std, simlen=35000):
     N_pop = int(N_pop)
     simlen = int(simlen)
     std = int(std) #set to 0.0 right now
-    FR = int(FR) # set to  8.0 right now
+    #FR = int(FR) # set to  8.0 right now
 
     # Generate Poisson spikes with added noise
 

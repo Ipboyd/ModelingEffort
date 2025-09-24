@@ -1,0 +1,33 @@
+
+import numpy as np
+from scipy.io import loadmat
+
+def pinit(batch_size, num_params,load_from_file):
+
+    if load_from_file:
+        file = "results//run_2025-08-12_15-22-22.mat"
+        mat = loadmat(file, squeeze_me=False, struct_as_record=False)["param_tracker"]
+        p = mat[-1,:,:]
+
+        #print(p)
+    else:
+        #Random initialization bounded by 0 and 0.08 uS
+        p = np.zeros((num_params,batch_size))
+        rng = np.random
+        
+        p[0:7,:] = rng.uniform(0.5, 15, size=(7, batch_size)).astype(np.float32)
+        
+
+
+        p[7:27:2,:] = rng.uniform(0.0, 0.08, size=(10, batch_size)).astype(np.float32) #Neighborhood for Gsyns
+
+        p[8:28:2,:] = rng.uniform(0.1, 0.9, size=(10, batch_size)).astype(np.float32) #Neighborhood for Fps
+
+        p[27,:] = rng.uniform(1, 15, size=(1, batch_size)).astype(np.float32) #Neighborhood for Fps
+
+        #if learning_mask[1] == 1:
+        #    p[10:17,:] = rng.uniform(5, 25, size=(7, batch_size)).astype(np.float32) #Neighborhood for Taus
+
+        #print(p)
+
+    return p

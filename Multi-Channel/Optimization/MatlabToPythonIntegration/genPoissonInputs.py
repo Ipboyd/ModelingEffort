@@ -14,7 +14,10 @@ def spike_generator(rate, dt, t_ref, t_ref_rel, rec):
     spike_train = np.zeros(n)
     spike_times = []
 
-    n_refab = int(15 / 1000 / dt_sec)  # number of samples for ref. period window
+    #9/17 refractory preiod seems to low compared to real data. Perhaps extend this?
+    n_refab = int(0 / 1000 / dt_sec)  # number of samples for ref. period window
+    #n_refab = int(15 / 1000 / dt_sec)  # number of samples for ref. period window
+    #n_refab = int(30 / 1000 / dt_sec)  # number of samples for ref. period window
     tw = np.arange(n_refab + 1)
 
     t_ref_samp = int(t_ref / 1000 / dt_sec)
@@ -47,6 +50,9 @@ def spike_generator(rate, dt, t_ref, t_ref_rel, rec):
             spike_train[i] = 1
             spike_times.append(i)
             #print('here5')
+
+
+    #print(spike_times)
 
     return spike_train
 

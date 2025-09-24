@@ -4,7 +4,9 @@ addpath('results\')
 %m = matfile('run_2025-09-11_20-28-42.mat');
 
 %PSTH only
-m = matfile('run_2025-09-05_22-19-39.mat');
+%m = matfile('run_2025-09-05_22-19-39.mat');
+
+m = matfile('run_2025-09-24_12-23-46.mat');
 
 losses = m.losses;
 param_tracker = m.param_tracker;
@@ -12,7 +14,7 @@ output = m.output;
 
 
 pc_axis1 = 1;
-pc_axis2 = 3;
+pc_axis2 = 2;
 
 % A: [E × P × B]
 [E, P, B] = size(param_tracker);
@@ -26,7 +28,7 @@ loss = squeeze(losses(:,2,:));
 loss_flat = loss(:);      
 
 [coeff, score, latent, tsquared, explained, mu] = pca(samples, ...
-    'Algorithm','svd', 'NumComponents', 10, 'Rows','complete');
+    'Algorithm','svd', 'NumComponents', 28, 'Rows','complete');
 
 
 figure;
@@ -39,7 +41,7 @@ axis equal; grid on;
 hold on;
 
 %Plot the convergent values
-f_index = 300:300:60000;
+f_index = 400:50:20000;
 f_scores = score(f_index,:);
 
 plot(f_scores(:,pc_axis1), f_scores(:,pc_axis2), 'go', 'LineWidth', 1.5, 'MarkerSize', 4);
@@ -118,7 +120,7 @@ plot(DT.Points(K,1), DT.Points(K,2), 'w-', 'LineWidth', 0.5);   % black edge on 
 
 %Visualize parameters with aheat map?
 % Example: 20 trials, 10 parameters
-nTrials = 300;
+nTrials = 50; %nEpochs
 nParams = 10;
 %X = randn(nTrials, nParams);  % replace with your solutions
 
@@ -133,7 +135,7 @@ trialLabels = arrayfun(@(i) sprintf("trial %d", i), 1:nTrials, 'UniformOutput', 
 figure;
 
 %SORTING BY FIRST COLUMN (On-R1On)
-h = heatmap(sortrows(transpose(squeeze(param_tracker(300,:,:))),7));
+h = heatmap(transpose(squeeze(param_tracker(nTrials,1:7,:))));
 %h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
 % Customize appearance
 h.Colormap = parula;
@@ -141,3 +143,43 @@ h.ColorbarVisible = 'on';
 h.XLabel = 'Parameters';
 h.YLabel = 'Trials';
 h.Title = 'Parameter Solutions Heatmap';
+
+
+% Make the heatmap
+figure;
+
+%SORTING BY FIRST COLUMN (On-R1On)
+h = heatmap(transpose(squeeze(param_tracker(nTrials,8:2:26,:))));
+%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% Customize appearance
+h.Colormap = parula;
+h.ColorbarVisible = 'on';
+h.XLabel = 'Parameters';
+h.YLabel = 'Trials';
+h.Title = 'Parameter Solutions Heatmap';
+
+% Make the heatmap
+figure;
+
+%SORTING BY FIRST COLUMN (On-R1On)
+h = heatmap(transpose(squeeze(param_tracker(nTrials,9:2:27,:))));
+%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% Customize appearance
+h.Colormap = parula;
+h.ColorbarVisible = 'on';
+h.XLabel = 'Parameters';
+h.YLabel = 'Trials';
+h.Title = 'Parameter Solutions Heatmap';
+
+
+%SORTING BY FIRST COLUMN (On-R1On)
+h = heatmap(transpose(squeeze(param_tracker(nTrials,28,:))));
+%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% Customize appearance
+h.Colormap = parula;
+h.ColorbarVisible = 'on';
+h.XLabel = 'Parameters';
+h.YLabel = 'Trials';
+h.Title = 'Parameter Solutions Heatmap';
+
+

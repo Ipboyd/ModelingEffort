@@ -28,7 +28,7 @@ def recurse(cur_node, tracker,nodes,edges):
 
 
 
-def build_ODE(parameters,batch_size):
+def build_ODE(parameters,batch_size,learning_mask):
 
     #--------------------------------------------------------        Connect to DynaSim Solve File        -----------------------------------------------------------------------#
 
@@ -125,11 +125,23 @@ def build_ODE(parameters,batch_size):
 
     #Bring in fixed params
     fixed_param_declaration = '\n    #Fixed Param Declaration\n'
+    count_ps2 = 0
     for k in range(len(lhs_list)):
-        if (lhs_list[k] != 'On_On_IC_input' and lhs_list[k] != 'Off_Off_IC_input'):
-            #if rhs_list[k].contains('ones'):
-            np_version = re.sub(r'ones\(\s*1\s*,\s*([^)]+)\)',r'np.ones((1,\1))',rhs_list[k])
-            fixed_param_declaration += f"    {lhs_list[k]} = {np_version}\n"            
+        if learning_mask[1] == 1:
+            if "tau" in lhs_list[k] and 'R2Off' not in lhs_list[k]:
+                    fixed_param_declaration += f"    {lhs_list[k]} = ps[{count_ps + count_ps2}]\n"   
+                    count_ps2 += 1
+
+            elif (lhs_list[k] != 'On_On_IC_input' and lhs_list[k] != 'Off_Off_IC_input'):
+                #if rhs_list[k].contains('ones'):
+                np_version = re.sub(r'ones\(\s*1\s*,\s*([^)]+)\)',r'np.ones((1,\1))',rhs_list[k])
+                fixed_param_declaration += f"    {lhs_list[k]} = {np_version}\n"   
+
+        elif (lhs_list[k] != 'On_On_IC_input' and lhs_list[k] != 'Off_Off_IC_input'):
+                #if rhs_list[k].contains('ones'):
+                np_version = re.sub(r'ones\(\s*1\s*,\s*([^)]+)\)',r'np.ones((1,\1))',rhs_list[k])
+                fixed_param_declaration += f"    {lhs_list[k]} = {np_version}\n" 
+                
             #else:
             #    fixed_param_declaration += f"    {lhs_list[k]} = {rhs_list[k]}\n"
 
@@ -184,6 +196,19 @@ def build_ODE(parameters,batch_size):
             #if 'buffer' in monitor_vars[k]:
             #    monitor_string += f"    {monitor_vars[k]} = {np_version_zeros} * np.ones(({batch_size},1,1))\n"
 
+    #Declare derivative holders for previous derivatives necessary for spiking derivative
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and  "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            var_name = var[:-5]
+
+            monitor_string += f"    dv1d{var_base} = np.ones(({batch_size},2))\n"
+            monitor_string += f"    dv2d{var_base} = np.ones(({batch_size},2))\n"
+
+            #Adding intialization for gradients to latch on to
+            monitor_string += f"    spikers_{var_name} = np.zeros(({batch_size})).astype(np.int8)\n"
+
 
     #Declare Inputs
     inputs_header = "\n    #Delcare Inputs\n    On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)\n    Off_Off_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,Off_Off_IC_locNum,Off_Off_IC_label,Off_Off_IC_t_ref,Off_Off_IC_t_ref_rel,Off_Off_IC_rec,scale_factor)\n"
@@ -225,16 +250,16 @@ def build_ODE(parameters,batch_size):
             test1_string += f"        mask = (({var_base}[:,-1] >= {var_thresh}) & ({var_prev} < {var_thresh})).astype(np.int8).tolist()\n"
             test1_string += f"        {var_base}_spikes_holder.append(mask)\n"
             test1_string += f"        if np.any(mask):\n"   
-            test1_string += f"            spikers = np.flatnonzero(mask)\n"
+            test1_string += f"            spikers_{var_name} = np.flatnonzero(mask)\n"
             #test1_string += f"            cols = ({var_name}_buffer_index[spikers].astype(np.int8)-1)\n"
             #test1_string += f"            print(mask)\n"
             #test1_string += f"            print(spikers)\n"
             #test1_string += f"            print({var_name}_buffer_index)\n"
-            test1_string += f"            {var_name}_tspike[spikers, {var_name}_buffer_index[spikers].astype(np.int8)-1] = helper[t]\n"
+            test1_string += f"            {var_name}_tspike[spikers_{var_name}, {var_name}_buffer_index[spikers_{var_name}].astype(np.int8)-1] = helper[t]\n"
             #test1_string += f"            print({var_name}_tspike)\n"
             #test1_string += f"            print(spikers)\n"             
             #test1_string += f"            print({var_name}_buffer_index)\n"
-            test1_string += f"            {var_name}_buffer_index[spikers] = ({var_name}_buffer_index[spikers] % 5) + 1\n"
+            test1_string += f"            {var_name}_buffer_index[spikers_{var_name}] = ({var_name}_buffer_index[spikers_{var_name}] % 5) + 1\n"
             
 
     #Test 2 (Voltage reset and adaptation) 
@@ -309,12 +334,12 @@ def build_ODE(parameters,batch_size):
     grad_string += '\n\n        #Surrogate Spike Related Derivates\n'
 
     for k in range(len(update_vars)):
-        if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+        if "_V" in update_vars[k] and  "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
             var = update_vars[k]
             var_base = var[:-3]
             #grad_string += f'        print(\'here2\')\n' 
 
-            grad_string += f'        dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[:,-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[:,-1] - {var_base}_thresh)))**2))/500\n'  #Nominally 500
+            grad_string += f'        #dspike_d{var_base} = (((10*np.exp(-(0.1)*({var_base}[:,-1] - {var_base}_thresh)))/(1+np.exp(-(0.1)*({var_base}[:,-1] - {var_base}_thresh)))**2))/500\n'  #Nominally 500
             #Incorrect dims
             #grad_string += f'        print(\'spikewrtV\')\n'
             #grad_string += f'        print(dspike_d{var_base})\n'
@@ -323,6 +348,73 @@ def build_ODE(parameters,batch_size):
             #Instead of normalizing with a constant you could track the derivatives at every time step for each trial and then divide by the maximum (initialized to 1?)
 
             #grad_string += f'            dv_d{var_base}_tracker.append(dspike_d{var_base})\n'
+
+    #implmenting spiking derivatives with all dependencies considered for voltage.
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and  "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            var_name = var[:-5]
+            #Move the old derivative out of the way (but save it to be used in later calculation) -> 1 will become new derivatived while 0 retains old version of 1.
+            grad_string += f'        dv1d{var_base}[:,0] = dv1d{var_base}[:,1]\n'
+            grad_string += f'        dv1d{var_base}[:,1] = ((1+np.exp({var_base}[:,-1]-{var_base}_thresh))-({var_base}[:,-1]-{var_base}_reset*np.exp({var_base}[:,-1]-{var_base}_thresh)))/(1+np.exp({var_base}[:,-1]-{var_base}_thresh))**2\n'
+
+            grad_string += f'        dv2d{var_base}[:,0] = dv2d{var_base}[:,1]\n'
+            grad_string += f'        dv2d{var_base}[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-({var_name}_tspike+{var_name}_t_ref)))),axis=1))\n'
+
+            #grad_string += f'        print("dv2d{var_base}[:,1]")\n'
+            #grad_string += f'        print(np.shape(dv2d{var_base}[:,1]))\n'
+
+            #Not sure if V_prev is legitimate in this scenario or if I need to pull vprev from the true start of the previous eulers timestep
+
+            #grad_string += f'        buff1 = (({var_name}_buffer_index[spikers_{var_name}] % 5) + 1).astype(np.int64)\n'
+            #grad_string += f'        buff2 = ((({var_name}_buffer_index[spikers_{var_name}] - 1) % 5) + 1).astype(np.int64)\n'
+            
+            #grad_string += f'        print(np.shape({var_name}_tspike))\n'
+            #grad_string += f'        print({var_name}_tspike)\n'
+
+            #grad_string += f'        dukdv2{var_base} = (-np.squeeze(np.take_along_axis(np.squeeze({var_name}_tspike),buff1[:, None]-1,axis = 1)-np.take_along_axis(np.squeeze({var_name}_tspike),buff2[:, None]-1,axis = 1))*(-np.exp(-({var_base}[:,-1]-{var_base}_thresh)))*(1+np.exp(({var_base}[:,-2]-{var_base}_thresh))))/((1+np.exp(-({var_base}[:,-1]-{var_base}_thresh)))*(1+np.exp(({var_base}[:,-2]-{var_base}_thresh))))**2\n'
+            
+            #grad_string += f'        print(np.shape((np.max({var_name}_tspike,axis=1))))\n'
+            #grad_string += f'        print(np.shape(np.partition({var_name}_tspike, -2, axis=1)[:, -2]))\n'
+
+            #grad_string += f'        print(np.shape((np.max({var_name}_tspike,axis=1))-np.partition({var_name}_tspike, -2, axis=1)[:, -2]))\n'
+
+            grad_string += f'        dukdv2{var_base} = (-np.squeeze((np.max({var_name}_tspike,axis=1)-np.partition({var_name}_tspike, -2, axis=1)[:, -2]))*(-np.exp(-({var_base}[:,-1]-{var_base}_thresh)))*(1+np.exp(({var_base}[:,-2]-{var_base}_thresh))))/((1+np.exp(-({var_base}[:,-1]-{var_base}_thresh)))*(1+np.exp(({var_base}[:,-2]-{var_base}_thresh))))**2\n'
+
+        
+            
+
+            grad_string += f'        dspike_d{var_base} = dukdv2{var_base}*dv2d{var_base}[:,0]*dv1d{var_base}[:,0]\n'
+
+            #grad_string += f'        print("dukdv2{var_base}")\n'
+            #grad_string += f'        print(np.shape(({var_name}_tspike[:,-1]-{var_name}_tspike[:,-2])))\n'
+    
+    if learning_mask[1] == 1:
+        grad_string += '\n\n        #Tau Related Derivates\n'
+        #Tau related derivatives
+
+        #Look through the ODEs and just extrac the voltage related traces
+        for k in range(len(pairs)):
+            rhs_ode = FormatODEs_Ns.reformat_input_time_indexing(FormatODEs_Ns.reformat_discrete_time_indexing(pairs[k][1]))
+            rhs_ode_rpl = rhs_ode.replace("[t-1]", "[:,-1]")
+
+            #LHS comparison
+            if "_V_" in pairs[k][0]:
+                ode_base = pairs[k][0][:-5]
+                grad_string += f'        dv_dtau_{ode_base} = np.squeeze(-(dt*{rhs_ode_rpl}**2))\n' #Note the square works here because tau is listed as the last variables in the ODE string
+                
+
+            #ode_string += f"        {pairs[k][0]} = {rhs_ode_rpl}\n"
+
+        #for k in range(len(update_vars)):
+        #    if "_V" in update_vars[k] and ("R" in update_vars[k] or "S" in update_vars[k]) and "Noise" not in update_vars[k] and "R2Off" not in update_vars[k]:
+        #        var = update_vars[k]
+        #        var_base = var[:-3]
+                #grad_string += f'        print(\'here2\')\n' 
+                
+                #Extract the correct line. Don't need post and pre cell here since the line just stays the same and tau is onyl effeced
+        #        grad_string += f'        dv_dtau_{var_base} = np.squeeze(-(dt*{post_cell}_R*{post_cell}_{pre_cell}_PSC_s[:,-1]*{post_cell}_{pre_cell}_PSC_netcon*({post_cell}_V[:,-1]-{post_cell}_{pre_cell}_PSC_ESYN)/{post_cell}_tau**2)/15)\n' #Nominally 15
 
     #Search for all of the gsyns that we want to update
     #Write all of the partials of the voltage w.r.t the parameters
@@ -558,6 +650,83 @@ def build_ODE(parameters,batch_size):
     generated_code = generated_code + grad_string
 
 
+    #Build the Tau derivatvies
+
+    #For each node
+        #Find each subpath within each path
+            #Compute and add the derivatives for each subpath
+    if learning_mask[1] == 1:
+        tau_grads = '\n\n        #Build Tau derivs\n'
+        #Redefined Nodes here so that they are in the same order that they will be updated in in the gradient calculations.
+        nodes2 = ['On','Off','R1On','R1Off','S1OnOff','R2On','S2OnOff']
+        for k in nodes2: 
+
+            #print(f'\n\n{k}\n\n')
+
+            subpath_grads = []
+
+            for m in path_holder:
+                path_parts = m.split('->',-1)
+                for count,z in enumerate(path_parts):
+                    if z == k:
+
+                        #Instead of printing m print the corresponding sub-path
+                    
+                        subpath = path_parts[count:]
+                    
+                        #Compensate for intermediate nodes
+                        if len(subpath) > 1:
+                            if subpath[0] == subpath[1]:
+                                subpath = subpath[1:]
+                    
+                    
+                        grad = ''
+
+
+
+                        #rev_subpath = reversed(np.unique(subpath))
+
+                        uniq, idx = np.unique(subpath, return_index=True)
+                        rev_subpath = uniq[np.argsort(idx)][::-1]
+
+                        #rev_subpath = np.unique(subpath)#[::-1]
+                        #print(subpath)
+                        #print(rev_subpath)
+
+                        #print(len(subpath))
+
+                        for count2,q in enumerate(rev_subpath):
+
+                        
+
+                            if count2 + 1 == len(rev_subpath):
+                               #uk/v * v/tau
+                               grad += f'dspike_d{q}_V*dv_dtau_{q}'
+                            else:
+                               #uk/v * v/psc * psc/uk
+                               grad += f'dspike_d{q}_V*dv_d{q}_{rev_subpath[count2+1]}_PSC*d{q}_{rev_subpath[count2+1]}_PSC_dUk*'
+
+
+                        subpath_grads.append(grad)
+
+                        #print(subpath)
+                        break
+
+            #print(np.unique(subpath_grads))
+
+            #Build the Tau derivatvies!
+
+            grad_str_tau = ''
+            for count3, g in enumerate(np.unique(subpath_grads)):
+                if count3 + 1 == len(np.unique(subpath_grads)):
+                    grad_str_tau += g
+                else:
+                    grad_str_tau += g + '+'
+
+            tau_grads += f'        dTAU_{k} = {grad_str_tau}\n'
+
+        generated_code = generated_code + tau_grads
+
     #************** Code Review Area #1 END! ****************
 
 
@@ -588,8 +757,11 @@ def build_ODE(parameters,batch_size):
             post_node = name.split('_',-1)[0]
             pre_node = name.split('_',-1)[1]
             deriv_return2 += 'dGSYN' + post_node + '_' + pre_node +', '
+    
 
-            
+    if learning_mask[1] == 1:
+        for k in nodes[:-1]:
+            deriv_return2 += f'dTAU_{k}, '
     
     deriv_return2 = '[' + deriv_return2[:-2] + ']'
 

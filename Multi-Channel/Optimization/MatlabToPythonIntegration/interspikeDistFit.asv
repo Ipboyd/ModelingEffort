@@ -1,0 +1,40 @@
+clear all
+close all
+%Calculate the interspike interval distribution
+
+%The goal here is to examine and fit the interspike interval distribution of the data.
+
+
+function isi_calc()
+
+end
+
+
+%Bring in data
+filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/picture_fit.mat";
+data = load(filename).picture;
+
+%Calculate the isi for all spikes accross all trials
+
+isi_holder = [];
+
+for k = 1:10
+    isi_holder = [isi_holder, diff(find(data(k,:)))];
+end
+
+figure;
+hist(isi_holder,1000)
+xlim([0,2000])
+
+%Print out some states
+disp('Mean Iterval = ' + string(mean(isi_holder(find(isi_holder < 2000)))*0.1)+ ' ms')  %dt = 0.1ms
+
+%Bring in the sim
+
+%PSTH + VR 100ms
+m = matfile('run_2025-09-11_20-28-42.mat');
+
+outputs = m.output;
+losses = m.losses;
+params = m.param_tracker;
+

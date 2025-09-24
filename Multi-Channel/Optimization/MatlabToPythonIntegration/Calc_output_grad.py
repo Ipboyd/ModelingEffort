@@ -933,6 +933,13 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
 
         #print(np.shape(forwards_out_r)[2]/num_bins)
 
+
+        #print('shapes')
+        #print(np.shape(forwards_out_r)[0])
+        #print(np.shape(forwards_out_r)[1])
+        #print(num_bins)
+        #print(bin_width)
+
         forwards_out_reshaped = forwards_out_r.reshape((np.shape(forwards_out_r)[0],np.shape(forwards_out_r)[1],num_bins,bin_width))
         data_reshaped = data_r.reshape((np.shape(data_r)[0],np.shape(data_r)[1],num_bins,bin_width))
 
@@ -978,9 +985,11 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         diff = forwards_out_hist - data_hist
 
         #print(np.shape(diff))
-
+ 
         #PSTH_loss_avg = np.mean(np.sum(diff * diff, axis=-1), axis=-1)
         PSTH_loss_avg = np.sum(diff * diff, axis=-1)
+        #Try MSE instead of SSE
+        #PSTH_loss_avg = np.mean(diff * diff, axis=-1)
 
         #print(PSTH_loss_avg)
 

@@ -100,6 +100,21 @@ def build_ODE(parameters,batch_size):
             #Initialize our parameters with the values we inherit from the learning
             params += f"    {name} = ps[{count_ps}]\n"
             count_ps += 1
+
+        elif "fP" in name and "R2Off" not in name:
+
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
+
+        elif "t_ref" in name and "On_On_IC_t_ref" not in name and "Off_Off_IC_t_ref" not in name and "R2Off" not in name:
+            #print('here')
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
+
+        elif "R2On_R2On_iNoise_V3_FR" in name:
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
+
         else:
             params += f"    {name} = {value}\n"
 
@@ -258,10 +273,31 @@ def build_ODE(parameters,batch_size):
             test2_string += f"            {var_adapt[:-3]}[spikers,-2] = {var_adapt[:-3]}[spikers,-1]\n"
             test2_string += f"            {var_adapt[:-3]}[spikers,-1] = {var_adapt[:-3]}[spikers,-1] + {var_inc}\n"
             #test2_string += f"        print((helper[t] <= ({var_name}_tspike + {var_name}_t_ref)))\n"
-            test2_string += f"        mask = np.any((helper[t] <= ({var_name}_tspike + {var_name}_t_ref)), axis = 1)\n"#.astype(np.int8).tolist()\n"
+
+            
+            #If t_ref has a batch dimention then its dim needs to be extended
+
+            if "R2Off" not in update_vars[k]:
+
+                test2_string += f"        mask = np.any((helper[t] <= (np.squeeze({var_name}_tspike) + {var_name}_t_ref[:, None])), axis = 1)\n"#.astype(np.int8).tolist()\n"
+            else:
+
+                test2_string += f"        mask = np.any((helper[t] <= (np.squeeze({var_name}_tspike) + {var_name}_t_ref)), axis = 1)\n"#.astype(np.int8).tolist()\n"
+
             #test2_string += f"        {var_base}_test2b = np.any(helper[t] <= {var_name}_tspike + {var_name}_t_ref)\n"
             test2_string += f"        if np.any(mask):\n"
             test2_string += f"            spikers = np.flatnonzero(mask) \n"
+            
+            #test2_string += f"            print({var_name}_t_ref)\n"
+            #test2_string += f"            print({var_name}_tspike)\n"
+
+            #test2_string += f"            print(np.shape({var_name}_tspike))\n"
+            #test2_string += f"            print(np.shape({var_name}_t_ref))\n"
+
+            #test2_string += f"            print(np.shape(mask))\n"
+            #test2_string += f"            print(np.shape({var_name}_tspike + {var_name}_t_ref))\n"
+            #test2_string += f"            print(np.shape(np.array({var_name}_tspike)+np.array({var_name}_t_ref)))\n"
+
             test2_string += f"            {var[:-3]}[spikers,-2] = {var[:-3]}[spikers,-1]\n"
             test2_string += f"            {var[:-3]}[spikers,-1] = {var_reset}\n"
 
@@ -291,7 +327,14 @@ def build_ODE(parameters,batch_size):
         test3_string += f"            {var_x}[spikers,-1] = {var_x}[spikers,-1] + {var_q}[spikers,-1]\n"
         test3_string += f"            {var_q}[spikers,-1] = {var_F}[spikers,-1] * {var_P}[spikers,-1]\n"
         test3_string += f"            {var_F}[spikers,-1] = {var_F}[spikers,-1] + {var_fF}*({var_max}-{var_F}[spikers,-1])\n"
-        test3_string += f"            {var_P}[spikers,-1] = {var_P}[spikers,-1] * (1 - {var_fP})\n"
+
+        if "R2Off" not in var_fP:
+
+            test3_string += f"            {var_P}[spikers,-1] = {var_P}[spikers,-1] * (1 - {var_fP}[spikers])\n"
+
+        else:
+
+            test3_string += f"            {var_P}[spikers,-1] = {var_P}[spikers,-1] * (1 - {var_fP})\n"
 
     generated_code = generated_code + ODE_loop_Declaration + ode_string + update_eulers + test1_string + test2_string + test3_string
     
@@ -304,9 +347,9 @@ def build_ODE(parameters,batch_size):
    
     generated_code = Clean_up.Clean_gen_code(generated_code)
 
-    with open("generatedGA.py", "w") as f:
+    with open("generated_GA.py", "w") as f:
         f.write(generated_code)
 
-    print("generatedGA.py has been created.")
+    print("generated_GA.py has been created.")
 
     return generated_code

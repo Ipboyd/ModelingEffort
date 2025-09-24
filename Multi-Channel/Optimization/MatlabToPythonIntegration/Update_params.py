@@ -11,6 +11,11 @@ def adam_update(m,v,p,t,beta1,beta2,lr,eps,out_grad):
     #m = [beta1*m[ms,:] + (1-beta1) * out_grad[ms,:] for ms in range(len(m))]
     #v = [beta2*v[vs,:] + (1-beta2) * (out_grad[vs,:]**2) for vs in range(len(v))]
 
+    #print('inside update')
+    #print(np.shape(p))
+
+    #print(np.shape(out_grad))
+
     m = beta1*m + (1-beta1) * out_grad
     v = beta2*v + (1-beta2) * (out_grad**2)
 

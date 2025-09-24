@@ -1,10 +1,21 @@
-close all;
+%close all;
+
+addpath('results\')
+
+m = matfile('run_2025-09-24_12-23-46.mat');
+
+
+%PSTH with taus
+%m = matfile('run_2025-09-17_22-03-47.mat');
+
+%GA
+%m = matfile('run_2025-09-15_22-02-10.mat');
 
 %PSTH + VR 100ms
 %m = matfile('run_2025-09-11_20-28-42.mat');
 
 %PSTH Only
-m = matfile('run_2025-09-05_22-19-39.mat');
+%m = matfile('run_2025-09-05_22-19-39.mat');
 losses = m.losses;
 param_tracker = m.param_tracker;
 output = m.output;
@@ -19,8 +30,8 @@ fit_gmm_bic = @(X) local_fit_gmm_bic(X, K_range, reg);
 
 % P: n_runs x 10, loss: n_runs x 1
 
-last_run = transpose(squeeze(param_tracker(300,:,:)));
-last_loss = transpose(squeeze(losses(300,2,:)));
+last_run = transpose(squeeze(param_tracker(50,:,:)));
+last_loss = transpose(squeeze(losses(50,2,:)));
 
 %last_run  = reshape(permute(param_tracker(291:300,:,:), [1 3 2]), [], P);
 %last_loss = reshape(squeeze(losses(291:300,2,:)), [], 1);
@@ -290,7 +301,7 @@ function [fig, ax] = make_blank_cluster_figure(method_label, S)
            [0.0;    1.0;   0.0;    2.0;    2.0;     3.0;   4.0], ... % Y
            'VariableNames', {'Name','X','Y'});
         
-        
+        weights = weights(1:10); %Only grab the edge weights
         
         % Create graph using node names instead of numeric IDs
         G = digraph(nodeNames(s), nodeNames(t), weights);

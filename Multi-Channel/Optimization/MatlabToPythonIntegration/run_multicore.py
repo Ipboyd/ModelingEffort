@@ -132,20 +132,26 @@ def run():
 
     batch_size = 200
 
+    #Learning mask determines the sets of parameters that you want to learn -- TODO createa a submask so that within each category you can learn just certain connections
+    #1 = learn 0 = do not learn
+    #[ gsyn ,  tau , more in the future]
+    learning_mask = [1,0]
     
-    ParamsReturned = modules["Solve_File_Generator_Manual"].build_ODE(p,batch_size)
+    ParamsReturned = modules["Solve_File_Generator_Manual"].build_ODE(p,batch_size,learning_mask)
 
     generated2 = _import_and_reload("generated2")
 
 
     from generated2_wrapper import _single_trial
 
-    num_epochs = 300
+    num_epochs = 50
     num_params = 10
     
     #Warning! Make sure params are using Init_Params
 
-    p = Init_Params.pinit(batch_size,num_params,load_from_file=False);
+    p = Init_Params.pinit(batch_size,num_params,learning_mask,load_from_file=False);
+
+    #print(np.shape(p))
 
 
     #p = np.transpose(np.array([[0.0014,0.078,0.0609,0.0592,0.0261,0.0125,0.0332,0.0734,0,0.0197],[0.0561,0.0332,0.0613,0.0772,0.0109,0.0499,0.0117,0.0301,0.0449,0.0371]]))
@@ -157,12 +163,12 @@ def run():
     
 
     #Initilze Adam Parameters
-    m = np.zeros((10,batch_size))
-    v = np.zeros((10,batch_size))
+    m = np.zeros((num_params,batch_size))
+    v = np.zeros((num_params,batch_size))
     beta1, beta2 = 0.99, 0.9995   #Nominally 0.92, 0.9995
     eps = 1e-6
     t = 0
-    lr = 5e-4
+    lr = 5e-3
 
     #print(p)
 
@@ -183,7 +189,7 @@ def run():
 
 
         output = []
-        grads = np.zeros((10,batch_size))
+        grads = np.zeros((num_params,batch_size))
 
         with mp.get_context("spawn").Pool(processes=N_PROCS) as pool:
             # Build an argument tuple for each trial
@@ -265,7 +271,7 @@ def run():
         #    - spike l2 distance /wip
         #    - van rossum distance (spike level) /wip
 
-        out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "PSTH_VR")
+        out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "PSTH")
 
         #Calculate parameter updates using Adam Optimizer
         #---
@@ -278,7 +284,7 @@ def run():
 
         m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
 
-        
+        #print(np.shape(p))
 
         #print(f"[epoch {epoch}] starmap: {t_pool:.3f}s   postproc: {t_post:.3f}s   postgrad: {t_post2:.3f}s")
 
@@ -286,7 +292,7 @@ def run():
 
         #print(losses)
         
-        print(f"Epoch {epoch}: Mean L2 Loss = {np.mean(loss[0])}: Mean ISI Loss = {np.mean(loss[1])}",flush=True) 
+        print(f"Epoch {epoch}: Mean L2 Loss = {np.mean(loss[0])}: Mean PSTH Loss = {np.mean(loss[1])}",flush=True) 
         #print(f"Epoch {{epoch}}: Loss = {{loss}}",flush=True) 
 
     t_post = time.perf_counter() - t0  

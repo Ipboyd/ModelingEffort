@@ -449,6 +449,27 @@ def main(trial_number,ps,scale_factor):
     R2Off_S2OnOff_PSC_syn = 0
     R2Off_R1Off_PSC_syn = 0
     S2OnOff_R1Off_PSC_syn = 0
+    dv1dOn_V = np.ones((200,2))
+    dv2dOn_V = np.ones((200,2))
+    spikers_On = np.zeros((200)).astype(np.int8)
+    dv1dOff_V = np.ones((200,2))
+    dv2dOff_V = np.ones((200,2))
+    spikers_Off = np.zeros((200)).astype(np.int8)
+    dv1dR1On_V = np.ones((200,2))
+    dv2dR1On_V = np.ones((200,2))
+    spikers_R1On = np.zeros((200)).astype(np.int8)
+    dv1dR1Off_V = np.ones((200,2))
+    dv2dR1Off_V = np.ones((200,2))
+    spikers_R1Off = np.zeros((200)).astype(np.int8)
+    dv1dS1OnOff_V = np.ones((200,2))
+    dv2dS1OnOff_V = np.ones((200,2))
+    spikers_S1OnOff = np.zeros((200)).astype(np.int8)
+    dv1dR2On_V = np.ones((200,2))
+    dv2dR2On_V = np.ones((200,2))
+    spikers_R2On = np.zeros((200)).astype(np.int8)
+    dv1dS2OnOff_V = np.ones((200,2))
+    dv2dS2OnOff_V = np.ones((200,2))
+    spikers_S2OnOff = np.zeros((200)).astype(np.int8)
 
     #Delcare Inputs
     On_On_IC_input = genPoissonInputs.gen_poisson_inputs(trial_number,On_On_IC_locNum,On_On_IC_label,On_On_IC_t_ref,On_On_IC_t_ref_rel,On_On_IC_rec,scale_factor)
@@ -698,51 +719,51 @@ def main(trial_number,ps,scale_factor):
         mask = ((On_V[:,-1] >= On_V_thresh) & (On_V[:,-2] < On_V_thresh)).astype(np.int8).tolist()
         On_V_spikes_holder.append(mask)
         if np.any(mask):
-            spikers = np.flatnonzero(mask)
-            On_tspike[spikers, On_buffer_index[spikers].astype(np.int8)-1] = helper[t]
-            On_buffer_index[spikers] = (On_buffer_index[spikers] % 5) + 1
+            spikers_On = np.flatnonzero(mask)
+            On_tspike[spikers_On, On_buffer_index[spikers_On].astype(np.int8)-1] = helper[t]
+            On_buffer_index[spikers_On] = (On_buffer_index[spikers_On] % 5) + 1
         mask = ((Off_V[:,-1] >= Off_V_thresh) & (Off_V[:,-2] < Off_V_thresh)).astype(np.int8).tolist()
         Off_V_spikes_holder.append(mask)
         if np.any(mask):
-            spikers = np.flatnonzero(mask)
-            Off_tspike[spikers, Off_buffer_index[spikers].astype(np.int8)-1] = helper[t]
-            Off_buffer_index[spikers] = (Off_buffer_index[spikers] % 5) + 1
+            spikers_Off = np.flatnonzero(mask)
+            Off_tspike[spikers_Off, Off_buffer_index[spikers_Off].astype(np.int8)-1] = helper[t]
+            Off_buffer_index[spikers_Off] = (Off_buffer_index[spikers_Off] % 5) + 1
         mask = ((R1On_V[:,-1] >= R1On_V_thresh) & (R1On_V[:,-2] < R1On_V_thresh)).astype(np.int8).tolist()
         R1On_V_spikes_holder.append(mask)
         if np.any(mask):
-            spikers = np.flatnonzero(mask)
-            R1On_tspike[spikers, R1On_buffer_index[spikers].astype(np.int8)-1] = helper[t]
-            R1On_buffer_index[spikers] = (R1On_buffer_index[spikers] % 5) + 1
+            spikers_R1On = np.flatnonzero(mask)
+            R1On_tspike[spikers_R1On, R1On_buffer_index[spikers_R1On].astype(np.int8)-1] = helper[t]
+            R1On_buffer_index[spikers_R1On] = (R1On_buffer_index[spikers_R1On] % 5) + 1
         mask = ((R1Off_V[:,-1] >= R1Off_V_thresh) & (R1Off_V[:,-2] < R1Off_V_thresh)).astype(np.int8).tolist()
         R1Off_V_spikes_holder.append(mask)
         if np.any(mask):
-            spikers = np.flatnonzero(mask)
-            R1Off_tspike[spikers, R1Off_buffer_index[spikers].astype(np.int8)-1] = helper[t]
-            R1Off_buffer_index[spikers] = (R1Off_buffer_index[spikers] % 5) + 1
+            spikers_R1Off = np.flatnonzero(mask)
+            R1Off_tspike[spikers_R1Off, R1Off_buffer_index[spikers_R1Off].astype(np.int8)-1] = helper[t]
+            R1Off_buffer_index[spikers_R1Off] = (R1Off_buffer_index[spikers_R1Off] % 5) + 1
         mask = ((S1OnOff_V[:,-1] >= S1OnOff_V_thresh) & (S1OnOff_V[:,-2] < S1OnOff_V_thresh)).astype(np.int8).tolist()
         S1OnOff_V_spikes_holder.append(mask)
         if np.any(mask):
-            spikers = np.flatnonzero(mask)
-            S1OnOff_tspike[spikers, S1OnOff_buffer_index[spikers].astype(np.int8)-1] = helper[t]
-            S1OnOff_buffer_index[spikers] = (S1OnOff_buffer_index[spikers] % 5) + 1
+            spikers_S1OnOff = np.flatnonzero(mask)
+            S1OnOff_tspike[spikers_S1OnOff, S1OnOff_buffer_index[spikers_S1OnOff].astype(np.int8)-1] = helper[t]
+            S1OnOff_buffer_index[spikers_S1OnOff] = (S1OnOff_buffer_index[spikers_S1OnOff] % 5) + 1
         mask = ((R2On_V[:,-1] >= R2On_V_thresh) & (R2On_V[:,-2] < R2On_V_thresh)).astype(np.int8).tolist()
         R2On_V_spikes_holder.append(mask)
         if np.any(mask):
-            spikers = np.flatnonzero(mask)
-            R2On_tspike[spikers, R2On_buffer_index[spikers].astype(np.int8)-1] = helper[t]
-            R2On_buffer_index[spikers] = (R2On_buffer_index[spikers] % 5) + 1
+            spikers_R2On = np.flatnonzero(mask)
+            R2On_tspike[spikers_R2On, R2On_buffer_index[spikers_R2On].astype(np.int8)-1] = helper[t]
+            R2On_buffer_index[spikers_R2On] = (R2On_buffer_index[spikers_R2On] % 5) + 1
         mask = ((R2Off_V[:,-1] >= R2Off_V_thresh) & (R2Off_V[:,-2] < R2Off_V_thresh)).astype(np.int8).tolist()
         R2Off_V_spikes_holder.append(mask)
         if np.any(mask):
-            spikers = np.flatnonzero(mask)
-            R2Off_tspike[spikers, R2Off_buffer_index[spikers].astype(np.int8)-1] = helper[t]
-            R2Off_buffer_index[spikers] = (R2Off_buffer_index[spikers] % 5) + 1
+            spikers_R2Off = np.flatnonzero(mask)
+            R2Off_tspike[spikers_R2Off, R2Off_buffer_index[spikers_R2Off].astype(np.int8)-1] = helper[t]
+            R2Off_buffer_index[spikers_R2Off] = (R2Off_buffer_index[spikers_R2Off] % 5) + 1
         mask = ((S2OnOff_V[:,-1] >= S2OnOff_V_thresh) & (S2OnOff_V[:,-2] < S2OnOff_V_thresh)).astype(np.int8).tolist()
         S2OnOff_V_spikes_holder.append(mask)
         if np.any(mask):
-            spikers = np.flatnonzero(mask)
-            S2OnOff_tspike[spikers, S2OnOff_buffer_index[spikers].astype(np.int8)-1] = helper[t]
-            S2OnOff_buffer_index[spikers] = (S2OnOff_buffer_index[spikers] % 5) + 1
+            spikers_S2OnOff = np.flatnonzero(mask)
+            S2OnOff_tspike[spikers_S2OnOff, S2OnOff_buffer_index[spikers_S2OnOff].astype(np.int8)-1] = helper[t]
+            S2OnOff_buffer_index[spikers_S2OnOff] = (S2OnOff_buffer_index[spikers_S2OnOff] % 5) + 1
 
             #Voltage reset and adaptation
         mask = (On_V[:,-1] > On_V_thresh)
@@ -980,11 +1001,55 @@ def main(trial_number,ps,scale_factor):
 
 
         #Surrogate Spike Related Derivates
-        dspike_dR1On_V = (((10*np.exp(-(0.1)*(R1On_V[:,-1] - R1On_V_thresh)))/(1+np.exp(-(0.1)*(R1On_V[:,-1] - R1On_V_thresh)))**2))/500
-        dspike_dR1Off_V = (((10*np.exp(-(0.1)*(R1Off_V[:,-1] - R1Off_V_thresh)))/(1+np.exp(-(0.1)*(R1Off_V[:,-1] - R1Off_V_thresh)))**2))/500
-        dspike_dS1OnOff_V = (((10*np.exp(-(0.1)*(S1OnOff_V[:,-1] - S1OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S1OnOff_V[:,-1] - S1OnOff_V_thresh)))**2))/500
-        dspike_dR2On_V = (((10*np.exp(-(0.1)*(R2On_V[:,-1] - R2On_V_thresh)))/(1+np.exp(-(0.1)*(R2On_V[:,-1] - R2On_V_thresh)))**2))/500
-        dspike_dS2OnOff_V = (((10*np.exp(-(0.1)*(S2OnOff_V[:,-1] - S2OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S2OnOff_V[:,-1] - S2OnOff_V_thresh)))**2))/500
+        #dspike_dOn_V = (((10*np.exp(-(0.1)*(On_V[:,-1] - On_V_thresh)))/(1+np.exp(-(0.1)*(On_V[:,-1] - On_V_thresh)))**2))/500
+        #dspike_dOff_V = (((10*np.exp(-(0.1)*(Off_V[:,-1] - Off_V_thresh)))/(1+np.exp(-(0.1)*(Off_V[:,-1] - Off_V_thresh)))**2))/500
+        #dspike_dR1On_V = (((10*np.exp(-(0.1)*(R1On_V[:,-1] - R1On_V_thresh)))/(1+np.exp(-(0.1)*(R1On_V[:,-1] - R1On_V_thresh)))**2))/500
+        #dspike_dR1Off_V = (((10*np.exp(-(0.1)*(R1Off_V[:,-1] - R1Off_V_thresh)))/(1+np.exp(-(0.1)*(R1Off_V[:,-1] - R1Off_V_thresh)))**2))/500
+        #dspike_dS1OnOff_V = (((10*np.exp(-(0.1)*(S1OnOff_V[:,-1] - S1OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S1OnOff_V[:,-1] - S1OnOff_V_thresh)))**2))/500
+        #dspike_dR2On_V = (((10*np.exp(-(0.1)*(R2On_V[:,-1] - R2On_V_thresh)))/(1+np.exp(-(0.1)*(R2On_V[:,-1] - R2On_V_thresh)))**2))/500
+        #dspike_dS2OnOff_V = (((10*np.exp(-(0.1)*(S2OnOff_V[:,-1] - S2OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S2OnOff_V[:,-1] - S2OnOff_V_thresh)))**2))/500
+        dv1dOn_V[:,0] = dv1dOn_V[:,1]
+        dv1dOn_V[:,1] = ((1+np.exp(On_V[:,-1]-On_V_thresh))-(On_V[:,-1]-On_V_reset*np.exp(On_V[:,-1]-On_V_thresh)))/(1+np.exp(On_V[:,-1]-On_V_thresh))**2
+        dv2dOn_V[:,0] = dv2dOn_V[:,1]
+        dv2dOn_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(On_tspike+On_t_ref)))),axis=1))
+        dukdv2On_V = (-np.squeeze((np.max(On_tspike,axis=1)-np.partition(On_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(On_V[:,-1]-On_V_thresh)))*(1+np.exp((On_V[:,-2]-On_V_thresh))))/((1+np.exp(-(On_V[:,-1]-On_V_thresh)))*(1+np.exp((On_V[:,-2]-On_V_thresh))))**2
+        dspike_dOn_V = dukdv2On_V*dv2dOn_V[:,0]*dv1dOn_V[:,0]
+        dv1dOff_V[:,0] = dv1dOff_V[:,1]
+        dv1dOff_V[:,1] = ((1+np.exp(Off_V[:,-1]-Off_V_thresh))-(Off_V[:,-1]-Off_V_reset*np.exp(Off_V[:,-1]-Off_V_thresh)))/(1+np.exp(Off_V[:,-1]-Off_V_thresh))**2
+        dv2dOff_V[:,0] = dv2dOff_V[:,1]
+        dv2dOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(Off_tspike+Off_t_ref)))),axis=1))
+        dukdv2Off_V = (-np.squeeze((np.max(Off_tspike,axis=1)-np.partition(Off_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(Off_V[:,-1]-Off_V_thresh)))*(1+np.exp((Off_V[:,-2]-Off_V_thresh))))/((1+np.exp(-(Off_V[:,-1]-Off_V_thresh)))*(1+np.exp((Off_V[:,-2]-Off_V_thresh))))**2
+        dspike_dOff_V = dukdv2Off_V*dv2dOff_V[:,0]*dv1dOff_V[:,0]
+        dv1dR1On_V[:,0] = dv1dR1On_V[:,1]
+        dv1dR1On_V[:,1] = ((1+np.exp(R1On_V[:,-1]-R1On_V_thresh))-(R1On_V[:,-1]-R1On_V_reset*np.exp(R1On_V[:,-1]-R1On_V_thresh)))/(1+np.exp(R1On_V[:,-1]-R1On_V_thresh))**2
+        dv2dR1On_V[:,0] = dv2dR1On_V[:,1]
+        dv2dR1On_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(R1On_tspike+R1On_t_ref)))),axis=1))
+        dukdv2R1On_V = (-np.squeeze((np.max(R1On_tspike,axis=1)-np.partition(R1On_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(R1On_V[:,-1]-R1On_V_thresh)))*(1+np.exp((R1On_V[:,-2]-R1On_V_thresh))))/((1+np.exp(-(R1On_V[:,-1]-R1On_V_thresh)))*(1+np.exp((R1On_V[:,-2]-R1On_V_thresh))))**2
+        dspike_dR1On_V = dukdv2R1On_V*dv2dR1On_V[:,0]*dv1dR1On_V[:,0]
+        dv1dR1Off_V[:,0] = dv1dR1Off_V[:,1]
+        dv1dR1Off_V[:,1] = ((1+np.exp(R1Off_V[:,-1]-R1Off_V_thresh))-(R1Off_V[:,-1]-R1Off_V_reset*np.exp(R1Off_V[:,-1]-R1Off_V_thresh)))/(1+np.exp(R1Off_V[:,-1]-R1Off_V_thresh))**2
+        dv2dR1Off_V[:,0] = dv2dR1Off_V[:,1]
+        dv2dR1Off_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(R1Off_tspike+R1Off_t_ref)))),axis=1))
+        dukdv2R1Off_V = (-np.squeeze((np.max(R1Off_tspike,axis=1)-np.partition(R1Off_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(R1Off_V[:,-1]-R1Off_V_thresh)))*(1+np.exp((R1Off_V[:,-2]-R1Off_V_thresh))))/((1+np.exp(-(R1Off_V[:,-1]-R1Off_V_thresh)))*(1+np.exp((R1Off_V[:,-2]-R1Off_V_thresh))))**2
+        dspike_dR1Off_V = dukdv2R1Off_V*dv2dR1Off_V[:,0]*dv1dR1Off_V[:,0]
+        dv1dS1OnOff_V[:,0] = dv1dS1OnOff_V[:,1]
+        dv1dS1OnOff_V[:,1] = ((1+np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh))-(S1OnOff_V[:,-1]-S1OnOff_V_reset*np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))/(1+np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh))**2
+        dv2dS1OnOff_V[:,0] = dv2dS1OnOff_V[:,1]
+        dv2dS1OnOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(S1OnOff_tspike+S1OnOff_t_ref)))),axis=1))
+        dukdv2S1OnOff_V = (-np.squeeze((np.max(S1OnOff_tspike,axis=1)-np.partition(S1OnOff_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))*(1+np.exp((S1OnOff_V[:,-2]-S1OnOff_V_thresh))))/((1+np.exp(-(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))*(1+np.exp((S1OnOff_V[:,-2]-S1OnOff_V_thresh))))**2
+        dspike_dS1OnOff_V = dukdv2S1OnOff_V*dv2dS1OnOff_V[:,0]*dv1dS1OnOff_V[:,0]
+        dv1dR2On_V[:,0] = dv1dR2On_V[:,1]
+        dv1dR2On_V[:,1] = ((1+np.exp(R2On_V[:,-1]-R2On_V_thresh))-(R2On_V[:,-1]-R2On_V_reset*np.exp(R2On_V[:,-1]-R2On_V_thresh)))/(1+np.exp(R2On_V[:,-1]-R2On_V_thresh))**2
+        dv2dR2On_V[:,0] = dv2dR2On_V[:,1]
+        dv2dR2On_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(R2On_tspike+R2On_t_ref)))),axis=1))
+        dukdv2R2On_V = (-np.squeeze((np.max(R2On_tspike,axis=1)-np.partition(R2On_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(R2On_V[:,-1]-R2On_V_thresh)))*(1+np.exp((R2On_V[:,-2]-R2On_V_thresh))))/((1+np.exp(-(R2On_V[:,-1]-R2On_V_thresh)))*(1+np.exp((R2On_V[:,-2]-R2On_V_thresh))))**2
+        dspike_dR2On_V = dukdv2R2On_V*dv2dR2On_V[:,0]*dv1dR2On_V[:,0]
+        dv1dS2OnOff_V[:,0] = dv1dS2OnOff_V[:,1]
+        dv1dS2OnOff_V[:,1] = ((1+np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh))-(S2OnOff_V[:,-1]-S2OnOff_V_reset*np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh)))/(1+np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh))**2
+        dv2dS2OnOff_V[:,0] = dv2dS2OnOff_V[:,1]
+        dv2dS2OnOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(S2OnOff_tspike+S2OnOff_t_ref)))),axis=1))
+        dukdv2S2OnOff_V = (-np.squeeze((np.max(S2OnOff_tspike,axis=1)-np.partition(S2OnOff_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(S2OnOff_V[:,-1]-S2OnOff_V_thresh)))*(1+np.exp((S2OnOff_V[:,-2]-S2OnOff_V_thresh))))/((1+np.exp(-(S2OnOff_V[:,-1]-S2OnOff_V_thresh)))*(1+np.exp((S2OnOff_V[:,-2]-S2OnOff_V_thresh))))**2
+        dspike_dS2OnOff_V = dukdv2S2OnOff_V*dv2dS2OnOff_V[:,0]*dv1dS2OnOff_V[:,0]
 
 
         #PSC & Parameter Related Derivates

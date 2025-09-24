@@ -1,13 +1,20 @@
 addpath('results\')
 
-m = matfile('run_2025-09-05_00-20-45.mat');
+%PSTH + VR 100ms
+%m = matfile('run_2025-09-11_20-28-42.mat');
+
+%PSTH only
+%m = matfile('run_2025-09-05_22-19-39.mat');
+
+m = matfile('run_2025-09-24_02-37-16.mat');
+
 losses = m.losses;
 param_tracker = m.param_tracker;
 output = m.output;
 
 
 pc_axis1 = 1;
-pc_axis2 = 10;
+pc_axis2 = 3;
 
 % A: [E × P × B]
 [E, P, B] = size(param_tracker);
@@ -112,4 +119,27 @@ plot(DT.Points(K,1), DT.Points(K,2), 'w-', 'LineWidth', 0.5);   % black edge on 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Visualize parameters with aheat map?
+% Example: 20 trials, 10 parameters
+nTrials = 300;
+nParams = 10;
+%X = randn(nTrials, nParams);  % replace with your solutions
 
+% Optional: normalize each parameter (z-score across trials)
+%Xz = (X - mean(X,1)) ./ std(X,[],1);
+
+% Parameter and trial labels
+paramNames = arrayfun(@(i) sprintf("p%d", i), 1:nParams, 'UniformOutput', false);
+trialLabels = arrayfun(@(i) sprintf("trial %d", i), 1:nTrials, 'UniformOutput', false);
+
+% Make the heatmap
+figure;
+
+%SORTING BY FIRST COLUMN (On-R1On)
+h = heatmap(sortrows(transpose(squeeze(param_tracker(500,:,:))),7));
+%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% Customize appearance
+h.Colormap = parula;
+h.ColorbarVisible = 'on';
+h.XLabel = 'Parameters';
+h.YLabel = 'Trials';
+h.Title = 'Parameter Solutions Heatmap';
