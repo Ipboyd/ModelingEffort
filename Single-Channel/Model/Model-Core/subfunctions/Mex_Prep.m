@@ -1,5 +1,4 @@
-% study_dir: folder under 'run' where m files and input spikes for simulations are written and saved
-study_dir = fullfile(pwd,'run','1-channel-paper');
+
 
 if isfolder(study_dir)
     warning('off', 'MATLAB:rmpath:DirNotFound');  % suppress path-related warnings

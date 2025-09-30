@@ -1,5 +1,5 @@
-clear all
-close all
+%clear all
+%close all
 %Calculate the interspike interval distribution
 
 %The goal here is to examine and fit the interspike interval distribution of the data.
@@ -12,7 +12,23 @@ data = load(filename).picture;
 %PSTH + VR 100ms
 %m = matfile('run_2025-09-11_20-28-42.mat');
 %m = matfile('run_2025-09-24_12-23-46.mat');
-m = matfile('run_2025-09-24_14-40-11.mat');
+%m = matfile('run_2025-09-24_14-40-11.mat');
+%m = matfile('run_2025-09-24_16-14-45.mat');
+%m = matfile('run_2025-09-24_17-08-02.mat');
+
+%m = matfile('run_2025-09-29_13-19-42.mat');
+
+
+%m = matfile('run_2025-09-29_13-41-22.mat');
+
+%m = matfile('run_2025-09-29_14-23-42.mat');
+
+%m = matfile('run_2025-09-29_15-25-13.mat');
+
+%m = matfile('run_2025-09-29_21-58-21.mat');
+m = matfile('run_2025-09-30_11-11-12.mat');
+
+%m = matfile('run_2025-09-29_23-43-46.mat');
 
 outputs = m.output;
 losses = m.losses;
@@ -20,25 +36,30 @@ params = m.param_tracker;
 
 %Calculate the isi for all spikes accross all trials
 epochnum = size(params);
-[min_val, min_idx] = min(losses(epochnum(1),2,:));
+[min_val, min_idx] = min(losses(epochnum(1),:));
+%[min_val, min_idx] = min(losses(epochnum(1),2,:));
 output_trial = min_idx;
 
 
 isi_holder_data = isi_calc(data);
-isi_holder_sim = isi_calc(outputs(:,:,min_idx));
+isi_holder_sim = isi_calc(outputs(:,:,1));
 
 
 figure;
-plot(movmean(histcounts(isi_holder_data,1:10000),100),'LineWidth',2); hold on
-plot(movmean(histcounts(isi_holder_sim,1:10000),100),'LineWidth',2);
+plot(movmean(histcounts(isi_holder_data,1:10000)/sum(histcounts(isi_holder_data,1:10000)),100),'LineWidth',2); hold on
+plot(movmean(histcounts(isi_holder_sim,1:10000)/sum(histcounts(isi_holder_sim,1:10000)),100),'LineWidth',2);
 xlim([0,2000])
 legend({'data','sim'})
 xlabel('samples in samples/0.1ms')
 
-% figure;
-% hist(isi_holder_data,1000); hold on
-% hist(isi_holder_sim,1000);
-% xlim([0,500])
+figure;
+hist(isi_holder_data,1000); hold on
+hist(isi_holder_sim,1000);
+
+%h = findobj(gca,'Type','patch');
+%h.FaceColor = 05;
+%h.EdgeColor = 'w';
+%xlim([0,500])
 
 
 disp('Mean Iterval Data < 200ms = ' + string(mean(isi_holder_data(find(isi_holder_data < 2000)))*0.1)+ ' ms')  %dt = 0.1ms

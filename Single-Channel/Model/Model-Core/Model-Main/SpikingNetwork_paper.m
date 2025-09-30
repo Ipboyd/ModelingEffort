@@ -39,6 +39,6 @@ setOptions;                                                                     
 [snn_out,s] = columnNetwork_paper_onoff(study_dir,varies,options,flag_raised_mex);  %\TODO Comment and clean
 
 % post-process for performance and firing results
-postProcessSims;                                                                    %\TODO Comment and clean
+%postProcessSims;                                                                    %\TODO Comment and clean
 
 

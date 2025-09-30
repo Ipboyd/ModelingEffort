@@ -72,11 +72,13 @@ end
 
 %% Plot PSTH and store in struct
 
-total_spike_data = [];
 
-for n = 7 % Number of cells
 
-    for ang = 1:3 % Number of angles
+for n = 1:64 % Number of cells
+
+    for ang = 1:4 % Number of angles
+
+        total_spike_data = [];
 
         figure;
 
@@ -369,7 +371,7 @@ for n = 7 % Number of cells
         is_Neither = 0;
 
         for h = 1:length(qual_off_points)
-            if sum(qual_on_points(h,3:5)) == 3
+            if sum(qual_off_points(h,3:5)) == 3
                 is_Offset = 1;
                 break
             end
@@ -410,7 +412,7 @@ for n = 7 % Number of cells
     end
 end
 
-%close all
+close all
 
 
 %%%% Figure out why onset/offset data is stacking!!

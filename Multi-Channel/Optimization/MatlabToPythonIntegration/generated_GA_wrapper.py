@@ -1,4 +1,4 @@
-def _single_trial(trial_number, ps, scale_factor):
+def _single_trial(trial_number, ps, scale_factor, name):
     """
     Wrapper that runs ONE trial and returns whatever `forwards` returns.
     Put *only* the per-trial work here so we can map it in parallel.

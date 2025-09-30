@@ -56,7 +56,7 @@ def spike_generator(rate, dt, t_ref, t_ref_rel, rec):
 
     return spike_train
 
-def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec, scale_factor):
+def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec, scale_factor, layer_name = "1-channel-paper"):
     """
     Generate Poisson spike inputs from a .mat file of spike rates.
 
@@ -81,7 +81,7 @@ def gen_poisson_inputs(trial, loc_num, label, t_ref, t_ref_rel, rec, scale_facto
     label_clean = label.strip("'")  # remove literal apostrophes
 
     #This needs to be made more dynamic and put in a spot where it will actually be updated (perhaps contingetnt on the model being run)
-    matfile_path = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Single-Channel/Model/Model-Core/Model-Main/run/1-channel-paper/solve"
+    matfile_path = f"C:/Users/ipboy/Documents/GitHub/ModelingEffort/Single-Channel/Model/Model-Core/Model-Main/run/{layer_name}/solve"
     filename = f"{matfile_path}/IC_spks_{label_clean}.mat"
     
     data = scipy.io.loadmat(filename)

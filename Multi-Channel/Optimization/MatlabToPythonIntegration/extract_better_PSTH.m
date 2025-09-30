@@ -5,7 +5,15 @@ data = load(filename).picture;
 
 addpath("results\")
 
-m = matfile('run_2025-09-24_12-23-46.mat');
+%m = matfile('run_2025-09-24_12-23-46.mat');
+%m = matfile('run_2025-09-24_16-14-45.mat');
+
+%m = matfile('run_2025-09-24_17-08-02.mat');
+%m = matfile('run_2025-09-29_23-43-46.mat');
+%m = matfile('run_2025-09-29_21-58-21.mat');
+
+%m = matfile('run_2025-09-30_10-21-33.mat');
+m = matfile('run_2025-09-30_11-11-12.mat');
 
 %New Spiking
 %m = matfile('run_2025-09-23_11-50-39.mat');
@@ -36,6 +44,7 @@ params = m.param_tracker;
 %m = matfile('run_2025-09-05_22-19-39.mat');
 epochnum = size(params);
 [min_val, min_idx] = min(losses(epochnum(1),2,:));
+%[min_val, min_idx] = min(losses(epochnum(1),:));
 
 output_trial = min_idx;
 bin_width = 200; %In 0.1 ms

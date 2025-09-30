@@ -115,6 +115,14 @@ def build_ODE(parameters,batch_size):
             params += f"    {name} = ps[{count_ps}]\n"
             count_ps += 1
 
+        elif "g_inc" in name and "R2Off" not in name:
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
+
+        elif "tau_ad" in name and "R2Off" not in name:
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
+
         else:
             params += f"    {name} = {value}\n"
 
