@@ -6,7 +6,8 @@
 
 
 %Bring in data
-filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/picture_fit.mat";
+addpath('results\')
+filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/picture_fit56.mat";
 data = load(filename).picture;
 
 %PSTH + VR 100ms
@@ -26,9 +27,24 @@ data = load(filename).picture;
 %m = matfile('run_2025-09-29_15-25-13.mat');
 
 %m = matfile('run_2025-09-29_21-58-21.mat');
-m = matfile('run_2025-09-30_11-11-12.mat');
+%m = matfile('run_2025-10-01_00-08-37.mat');
+%m = matfile('run_2025-10-01_07-08-28.mat');
 
-%m = matfile('run_2025-09-29_23-43-46.mat');
+%Layer 4
+%m = matfile('run_2025-10-01_17-07-52.mat');
+
+
+%%make_raster(m,data)
+
+%m = matfile('run_2025-10-01_17-48-11.mat');
+
+%make_raster(m,data)
+
+%m = matfile('run_2025-10-01_18-53-40.mat');
+
+%make_raster(m,data)
+
+m = matfile('run_2025-10-01_23-08-57.mat');
 
 outputs = m.output;
 losses = m.losses;
@@ -36,13 +52,13 @@ params = m.param_tracker;
 
 %Calculate the isi for all spikes accross all trials
 epochnum = size(params);
-[min_val, min_idx] = min(losses(epochnum(1),:));
-%[min_val, min_idx] = min(losses(epochnum(1),2,:));
+%[min_val, min_idx] = min(losses(epochnum(1),:));
+[min_val, min_idx] = min(losses(epochnum(1),2,:));
 output_trial = min_idx;
 
 
 isi_holder_data = isi_calc(data);
-isi_holder_sim = isi_calc(outputs(:,:,1));
+isi_holder_sim = isi_calc(outputs(:,:,output_trial));
 
 
 figure;

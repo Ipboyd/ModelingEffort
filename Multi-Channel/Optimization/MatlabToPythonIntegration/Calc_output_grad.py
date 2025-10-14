@@ -192,7 +192,7 @@ def spike_idx_from_binary(x, thresh=0.5, refrac_ms=0.0, dt=0.1):
     return spike_idx
 
 
-def calculate(forwards_output, grads, scale_factor, grad_type):
+def calculate(forwards_output, grads, scale_factor, grad_type, ncell = None):
 
     if grad_type == "fr":
 
@@ -903,7 +903,7 @@ def calculate(forwards_output, grads, scale_factor, grad_type):
         # -- Load in data
 
         forwards_out = np.asarray(forwards_output, dtype=np.float32)
-        filename = "c:/users/ipboy/documents/github/modelingeffort/multi-channel/plotting/oliverdataplotting/picture_fit.mat"
+        filename = f"C:/Users/ipboy/Documents/Github/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/PicturesToFit/picture_fit{ncell}contra.mat"
         data = loadmat(filename)['picture'].astype(np.float32)[:,:,None]
 
         data = np.transpose(data,(2,0,1)) #Transpose things to be Batch,trials,timecouse

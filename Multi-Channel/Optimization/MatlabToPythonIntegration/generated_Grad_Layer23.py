@@ -9,6 +9,25 @@ import Update_params
 def main(trial_number,ps,scale_factor):
 
     #Params
+    R1On_On_PSC_gSYN = ps[0]
+    S1OnOff_On_PSC_gSYN = ps[1]
+    R1On_S1OnOff_PSC_gSYN = ps[2]
+    R1Off_S1OnOff_PSC_gSYN = ps[3]
+    R1Off_Off_PSC_gSYN = ps[4]
+    S1OnOff_Off_PSC_gSYN = ps[5]
+    R2On_R1On_PSC_gSYN = ps[6]
+    S2OnOff_R1On_PSC_gSYN = ps[7]
+    R2On_S2OnOff_PSC_gSYN = ps[8]
+    S2OnOff_R1Off_PSC_gSYN = ps[9]
+    On_t_ref = ps[10]
+    Off_t_ref = ps[11]
+    R1On_t_ref = ps[12]
+    R1Off_t_ref = ps[13]
+    S1OnOff_t_ref = ps[14]
+    R2On_t_ref = ps[15]
+    S2OnOff_t_ref = ps[16]
+    On_On_IC_g_postIC = ps[17]
+    Off_Off_IC_g_postIC = ps[18]
     tspan = np.array([0.1, 2980.1*scale_factor])
     downsample_factor = 1
 
@@ -22,7 +41,6 @@ def main(trial_number,ps,scale_factor):
     On_g_L = 0.005
     On_E_L = -65
     On_noise = 0
-    On_t_ref = 1
     On_E_k = -80
     On_tau_ad = 5
     On_g_inc = 0
@@ -34,7 +52,6 @@ def main(trial_number,ps,scale_factor):
     Off_g_L = 0.005
     Off_E_L = -65
     Off_noise = 0
-    Off_t_ref = 1
     Off_E_k = -80
     Off_tau_ad = 5
     Off_g_inc = 0
@@ -46,7 +63,6 @@ def main(trial_number,ps,scale_factor):
     R1On_g_L = 0.005
     R1On_E_L = -65
     R1On_noise = 0
-    R1On_t_ref = 1
     R1On_E_k = -80
     R1On_tau_ad = 100
     R1On_g_inc = 0.0003
@@ -58,7 +74,6 @@ def main(trial_number,ps,scale_factor):
     R1Off_g_L = 0.005
     R1Off_E_L = -65
     R1Off_noise = 0
-    R1Off_t_ref = 1
     R1Off_E_k = -80
     R1Off_tau_ad = 100
     R1Off_g_inc = 0.0003
@@ -70,7 +85,6 @@ def main(trial_number,ps,scale_factor):
     S1OnOff_g_L = 0.01
     S1OnOff_E_L = -57
     S1OnOff_noise = 0
-    S1OnOff_t_ref = 0.5
     S1OnOff_E_k = -80
     S1OnOff_tau_ad = 5
     S1OnOff_g_inc = 0
@@ -82,7 +96,6 @@ def main(trial_number,ps,scale_factor):
     R2On_g_L = 0.005
     R2On_E_L = -65
     R2On_noise = 0
-    R2On_t_ref = 1
     R2On_E_k = -80
     R2On_tau_ad = 100
     R2On_g_inc = 0.0003
@@ -106,7 +119,6 @@ def main(trial_number,ps,scale_factor):
     S2OnOff_g_L = 0.01
     S2OnOff_E_L = -57
     S2OnOff_noise = 0
-    S2OnOff_t_ref = 0.5
     S2OnOff_E_k = -80
     S2OnOff_tau_ad = 5
     S2OnOff_g_inc = 0
@@ -120,7 +132,6 @@ def main(trial_number,ps,scale_factor):
     On_On_IC_t_ref = 1
     On_On_IC_t_ref_rel = 1
     On_On_IC_rec = 2
-    On_On_IC_g_postIC = 0.17
     On_On_IC_E_exc = 0
     Off_Off_IC_trial = 20
     Off_Off_IC_locNum = 15
@@ -128,13 +139,11 @@ def main(trial_number,ps,scale_factor):
     Off_Off_IC_t_ref = 1
     Off_Off_IC_t_ref_rel = 1
     Off_Off_IC_rec = 2
-    Off_Off_IC_g_postIC = 0.17
     Off_Off_IC_E_exc = 0
     R1On_On_PSC_ESYN = 0
     R1On_On_PSC_tauD = 1.5
     R1On_On_PSC_tauR = 0.7
     R1On_On_PSC_delay = 0
-    R1On_On_PSC_gSYN = ps[0]
     R1On_On_PSC_fF = 0
     R1On_On_PSC_fP = 0.1
     R1On_On_PSC_tauF = 180
@@ -144,7 +153,6 @@ def main(trial_number,ps,scale_factor):
     S1OnOff_On_PSC_tauD = 1
     S1OnOff_On_PSC_tauR = 0.1
     S1OnOff_On_PSC_delay = 0
-    S1OnOff_On_PSC_gSYN = ps[1]
     S1OnOff_On_PSC_fF = 0
     S1OnOff_On_PSC_fP = 0.2
     S1OnOff_On_PSC_tauF = 180
@@ -154,7 +162,6 @@ def main(trial_number,ps,scale_factor):
     R1On_S1OnOff_PSC_tauD = 4.5
     R1On_S1OnOff_PSC_tauR = 1
     R1On_S1OnOff_PSC_delay = 0
-    R1On_S1OnOff_PSC_gSYN = ps[2]
     R1On_S1OnOff_PSC_fF = 0
     R1On_S1OnOff_PSC_fP = 0.5
     R1On_S1OnOff_PSC_tauF = 180
@@ -164,7 +171,6 @@ def main(trial_number,ps,scale_factor):
     R1Off_S1OnOff_PSC_tauD = 4.5
     R1Off_S1OnOff_PSC_tauR = 1
     R1Off_S1OnOff_PSC_delay = 0
-    R1Off_S1OnOff_PSC_gSYN = ps[3]
     R1Off_S1OnOff_PSC_fF = 0
     R1Off_S1OnOff_PSC_fP = 0.5
     R1Off_S1OnOff_PSC_tauF = 180
@@ -174,7 +180,6 @@ def main(trial_number,ps,scale_factor):
     R1Off_Off_PSC_tauD = 1.5
     R1Off_Off_PSC_tauR = 0.7
     R1Off_Off_PSC_delay = 0
-    R1Off_Off_PSC_gSYN = ps[4]
     R1Off_Off_PSC_fF = 0
     R1Off_Off_PSC_fP = 0.1
     R1Off_Off_PSC_tauF = 180
@@ -184,7 +189,6 @@ def main(trial_number,ps,scale_factor):
     S1OnOff_Off_PSC_tauD = 1
     S1OnOff_Off_PSC_tauR = 0.1
     S1OnOff_Off_PSC_delay = 0
-    S1OnOff_Off_PSC_gSYN = ps[5]
     S1OnOff_Off_PSC_fF = 0
     S1OnOff_Off_PSC_fP = 0
     S1OnOff_Off_PSC_tauF = 180
@@ -194,7 +198,6 @@ def main(trial_number,ps,scale_factor):
     R2On_R1On_PSC_tauD = 1.5
     R2On_R1On_PSC_tauR = 0.7
     R2On_R1On_PSC_delay = 0
-    R2On_R1On_PSC_gSYN = ps[6]
     R2On_R1On_PSC_fF = 0
     R2On_R1On_PSC_fP = 0.1
     R2On_R1On_PSC_tauF = 180
@@ -204,7 +207,6 @@ def main(trial_number,ps,scale_factor):
     S2OnOff_R1On_PSC_tauD = 1
     S2OnOff_R1On_PSC_tauR = 0.1
     S2OnOff_R1On_PSC_delay = 0
-    S2OnOff_R1On_PSC_gSYN = ps[7]
     S2OnOff_R1On_PSC_fF = 0
     S2OnOff_R1On_PSC_fP = 0.2
     S2OnOff_R1On_PSC_tauF = 180
@@ -214,7 +216,6 @@ def main(trial_number,ps,scale_factor):
     R2On_S2OnOff_PSC_tauD = 4.5
     R2On_S2OnOff_PSC_tauR = 1
     R2On_S2OnOff_PSC_delay = 0
-    R2On_S2OnOff_PSC_gSYN = ps[8]
     R2On_S2OnOff_PSC_fF = 0
     R2On_S2OnOff_PSC_fP = 0.5
     R2On_S2OnOff_PSC_tauF = 180
@@ -244,7 +245,6 @@ def main(trial_number,ps,scale_factor):
     S2OnOff_R1Off_PSC_tauD = 1
     S2OnOff_R1Off_PSC_tauR = 0.1
     S2OnOff_R1Off_PSC_delay = 0
-    S2OnOff_R1Off_PSC_gSYN = ps[9]
     S2OnOff_R1Off_PSC_fF = 0
     S2OnOff_R1Off_PSC_fP = 0
     S2OnOff_R1Off_PSC_tauF = 180
@@ -261,6 +261,13 @@ def main(trial_number,ps,scale_factor):
     ROn_X_PSC3_netcon = 1
     ROn_SOnOff_PSC3_netcon = 1
     C_ROn_PSC3_netcon = 1
+    dv1dOn_V_holder = []
+    dv1dOff_V_holder = []
+    dv1dR1On_V_holder = []
+    dv1dR1Off_V_holder = []
+    dv1dS1OnOff_V_holder = []
+    dv1dR2On_V_holder = []
+    dv1dS2OnOff_V_holder = []
     dGSYNR1On_On = np.zeros((400))
     dGSYNS1OnOff_On = np.zeros((400))
     dGSYNR1On_S1OnOff = np.zeros((400))
@@ -411,28 +418,28 @@ def main(trial_number,ps,scale_factor):
     R2On_R2On_iNoise_V3_xn = np.ones((400,2)) * [0, 0]
 
     #Monitor Declaration
-    On_tspike = -1e32*np.ones((400, 5, On_Npop))
+    On_tspike = -30*np.ones((400, 5, On_Npop))
     On_buffer_index = np.ones((400))
     On_V_spikes_holder = []
-    Off_tspike = -1e32*np.ones((400, 5, Off_Npop))
+    Off_tspike = -30*np.ones((400, 5, Off_Npop))
     Off_buffer_index = np.ones((400))
     Off_V_spikes_holder = []
-    R1On_tspike = -1e32*np.ones((400, 5, R1On_Npop))
+    R1On_tspike = -30*np.ones((400, 5, R1On_Npop))
     R1On_buffer_index = np.ones((400))
     R1On_V_spikes_holder = []
-    R1Off_tspike = -1e32*np.ones((400, 5, R1Off_Npop))
+    R1Off_tspike = -30*np.ones((400, 5, R1Off_Npop))
     R1Off_buffer_index = np.ones((400))
     R1Off_V_spikes_holder = []
-    S1OnOff_tspike = -1e32*np.ones((400, 5, S1OnOff_Npop))
+    S1OnOff_tspike = -30*np.ones((400, 5, S1OnOff_Npop))
     S1OnOff_buffer_index = np.ones((400))
     S1OnOff_V_spikes_holder = []
-    R2On_tspike = -1e32*np.ones((400, 5, R2On_Npop))
+    R2On_tspike = -30*np.ones((400, 5, R2On_Npop))
     R2On_buffer_index = np.ones((400))
     R2On_V_spikes_holder = []
-    R2Off_tspike = -1e32*np.ones((400, 5, R2Off_Npop))
+    R2Off_tspike = -30*np.ones((400, 5, R2Off_Npop))
     R2Off_buffer_index = np.ones((400))
     R2Off_V_spikes_holder = []
-    S2OnOff_tspike = -1e32*np.ones((400, 5, S2OnOff_Npop))
+    S2OnOff_tspike = -30*np.ones((400, 5, S2OnOff_Npop))
     S2OnOff_buffer_index = np.ones((400))
     S2OnOff_V_spikes_holder = []
     On_On_IC_iIC = 0
@@ -451,24 +458,31 @@ def main(trial_number,ps,scale_factor):
     S2OnOff_R1Off_PSC_syn = 0
     dv1dOn_V = np.ones((400,2))
     dv2dOn_V = np.ones((400,2))
+    dv2_dOn_tref = np.ones((400,2))
     spikers_On = np.zeros((400)).astype(np.int8)
     dv1dOff_V = np.ones((400,2))
     dv2dOff_V = np.ones((400,2))
+    dv2_dOff_tref = np.ones((400,2))
     spikers_Off = np.zeros((400)).astype(np.int8)
     dv1dR1On_V = np.ones((400,2))
     dv2dR1On_V = np.ones((400,2))
+    dv2_dR1On_tref = np.ones((400,2))
     spikers_R1On = np.zeros((400)).astype(np.int8)
     dv1dR1Off_V = np.ones((400,2))
     dv2dR1Off_V = np.ones((400,2))
+    dv2_dR1Off_tref = np.ones((400,2))
     spikers_R1Off = np.zeros((400)).astype(np.int8)
     dv1dS1OnOff_V = np.ones((400,2))
     dv2dS1OnOff_V = np.ones((400,2))
+    dv2_dS1OnOff_tref = np.ones((400,2))
     spikers_S1OnOff = np.zeros((400)).astype(np.int8)
     dv1dR2On_V = np.ones((400,2))
     dv2dR2On_V = np.ones((400,2))
+    dv2_dR2On_tref = np.ones((400,2))
     spikers_R2On = np.zeros((400)).astype(np.int8)
     dv1dS2OnOff_V = np.ones((400,2))
     dv2dS2OnOff_V = np.ones((400,2))
+    dv2_dS2OnOff_tref = np.ones((400,2))
     spikers_S2OnOff = np.zeros((400)).astype(np.int8)
 
     #Delcare Inputs
@@ -773,7 +787,7 @@ def main(trial_number,ps,scale_factor):
             On_V[spikers,-1] = On_V_reset 
             On_g_ad[spikers,-2] = On_g_ad[spikers,-1]
             On_g_ad[spikers,-1] = On_g_ad[spikers,-1] + On_g_inc
-        mask = np.any((helper[t] <= (On_tspike + On_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(On_tspike) + On_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             On_V[spikers,-2] = On_V[spikers,-1]
@@ -785,7 +799,7 @@ def main(trial_number,ps,scale_factor):
             Off_V[spikers,-1] = Off_V_reset 
             Off_g_ad[spikers,-2] = Off_g_ad[spikers,-1]
             Off_g_ad[spikers,-1] = Off_g_ad[spikers,-1] + Off_g_inc
-        mask = np.any((helper[t] <= (Off_tspike + Off_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(Off_tspike) + Off_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             Off_V[spikers,-2] = Off_V[spikers,-1]
@@ -797,7 +811,7 @@ def main(trial_number,ps,scale_factor):
             R1On_V[spikers,-1] = R1On_V_reset 
             R1On_g_ad[spikers,-2] = R1On_g_ad[spikers,-1]
             R1On_g_ad[spikers,-1] = R1On_g_ad[spikers,-1] + R1On_g_inc
-        mask = np.any((helper[t] <= (R1On_tspike + R1On_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(R1On_tspike) + R1On_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             R1On_V[spikers,-2] = R1On_V[spikers,-1]
@@ -809,7 +823,7 @@ def main(trial_number,ps,scale_factor):
             R1Off_V[spikers,-1] = R1Off_V_reset 
             R1Off_g_ad[spikers,-2] = R1Off_g_ad[spikers,-1]
             R1Off_g_ad[spikers,-1] = R1Off_g_ad[spikers,-1] + R1Off_g_inc
-        mask = np.any((helper[t] <= (R1Off_tspike + R1Off_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(R1Off_tspike) + R1Off_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             R1Off_V[spikers,-2] = R1Off_V[spikers,-1]
@@ -821,7 +835,7 @@ def main(trial_number,ps,scale_factor):
             S1OnOff_V[spikers,-1] = S1OnOff_V_reset 
             S1OnOff_g_ad[spikers,-2] = S1OnOff_g_ad[spikers,-1]
             S1OnOff_g_ad[spikers,-1] = S1OnOff_g_ad[spikers,-1] + S1OnOff_g_inc
-        mask = np.any((helper[t] <= (S1OnOff_tspike + S1OnOff_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(S1OnOff_tspike) + S1OnOff_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             S1OnOff_V[spikers,-2] = S1OnOff_V[spikers,-1]
@@ -833,7 +847,7 @@ def main(trial_number,ps,scale_factor):
             R2On_V[spikers,-1] = R2On_V_reset 
             R2On_g_ad[spikers,-2] = R2On_g_ad[spikers,-1]
             R2On_g_ad[spikers,-1] = R2On_g_ad[spikers,-1] + R2On_g_inc
-        mask = np.any((helper[t] <= (R2On_tspike + R2On_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(R2On_tspike) + R2On_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             R2On_V[spikers,-2] = R2On_V[spikers,-1]
@@ -845,7 +859,7 @@ def main(trial_number,ps,scale_factor):
             R2Off_V[spikers,-1] = R2Off_V_reset 
             R2Off_g_ad[spikers,-2] = R2Off_g_ad[spikers,-1]
             R2Off_g_ad[spikers,-1] = R2Off_g_ad[spikers,-1] + R2Off_g_inc
-        mask = np.any((helper[t] <= (R2Off_tspike + R2Off_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(R2Off_tspike) + R2Off_t_ref)), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             R2Off_V[spikers,-2] = R2Off_V[spikers,-1]
@@ -857,7 +871,7 @@ def main(trial_number,ps,scale_factor):
             S2OnOff_V[spikers,-1] = S2OnOff_V_reset 
             S2OnOff_g_ad[spikers,-2] = S2OnOff_g_ad[spikers,-1]
             S2OnOff_g_ad[spikers,-1] = S2OnOff_g_ad[spikers,-1] + S2OnOff_g_inc
-        mask = np.any((helper[t] <= (S2OnOff_tspike + S2OnOff_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(S2OnOff_tspike) + S2OnOff_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             S2OnOff_V[spikers,-2] = S2OnOff_V[spikers,-1]
@@ -1009,46 +1023,53 @@ def main(trial_number,ps,scale_factor):
         #dspike_dR2On_V = (((10*np.exp(-(0.1)*(R2On_V[:,-1] - R2On_V_thresh)))/(1+np.exp(-(0.1)*(R2On_V[:,-1] - R2On_V_thresh)))**2))/500
         #dspike_dS2OnOff_V = (((10*np.exp(-(0.1)*(S2OnOff_V[:,-1] - S2OnOff_V_thresh)))/(1+np.exp(-(0.1)*(S2OnOff_V[:,-1] - S2OnOff_V_thresh)))**2))/500
         dv1dOn_V[:,0] = dv1dOn_V[:,1]
-        dv1dOn_V[:,1] = ((1+np.exp(On_V[:,-1]-On_V_thresh))-(On_V[:,-1]-On_V_reset*np.exp(On_V[:,-1]-On_V_thresh)))/(1+np.exp(On_V[:,-1]-On_V_thresh))**2
+        dv1dOn_V[:,1] = ((1+np.exp(On_V[:,-1]-On_V_thresh))-((On_V[:,-1]-On_V_reset)*np.exp(On_V[:,-1]-On_V_thresh)))/(1+np.exp(On_V[:,-1]-On_V_thresh))**2
         dv2dOn_V[:,0] = dv2dOn_V[:,1]
-        dv2dOn_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(On_tspike+On_t_ref)))),axis=1))
+        dv2dOn_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(On_tspike)+On_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2On_V = (-np.squeeze((np.max(On_tspike,axis=1)-np.partition(On_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(On_V[:,-1]-On_V_thresh)))*(1+np.exp((On_V[:,-2]-On_V_thresh))))/((1+np.exp(-(On_V[:,-1]-On_V_thresh)))*(1+np.exp((On_V[:,-2]-On_V_thresh))))**2
+        dv1dOn_V_holder.append(-np.squeeze((np.max(On_tspike,axis=1))))
         dspike_dOn_V = dukdv2On_V*dv2dOn_V[:,0]*dv1dOn_V[:,0]
         dv1dOff_V[:,0] = dv1dOff_V[:,1]
-        dv1dOff_V[:,1] = ((1+np.exp(Off_V[:,-1]-Off_V_thresh))-(Off_V[:,-1]-Off_V_reset*np.exp(Off_V[:,-1]-Off_V_thresh)))/(1+np.exp(Off_V[:,-1]-Off_V_thresh))**2
+        dv1dOff_V[:,1] = ((1+np.exp(Off_V[:,-1]-Off_V_thresh))-((Off_V[:,-1]-Off_V_reset)*np.exp(Off_V[:,-1]-Off_V_thresh)))/(1+np.exp(Off_V[:,-1]-Off_V_thresh))**2
         dv2dOff_V[:,0] = dv2dOff_V[:,1]
-        dv2dOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(Off_tspike+Off_t_ref)))),axis=1))
+        dv2dOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(Off_tspike)+Off_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2Off_V = (-np.squeeze((np.max(Off_tspike,axis=1)-np.partition(Off_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(Off_V[:,-1]-Off_V_thresh)))*(1+np.exp((Off_V[:,-2]-Off_V_thresh))))/((1+np.exp(-(Off_V[:,-1]-Off_V_thresh)))*(1+np.exp((Off_V[:,-2]-Off_V_thresh))))**2
+        dv1dOff_V_holder.append(-np.squeeze((np.max(Off_tspike,axis=1))))
         dspike_dOff_V = dukdv2Off_V*dv2dOff_V[:,0]*dv1dOff_V[:,0]
         dv1dR1On_V[:,0] = dv1dR1On_V[:,1]
-        dv1dR1On_V[:,1] = ((1+np.exp(R1On_V[:,-1]-R1On_V_thresh))-(R1On_V[:,-1]-R1On_V_reset*np.exp(R1On_V[:,-1]-R1On_V_thresh)))/(1+np.exp(R1On_V[:,-1]-R1On_V_thresh))**2
+        dv1dR1On_V[:,1] = ((1+np.exp(R1On_V[:,-1]-R1On_V_thresh))-((R1On_V[:,-1]-R1On_V_reset)*np.exp(R1On_V[:,-1]-R1On_V_thresh)))/(1+np.exp(R1On_V[:,-1]-R1On_V_thresh))**2
         dv2dR1On_V[:,0] = dv2dR1On_V[:,1]
-        dv2dR1On_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(R1On_tspike+R1On_t_ref)))),axis=1))
+        dv2dR1On_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(R1On_tspike)+R1On_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2R1On_V = (-np.squeeze((np.max(R1On_tspike,axis=1)-np.partition(R1On_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(R1On_V[:,-1]-R1On_V_thresh)))*(1+np.exp((R1On_V[:,-2]-R1On_V_thresh))))/((1+np.exp(-(R1On_V[:,-1]-R1On_V_thresh)))*(1+np.exp((R1On_V[:,-2]-R1On_V_thresh))))**2
+        dv1dR1On_V_holder.append(-np.squeeze((np.max(R1On_tspike,axis=1))))
         dspike_dR1On_V = dukdv2R1On_V*dv2dR1On_V[:,0]*dv1dR1On_V[:,0]
         dv1dR1Off_V[:,0] = dv1dR1Off_V[:,1]
-        dv1dR1Off_V[:,1] = ((1+np.exp(R1Off_V[:,-1]-R1Off_V_thresh))-(R1Off_V[:,-1]-R1Off_V_reset*np.exp(R1Off_V[:,-1]-R1Off_V_thresh)))/(1+np.exp(R1Off_V[:,-1]-R1Off_V_thresh))**2
+        dv1dR1Off_V[:,1] = ((1+np.exp(R1Off_V[:,-1]-R1Off_V_thresh))-((R1Off_V[:,-1]-R1Off_V_reset)*np.exp(R1Off_V[:,-1]-R1Off_V_thresh)))/(1+np.exp(R1Off_V[:,-1]-R1Off_V_thresh))**2
         dv2dR1Off_V[:,0] = dv2dR1Off_V[:,1]
-        dv2dR1Off_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(R1Off_tspike+R1Off_t_ref)))),axis=1))
+        dv2dR1Off_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(R1Off_tspike)+R1Off_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2R1Off_V = (-np.squeeze((np.max(R1Off_tspike,axis=1)-np.partition(R1Off_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(R1Off_V[:,-1]-R1Off_V_thresh)))*(1+np.exp((R1Off_V[:,-2]-R1Off_V_thresh))))/((1+np.exp(-(R1Off_V[:,-1]-R1Off_V_thresh)))*(1+np.exp((R1Off_V[:,-2]-R1Off_V_thresh))))**2
+        dv1dR1Off_V_holder.append(-np.squeeze((np.max(R1Off_tspike,axis=1))))
         dspike_dR1Off_V = dukdv2R1Off_V*dv2dR1Off_V[:,0]*dv1dR1Off_V[:,0]
         dv1dS1OnOff_V[:,0] = dv1dS1OnOff_V[:,1]
-        dv1dS1OnOff_V[:,1] = ((1+np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh))-(S1OnOff_V[:,-1]-S1OnOff_V_reset*np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))/(1+np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh))**2
+        dv1dS1OnOff_V[:,1] = ((1+np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh))-((S1OnOff_V[:,-1]-S1OnOff_V_reset)*np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))/(1+np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh))**2
         dv2dS1OnOff_V[:,0] = dv2dS1OnOff_V[:,1]
-        dv2dS1OnOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(S1OnOff_tspike+S1OnOff_t_ref)))),axis=1))
+        dv2dS1OnOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(S1OnOff_tspike)+S1OnOff_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2S1OnOff_V = (-np.squeeze((np.max(S1OnOff_tspike,axis=1)-np.partition(S1OnOff_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))*(1+np.exp((S1OnOff_V[:,-2]-S1OnOff_V_thresh))))/((1+np.exp(-(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))*(1+np.exp((S1OnOff_V[:,-2]-S1OnOff_V_thresh))))**2
+        dv1dS1OnOff_V_holder.append(-np.squeeze((np.max(S1OnOff_tspike,axis=1))))
         dspike_dS1OnOff_V = dukdv2S1OnOff_V*dv2dS1OnOff_V[:,0]*dv1dS1OnOff_V[:,0]
         dv1dR2On_V[:,0] = dv1dR2On_V[:,1]
-        dv1dR2On_V[:,1] = ((1+np.exp(R2On_V[:,-1]-R2On_V_thresh))-(R2On_V[:,-1]-R2On_V_reset*np.exp(R2On_V[:,-1]-R2On_V_thresh)))/(1+np.exp(R2On_V[:,-1]-R2On_V_thresh))**2
+        dv1dR2On_V[:,1] = ((1+np.exp(R2On_V[:,-1]-R2On_V_thresh))-((R2On_V[:,-1]-R2On_V_reset)*np.exp(R2On_V[:,-1]-R2On_V_thresh)))/(1+np.exp(R2On_V[:,-1]-R2On_V_thresh))**2
         dv2dR2On_V[:,0] = dv2dR2On_V[:,1]
-        dv2dR2On_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(R2On_tspike+R2On_t_ref)))),axis=1))
+        dv2dR2On_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(R2On_tspike)+R2On_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2R2On_V = (-np.squeeze((np.max(R2On_tspike,axis=1)-np.partition(R2On_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(R2On_V[:,-1]-R2On_V_thresh)))*(1+np.exp((R2On_V[:,-2]-R2On_V_thresh))))/((1+np.exp(-(R2On_V[:,-1]-R2On_V_thresh)))*(1+np.exp((R2On_V[:,-2]-R2On_V_thresh))))**2
+        dv1dR2On_V_holder.append(-np.squeeze((np.max(R2On_tspike,axis=1))))
         dspike_dR2On_V = dukdv2R2On_V*dv2dR2On_V[:,0]*dv1dR2On_V[:,0]
         dv1dS2OnOff_V[:,0] = dv1dS2OnOff_V[:,1]
-        dv1dS2OnOff_V[:,1] = ((1+np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh))-(S2OnOff_V[:,-1]-S2OnOff_V_reset*np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh)))/(1+np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh))**2
+        dv1dS2OnOff_V[:,1] = ((1+np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh))-((S2OnOff_V[:,-1]-S2OnOff_V_reset)*np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh)))/(1+np.exp(S2OnOff_V[:,-1]-S2OnOff_V_thresh))**2
         dv2dS2OnOff_V[:,0] = dv2dS2OnOff_V[:,1]
-        dv2dS2OnOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(S2OnOff_tspike+S2OnOff_t_ref)))),axis=1))
+        dv2dS2OnOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2S2OnOff_V = (-np.squeeze((np.max(S2OnOff_tspike,axis=1)-np.partition(S2OnOff_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(S2OnOff_V[:,-1]-S2OnOff_V_thresh)))*(1+np.exp((S2OnOff_V[:,-2]-S2OnOff_V_thresh))))/((1+np.exp(-(S2OnOff_V[:,-1]-S2OnOff_V_thresh)))*(1+np.exp((S2OnOff_V[:,-2]-S2OnOff_V_thresh))))**2
+        dv1dS2OnOff_V_holder.append(-np.squeeze((np.max(S2OnOff_tspike,axis=1))))
         dspike_dS2OnOff_V = dukdv2S2OnOff_V*dv2dS2OnOff_V[:,0]*dv1dS2OnOff_V[:,0]
 
 
@@ -1084,6 +1105,35 @@ def main(trial_number,ps,scale_factor):
         dS2OnOff_R1Off_PSC_dUk = np.squeeze(-((dt*S2OnOff_R1Off_PSC_scale*2*(S2OnOff_R1Off_PSC_x[:,-1]+S2OnOff_R1Off_PSC_q[:,-1])/S2OnOff_R1Off_PSC_tauR)*helper[t]*np.squeeze(np.sum((((R1Off_tspike+S2OnOff_R1Off_PSC_delay)-helper[t])*np.exp(-1*((R1Off_tspike+S2OnOff_R1Off_PSC_delay)-helper[t])**2)),axis=1)))/2500)
         dv_dS2OnOff_R1Off_PSC = np.squeeze(-(dt*S2OnOff_R*S2OnOff_R1Off_PSC_gSYN*S2OnOff_R1Off_PSC_netcon*(S2OnOff_V[:,-1]-S2OnOff_R1Off_PSC_ESYN)/S2OnOff_tau)/10)
 
+
+        #Tref Related Derivates
+        dv2_dOn_tref[:,0] = dv2_dOn_tref[:,1]
+        dv2_dOn_tref[:,1] = np.squeeze(np.sum(-(On_V[:,-1]-On_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None])))))**2,axis=1))
+        dspike_dOn_tref = dukdv2On_V*dv2_dOn_tref[:,0]
+        dv2_dOff_tref[:,0] = dv2_dOff_tref[:,1]
+        dv2_dOff_tref[:,1] = np.squeeze(np.sum(-(Off_V[:,-1]-Off_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None])))))**2,axis=1))
+        dspike_dOff_tref = dukdv2Off_V*dv2_dOff_tref[:,0]
+        dv2_dR1On_tref[:,0] = dv2_dR1On_tref[:,1]
+        dv2_dR1On_tref[:,1] = np.squeeze(np.sum(-(R1On_V[:,-1]-R1On_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None])))))**2,axis=1))
+        dspike_dR1On_tref = dukdv2R1On_V*dv2_dR1On_tref[:,0]
+        dv2_dR1Off_tref[:,0] = dv2_dR1Off_tref[:,1]
+        dv2_dR1Off_tref[:,1] = np.squeeze(np.sum(-(R1Off_V[:,-1]-R1Off_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None])))))**2,axis=1))
+        dspike_dR1Off_tref = dukdv2R1Off_V*dv2_dR1Off_tref[:,0]
+        dv2_dS1OnOff_tref[:,0] = dv2_dS1OnOff_tref[:,1]
+        dv2_dS1OnOff_tref[:,1] = np.squeeze(np.sum(-(S1OnOff_V[:,-1]-S1OnOff_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None])))))**2,axis=1))
+        dspike_dS1OnOff_tref = dukdv2S1OnOff_V*dv2_dS1OnOff_tref[:,0]
+        dv2_dR2On_tref[:,0] = dv2_dR2On_tref[:,1]
+        dv2_dR2On_tref[:,1] = np.squeeze(np.sum(-(R2On_V[:,-1]-R2On_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None])))))**2,axis=1))
+        dspike_dR2On_tref = dukdv2R2On_V*dv2_dR2On_tref[:,0]
+        dv2_dS2OnOff_tref[:,0] = dv2_dS2OnOff_tref[:,1]
+        dv2_dS2OnOff_tref[:,1] = np.squeeze(np.sum(-(S2OnOff_V[:,-1]-S2OnOff_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze(S2OnOff_tspike)+S2OnOff_t_ref[:,None])))))**2,axis=1))
+        dspike_dS2OnOff_tref = dukdv2S2OnOff_V*dv2_dS2OnOff_tref[:,0]
+
+
+        #Input Related Derivates
+        dv_dOn_input = (-On_R*On_On_IC_input[t]*On_On_IC_netcon*(On_V[:,-1]-On_On_IC_E_exc)/On_tau)/1000 #Nominally 1000
+        dv_dOff_input = (-Off_R*Off_Off_IC_input[t]*Off_Off_IC_netcon*(Off_V[:,-1]-Off_Off_IC_E_exc)/Off_tau)/1000 #Nominally 1000
+
         #Build derivs
         dGSYNR1On_On += dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC_gSYN
         dGSYNS1OnOff_On += dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC_gSYN+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_V*dv_dR1Off_S1OnOff_PSC*dR1Off_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC_gSYN+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC_gSYN
@@ -1097,4 +1147,19 @@ def main(trial_number,ps,scale_factor):
         dGSYNS2OnOff_R1Off += dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC_gSYN
 
 
-    return R2On_V_spikes_holder, [dGSYNR1On_On, dGSYNS1OnOff_On, dGSYNR1On_S1OnOff, dGSYNR1Off_S1OnOff, dGSYNR1Off_Off, dGSYNS1OnOff_Off, dGSYNR2On_R1On, dGSYNS2OnOff_R1On, dGSYNR2On_S2OnOff, dGSYNS2OnOff_R1Off]
+        #Build T_ref derivs
+        dtref_On = dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC*dR1On_On_PSC_dUk*dspike_dOn_tref+dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC*dS1OnOff_On_PSC_dUk*dspike_dOn_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_V*dv_dR1Off_S1OnOff_PSC*dR1Off_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC*dS1OnOff_On_PSC_dUk*dspike_dOn_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC*dR1On_On_PSC_dUk*dspike_dOn_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC*dS1OnOff_On_PSC_dUk*dspike_dOn_tref
+        dtref_Off = dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_Off_PSC*dS1OnOff_Off_PSC_dUk*dspike_dOff_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_V*dv_dR1Off_Off_PSC*dR1Off_Off_PSC_dUk*dspike_dOff_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_V*dv_dR1Off_S1OnOff_PSC*dR1Off_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_Off_PSC*dS1OnOff_Off_PSC_dUk*dspike_dOff_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_Off_PSC*dS1OnOff_Off_PSC_dUk*dspike_dOff_tref
+        dtref_R1On = dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_tref
+        dtref_R1Off = dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_tref
+        dtref_S1OnOff = dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_V*dv_dR1Off_S1OnOff_PSC*dR1Off_S1OnOff_PSC_dUk*dspike_dS1OnOff_tref+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_tref
+        dtref_R2On = dspike_dR2On_tref
+        dtref_S2OnOff = dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_tref
+
+
+        #Build Input derivs
+        dinput_On = dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC*dR1On_On_PSC_dUk*dspike_dOn_V*dv_dOn_input+dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC*dS1OnOff_On_PSC_dUk*dspike_dOn_V*dv_dOn_input+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_V*dv_dR1Off_S1OnOff_PSC*dR1Off_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC*dS1OnOff_On_PSC_dUk*dspike_dOn_V*dv_dOn_input+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_On_PSC*dR1On_On_PSC_dUk*dspike_dOn_V*dv_dOn_input+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC*dS1OnOff_On_PSC_dUk*dspike_dOn_V*dv_dOn_input
+        dinput_Off = dspike_dR2On_V*dv_dR2On_R1On_PSC*dR2On_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_Off_PSC*dS1OnOff_Off_PSC_dUk*dspike_dOff_V*dv_dOff_input+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_V*dv_dR1Off_Off_PSC*dR1Off_Off_PSC_dUk*dspike_dOff_V*dv_dOff_input+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1Off_PSC*dS2OnOff_R1Off_PSC_dUk*dspike_dR1Off_V*dv_dR1Off_S1OnOff_PSC*dR1Off_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_Off_PSC*dS1OnOff_Off_PSC_dUk*dspike_dOff_V*dv_dOff_input+dspike_dR2On_V*dv_dR2On_S2OnOff_PSC*dR2On_S2OnOff_PSC_dUk*dspike_dS2OnOff_V*dv_dS2OnOff_R1On_PSC*dS2OnOff_R1On_PSC_dUk*dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_Off_PSC*dS1OnOff_Off_PSC_dUk*dspike_dOff_V*dv_dOff_input
+
+
+    return R2On_V_spikes_holder, [dGSYNR1On_On, dGSYNS1OnOff_On, dGSYNR1On_S1OnOff, dGSYNR1Off_S1OnOff, dGSYNR1Off_Off, dGSYNS1OnOff_Off, dGSYNR2On_R1On, dGSYNS2OnOff_R1On, dGSYNR2On_S2OnOff, dGSYNS2OnOff_R1Off, dtref_On, dtref_Off, dtref_R1On, dtref_R1Off, dtref_S1OnOff, dtref_R2On, dtref_S2OnOff, dinput_On, dinput_Off]

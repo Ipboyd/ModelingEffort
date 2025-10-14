@@ -6,7 +6,14 @@ addpath('results\')
 %PSTH only
 %m = matfile('run_2025-09-05_22-19-39.mat');
 
-m = matfile('run_2025-09-24_12-23-46.mat');
+%m = matfile('run_2025-09-24_12-23-46.mat');
+
+%Layer 4
+%m = matfile('run_2025-10-01_12-07-07.mat');
+
+%m = matfile('run_2025-10-01_12-20-18.mat');
+
+m = matfile('run_2025-10-01_12-42-12.mat');
 
 losses = m.losses;
 param_tracker = m.param_tracker;
@@ -28,7 +35,7 @@ loss = squeeze(losses(:,2,:));
 loss_flat = loss(:);      
 
 [coeff, score, latent, tsquared, explained, mu] = pca(samples, ...
-    'Algorithm','svd', 'NumComponents', 28, 'Rows','complete');
+    'Algorithm','svd', 'NumComponents', 10, 'Rows','complete');
 
 
 figure;
@@ -41,7 +48,7 @@ axis equal; grid on;
 hold on;
 
 %Plot the convergent values
-f_index = 400:50:20000;
+f_index = 400:5:2000;
 f_scores = score(f_index,:);
 
 plot(f_scores(:,pc_axis1), f_scores(:,pc_axis2), 'go', 'LineWidth', 1.5, 'MarkerSize', 4);
@@ -118,68 +125,68 @@ plot(DT.Points(K,1), DT.Points(K,2), 'w-', 'LineWidth', 0.5);   % black edge on 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%Visualize parameters with aheat map?
-% Example: 20 trials, 10 parameters
-nTrials = 50; %nEpochs
-nParams = 10;
-%X = randn(nTrials, nParams);  % replace with your solutions
-
-% Optional: normalize each parameter (z-score across trials)
-%Xz = (X - mean(X,1)) ./ std(X,[],1);
-
-% Parameter and trial labels
-paramNames = arrayfun(@(i) sprintf("p%d", i), 1:nParams, 'UniformOutput', false);
-trialLabels = arrayfun(@(i) sprintf("trial %d", i), 1:nTrials, 'UniformOutput', false);
-
-% Make the heatmap
-figure;
-
-%SORTING BY FIRST COLUMN (On-R1On)
-h = heatmap(transpose(squeeze(param_tracker(nTrials,1:7,:))));
-%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
-% Customize appearance
-h.Colormap = parula;
-h.ColorbarVisible = 'on';
-h.XLabel = 'Parameters';
-h.YLabel = 'Trials';
-h.Title = 'Parameter Solutions Heatmap';
-
-
-% Make the heatmap
-figure;
-
-%SORTING BY FIRST COLUMN (On-R1On)
-h = heatmap(transpose(squeeze(param_tracker(nTrials,8:2:26,:))));
-%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
-% Customize appearance
-h.Colormap = parula;
-h.ColorbarVisible = 'on';
-h.XLabel = 'Parameters';
-h.YLabel = 'Trials';
-h.Title = 'Parameter Solutions Heatmap';
-
-% Make the heatmap
-figure;
-
-%SORTING BY FIRST COLUMN (On-R1On)
-h = heatmap(transpose(squeeze(param_tracker(nTrials,9:2:27,:))));
-%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
-% Customize appearance
-h.Colormap = parula;
-h.ColorbarVisible = 'on';
-h.XLabel = 'Parameters';
-h.YLabel = 'Trials';
-h.Title = 'Parameter Solutions Heatmap';
-
-
-%SORTING BY FIRST COLUMN (On-R1On)
-h = heatmap(transpose(squeeze(param_tracker(nTrials,28,:))));
-%h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
-% Customize appearance
-h.Colormap = parula;
-h.ColorbarVisible = 'on';
-h.XLabel = 'Parameters';
-h.YLabel = 'Trials';
-h.Title = 'Parameter Solutions Heatmap';
+% %Visualize parameters with aheat map?
+% % Example: 20 trials, 10 parameters
+% nTrials = 50; %nEpochs
+% nParams = 10;
+% %X = randn(nTrials, nParams);  % replace with your solutions
+% 
+% % Optional: normalize each parameter (z-score across trials)
+% %Xz = (X - mean(X,1)) ./ std(X,[],1);
+% 
+% % Parameter and trial labels
+% paramNames = arrayfun(@(i) sprintf("p%d", i), 1:nParams, 'UniformOutput', false);
+% trialLabels = arrayfun(@(i) sprintf("trial %d", i), 1:nTrials, 'UniformOutput', false);
+% 
+% % Make the heatmap
+% figure;
+% 
+% %SORTING BY FIRST COLUMN (On-R1On)
+% h = heatmap(transpose(squeeze(param_tracker(nTrials,1:7,:))));
+% %h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% % Customize appearance
+% h.Colormap = parula;
+% h.ColorbarVisible = 'on';
+% h.XLabel = 'Parameters';
+% h.YLabel = 'Trials';
+% h.Title = 'Parameter Solutions Heatmap';
+% 
+% 
+% % Make the heatmap
+% figure;
+% 
+% %SORTING BY FIRST COLUMN (On-R1On)
+% h = heatmap(transpose(squeeze(param_tracker(nTrials,8:2:26,:))));
+% %h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% % Customize appearance
+% h.Colormap = parula;
+% h.ColorbarVisible = 'on';
+% h.XLabel = 'Parameters';
+% h.YLabel = 'Trials';
+% h.Title = 'Parameter Solutions Heatmap';
+% 
+% % Make the heatmap
+% figure;
+% 
+% %SORTING BY FIRST COLUMN (On-R1On)
+% h = heatmap(transpose(squeeze(param_tracker(nTrials,9:2:27,:))));
+% %h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% % Customize appearance
+% h.Colormap = parula;
+% h.ColorbarVisible = 'on';
+% h.XLabel = 'Parameters';
+% h.YLabel = 'Trials';
+% h.Title = 'Parameter Solutions Heatmap';
+% 
+% 
+% %SORTING BY FIRST COLUMN (On-R1On)
+% h = heatmap(transpose(squeeze(param_tracker(nTrials,28,:))));
+% %h = heatmap(transpose(squeeze(param_tracker(300,:,:))));
+% % Customize appearance
+% h.Colormap = parula;
+% h.ColorbarVisible = 'on';
+% h.XLabel = 'Parameters';
+% h.YLabel = 'Trials';
+% h.Title = 'Parameter Solutions Heatmap';
 
 

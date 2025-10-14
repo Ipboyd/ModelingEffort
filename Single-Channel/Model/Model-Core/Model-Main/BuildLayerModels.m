@@ -24,10 +24,10 @@ dt = 0.1;                                                                       
 %study_dir = fullfile(pwd,'run','1-channel-paper');
 
 %Layer 23 (Same as 1-chan just with diff name)
-study_dir = fullfile(pwd,'run','Layer23');
+%study_dir = fullfile(pwd,'run','Layer23');
 
 %Layer 4
-%study_dir = fullfile(pwd,'run','Layer4');
+study_dir = fullfile(pwd,'run','Layer4v2');
 
 %Layer 5-6
 %study_dir = fullfile(pwd,'run','Layer56');
@@ -39,10 +39,10 @@ Mex_Prep;                                                                       
 
 %Declare Parameter File
 %2-3
-params_5_rate_based_onoff_fig4;                                                     %Parameter file for Onset Dominated Regieme in 2025 Modeling Paper.
+%params_5_rate_based_onoff_fig4;                                                     %Parameter file for Onset Dominated Regieme in 2025 Modeling Paper.
 
 %4
-%Layer4;
+Layer4;
 
 %5-6
 %Layer56;
@@ -59,12 +59,12 @@ prepInputData;                                                                  
 setOptions;                                                                         %Set DynaSim Options \TODO Comment
 
 
-%[snn_out,s] = columnNetwork_Layer4(study_dir,varies,options,flag_raised_mex); 
+[snn_out,s] = columnNetwork_Layer4_v2(study_dir,varies,options,flag_raised_mex); 
 
 %[snn_out,s] = columnNetwork_Layer56(study_dir,varies,options,flag_raised_mex); 
 
 %Layer 2-3 (Default/Old Network)
-[snn_out,s] = columnNetwork_paper_onoff(study_dir,varies,options,flag_raised_mex);  %\TODO Comment and clean
+%[snn_out,s] = columnNetwork_paper_onoff(study_dir,varies,options,flag_raised_mex);  %\TODO Comment and clean
 
 % post-process for performance and firing results
 %postProcessSims;                                                                    %\TODO Comment and clean

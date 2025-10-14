@@ -32,7 +32,7 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
 
 
 
-    if layer_name == 'Layer4':
+    if layer_name == 'Layer4' or layer_name == 'Layer4v2':
         num_layers = 1
     elif layer_name == 'Layer23':
         num_layers = 2
@@ -116,17 +116,48 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
             #Initialize our parameters with the values we inherit from the learning
             params += f"    {name} = ps[{count_ps}]\n"
             count_ps += 1
+    for name, value in parameters.items():
+        if "On_On_IC_g_postIC" in name or "Off_Off_IC_g_postIC" in name:
+            #Initialize our parameters with the values we inherit from the learning
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
 
     for name, value in parameters.items():
         if "t_ref" in name and f"R{num_layers}Off" not in name and "On_On" not in name and "Off_Off" not in name:
             nothing_here = 1
         elif "_gSYN" in name and f"R{num_layers}Off" not in name:
             nothing_here = 1
+        elif "On_On_IC_g_postIC" in name or "Off_Off_IC_g_postIC" in name:
+            nothing_here = 1
         else:
             params += f"    {name} = {value}\n"
 
+    #for name in {'On','Off'}:
+       
+    #    params += f"    dv_d{name}_input_holder = []\n"
+
+    #for name, value in parameters.items():
+    #    if "t_ref" in name and f"R{num_layers}Off" not in name and "On_On" not in name and "Off_Off" not in name:
+    #        cell_name = name.split('_', -1)[0]
+    #        params += f"    dv2_d{cell_name}_tref_holder = []\n"
 
     
+    for k in range(len(update_vars)):
+        if "_V" in update_vars[k] and  "Noise" not in update_vars[k] and f"R{num_layers}Off" not in update_vars[k]:
+            var = update_vars[k]
+            var_base = var[:-3]
+            var_name = var[:-5]
+
+            #grad_string += f'        dv1d{var_base}[:,1] = ((1+np.exp({var_base}[:,-1]-{var_base}_thresh))-(({var_base}[:,-1]-{var_base}_reset)*np.exp({var_base}[:,-1]-{var_base}_thresh)))/(1+np.exp({var_base}[:,-1]-{var_base}_thresh))**2\n'
+            params += f"    dv1d{var_base}_holder = []\n"
+
+            #grad_string += f'        dv2d{var_base}[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze({var_name}_tspike)+{var_name}_t_ref[:,None])))),axis=1))\n'
+
+
+
+            #grad_string += f'        dukdv2{var_base} = (-np.squeeze((np.max({var_name}_tspike,axis=1)-np.partition({var_name}_tspike, -2, axis=1)[:, -2]))*(-np.exp(-({var_base}[:,-1]-{var_base}_thresh)))*(1+np.exp(({var_base}[:,-2]-{var_base}_thresh))))/((1+np.exp(-({var_base}[:,-1]-{var_base}_thresh)))*(1+np.exp(({var_base}[:,-2]-{var_base}_thresh))))**2\n'
+
+
     #Initialize grads
     for name, value in parameters.items():
         if "_gSYN" in name and f"R{num_layers}Off" not in name:
@@ -212,8 +243,15 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
             np_version_ones = re.sub(r'ones\s*\(\s*5\s*,\s*([^)]+)\s*\)',rf'np.ones(({batch_size}, 5, \1))',monitor_vals[k])
             np_version_second_check = re.sub(r'ones\s*\(\s*1\s*,\s*([^)]+)\s*\)',rf'np.ones(({batch_size}))',np_version_ones)
             np_version_zeros = re.sub(r'zeros\(\s*nsamp\s*,\s*([^)]+)\)',r'np.zeros((T,\1))',np_version_second_check)
+            
+            #10/1 changed because the tspike derivatve is weird with a impossibly large sentinel. We should be safe at -30 and the effects of the large derivatvie if there were any should be mitigated.
+            if 'tspike' in monitor_vars[k]:
+                monitor_string += f"    {monitor_vars[k]} = -30*{np_version_zeros[6:]}\n"
+            else:
+                monitor_string += f"    {monitor_vars[k]} = {np_version_zeros}\n"
 
-            monitor_string += f"    {monitor_vars[k]} = {np_version_zeros}\n"
+            #Scale down the t-spike intilization for the derivative. -1e32 seems unncessary
+
 
             #if 'tspike' in monitor_vars[k]:
             #    monitor_string += f"    {monitor_vars[k]} = {np_version_zeros} * np.ones(({batch_size},5,1))\n"
@@ -393,10 +431,14 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
             #Move the old derivative out of the way (but save it to be used in later calculation) -> 1 will become new derivatived while 0 retains old version of 1.
             grad_string += f'        dv1d{var_base}[:,0] = dv1d{var_base}[:,1]\n'
             grad_string += f'        dv1d{var_base}[:,1] = ((1+np.exp({var_base}[:,-1]-{var_base}_thresh))-(({var_base}[:,-1]-{var_base}_reset)*np.exp({var_base}[:,-1]-{var_base}_thresh)))/(1+np.exp({var_base}[:,-1]-{var_base}_thresh))**2\n'
+            
+            
 
             grad_string += f'        dv2d{var_base}[:,0] = dv2d{var_base}[:,1]\n'
             #grad_string += f'        print(np.shape(np.squeeze({var_name}_tspike)+{var_name}_t_ref[:,None]))\n'
-            grad_string += f'        dv2d{var_base}[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze({var_name}_tspike)+{var_name}_t_ref[:,None])))),axis=1))\n'
+            grad_string += f'        dv2d{var_base}[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze({var_name}_tspike)+{var_name}_t_ref[:,None])))),axis=1))/5 #Nominally 5\n'
+
+            
 
             #grad_string += f'        print("dv2d{var_base}[:,1]")\n'
             #grad_string += f'        print(np.shape(dv2d{var_base}[:,1]))\n'
@@ -416,10 +458,17 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
 
             #grad_string += f'        print(np.shape((np.max({var_name}_tspike,axis=1))-np.partition({var_name}_tspike, -2, axis=1)[:, -2]))\n'
 
+            #grad_string += f'        tspike_overmask = (abs(np.partition({var_name}_tspike, -2, axis=1)[:, -2])<1e20)\n'
+
+            #grad_string += f'        print(np.shape(tspike_overmask))\n'
+            #grad_string += f'        print(np.shape(np.squeeze((np.max({var_name}_tspike,axis=1)-np.partition({var_name}_tspike, -2, axis=1)[:, -2]))))\n'
+            #np.squeeze(tspike_overmask)*
+
+            #Going to switch to smaller sentinel. for now
             grad_string += f'        dukdv2{var_base} = (-np.squeeze((np.max({var_name}_tspike,axis=1)-np.partition({var_name}_tspike, -2, axis=1)[:, -2]))*(-np.exp(-({var_base}[:,-1]-{var_base}_thresh)))*(1+np.exp(({var_base}[:,-2]-{var_base}_thresh))))/((1+np.exp(-({var_base}[:,-1]-{var_base}_thresh)))*(1+np.exp(({var_base}[:,-2]-{var_base}_thresh))))**2\n'
 
         
-            
+            grad_string += f'        dv1d{var_base}_holder.append(-np.squeeze((np.max({var_name}_tspike,axis=1))))\n'
 
             grad_string += f'        dspike_d{var_base} = dukdv2{var_base}*dv2d{var_base}[:,0]*dv1d{var_base}[:,0]\n'
 
@@ -521,6 +570,22 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
             grad_string += f'        dv2_d{cell_name}_tref[:,1] = np.squeeze(np.sum(-({cell_name}_V[:,-1]-{cell_name}_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze({var_name}_tspike)+{var_name}_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze({var_name}_tspike)+{var_name}_t_ref[:,None])))))**2,axis=1))\n' #nominally 2500
             
             grad_string += f'        dspike_d{cell_name}_tref = dukdv2{cell_name}_V*dv2_d{cell_name}_tref[:,0]\n'
+
+
+            #grad_string += f'        dv2_d{cell_name}_tref_holder.append(dv2_d{cell_name}_tref[:,1])\n'
+
+    grad_string += '\n\n        #Input Related Derivates\n' #Tenatively using both inputs
+    for name in {'On','Off'}:
+       
+        grad_string += f'        dv_d{name}_input = (-{name}_R*{name}_{name}_IC_input[t]*{name}_{name}_IC_netcon*({name}_V[:,-1]-{name}_{name}_IC_E_exc)/{name}_tau)/1000 #Nominally 1000\n'
+
+        #grad_string += f'        dv_d{name}_input_holder.append(dv_d{name}_input)\n'
+
+        #grad_string += f'        print(np.shape(-({cell_name}_V[:,-1]-{cell_name}_V_reset)))\n' #nominally 2500
+        #grad_string += f'        print(np.shape(np.exp(-(helper[t]-({var_name}_tspike+{var_name}_t_ref)))))\n' #nominally 2500
+        #grad_string += f'        print(np.shape((1+np.exp(-(helper[t]-({var_name}_tspike+{var_name}_t_ref))))**2))\n' #nominally 2500
+        #grad_string += f'        print(np.shape(-({cell_name}_V[:,-1]-{cell_name}_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-({var_name}_tspike+{var_name}_t_ref))))))\n' #nominally 2500
+            
     
 
     # grad_string += '\n\n            #Chcks\n'
@@ -556,6 +621,9 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
     if layer_name == 'Layer4':
         nodes = ['R1On','On','Off','S1OnOff','R1Off']
         edges = ['On->R1On','On->S1OnOff','Off->R1Off','Off->S1OnOff','S1OnOff->R1On','S1OnOff->R1Off']
+    elif layer_name == 'Layer4v2':
+        nodes = ['R1On','On','Off','S1OnOff']
+        edges = ['On->R1On','Off->R1On','On->S1OnOff','Off->R1Off','Off->S1OnOff','S1OnOff->R1On','S1OnOff->R1Off']
     elif layer_name == 'Layer23':
         nodes = ['R2On','R1On','On','Off','S2OnOff','S1OnOff','R1Off','R2Off']
         edges = ['On->R1On','On->S1OnOff','Off->R1Off','Off->S1OnOff','S1OnOff->R1On','S1OnOff->R1Off','R1On->R2On','R1On->S2OnOff','R1Off->R2Off','R1Off->S2OnOff','S2OnOff->R2On','S2OnOff->R2Off']
@@ -721,7 +789,7 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
     if learning_mask[1] == 1:
         tau_grads = '\n\n        #Build Tau derivs\n'
         #Redefined Nodes here so that they are in the same order that they will be updated in in the gradient calculations.
-        if layer_name == 'Layer4':
+        if layer_name == 'Layer4' or layer_name == 'Layer4v2':
             nodes2 = ['On','Off','R1On','S1OnOff']
         elif layer_name == 'Layer23':
             nodes2 = ['On','Off','R1On','R1Off','S1OnOff','R2On','S2OnOff']
@@ -800,7 +868,7 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
     #Testing Adding tref grads
     t_ref_grads = '\n\n        #Build T_ref derivs\n'
     #Redefined Nodes here so that they are in the same order that they will be updated in in the gradient calculations.
-    if layer_name == 'Layer4':
+    if layer_name == 'Layer4' or layer_name == 'Layer4v2':
         nodes2 = ['On','Off','R1On','S1OnOff']
     elif layer_name == 'Layer23':
         nodes2 = ['On','Off','R1On','R1Off','S1OnOff','R2On','S2OnOff']
@@ -875,6 +943,79 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
 
     generated_code = generated_code + t_ref_grads
 
+    input_grads = '\n\n        #Build Input derivs\n'
+    #Redefined Nodes here so that they are in the same order that they will be updated in in the gradient calculations.
+    nodes2 = ['On','Off']
+
+
+    for k in nodes2: 
+
+        #print(f'\n\n{k}\n\n')
+
+        subpath_grads = []
+
+        for m in path_holder:
+            path_parts = m.split('->',-1)
+            for count,z in enumerate(path_parts):
+                if z == k:
+
+                    #Instead of printing m print the corresponding sub-path
+                    
+                    subpath = path_parts[count:]
+                    
+                    #Compensate for intermediate nodes
+                    if len(subpath) > 1:
+                        if subpath[0] == subpath[1]:
+                            subpath = subpath[1:]
+                    
+                    
+                    grad = ''
+
+
+
+                    #rev_subpath = reversed(np.unique(subpath))
+
+                    uniq, idx = np.unique(subpath, return_index=True)
+                    rev_subpath = uniq[np.argsort(idx)][::-1]
+
+                    #rev_subpath = np.unique(subpath)#[::-1]
+                    #print(subpath)
+                    #print(rev_subpath)
+
+                    #print(len(subpath))
+
+                    for count2,q in enumerate(rev_subpath):
+
+                        
+
+                        if count2 + 1 == len(rev_subpath):
+                            #uk/v * v/tau
+                            grad += f'dspike_d{q}_V*dv_d{q}_input'
+                        else:
+                            #uk/v * v/psc * psc/uk
+                            grad += f'dspike_d{q}_V*dv_d{q}_{rev_subpath[count2+1]}_PSC*d{q}_{rev_subpath[count2+1]}_PSC_dUk*'
+
+
+                    subpath_grads.append(grad)
+
+                    #print(subpath)
+                    break
+
+        #print(np.unique(subpath_grads))
+
+        #Build the Tau derivatvies!
+
+        grad_str_input = ''
+        for count3, g in enumerate(np.unique(subpath_grads)):
+            if count3 + 1 == len(np.unique(subpath_grads)):
+                grad_str_input += g
+            else:
+                grad_str_input += g + '+'
+
+        input_grads += f'        dinput_{k} = {grad_str_input}\n'
+
+    generated_code = generated_code + input_grads
+
     #************** Code Review Area #1 END! ****************
 
 
@@ -916,6 +1057,10 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
             deriv_return2 += 'dtref_' + cell_name + ', '
 
     
+    for name in {'On','Off'}:
+        deriv_return2 += 'dinput_' + name + ', '
+
+    
 
     if learning_mask[1] == 1:
         for k in nodes[:-1]:
@@ -924,6 +1069,12 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
     deriv_return2 = '[' + deriv_return2[:-2] + ']'
 
     return_statement = f"\n{deriv_return}\n    return R{num_layers}On_V_spikes_holder, {deriv_return2}"
+
+    print_statement = ''
+    #print_statement += f'    print(np.shape(dv1dOn_V_holder))\n'
+    #print_statement += f'    print(np.max(np.array(dv1dOn_V_holder)[:,0]))\n'
+
+    generated_code = generated_code + print_statement
 
     generated_code = generated_code + return_statement
 
@@ -1078,7 +1229,10 @@ def build_ODE(parameters,batch_size,learning_mask,layer_name):
 
     #print("generated2.py has been created.")
 
-    with open(f"generated_Grad_{layer_name}.py", "w") as f:
+    out_filename = f"generated_Grad_{layer_name}.py"
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    outpath = os.path.join(script_dir, out_filename)
+    with open(outpath, "w") as f:
         f.write(generated_code)
 
     print(f"generated_Grad_{layer_name}.py has been created.")

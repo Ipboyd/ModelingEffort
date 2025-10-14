@@ -17,6 +17,8 @@ def main(trial_number,ps,scale_factor):
     Off_t_ref = ps[5]
     R1On_t_ref = ps[6]
     S1OnOff_t_ref = ps[7]
+    On_On_IC_g_postIC = ps[8]
+    Off_Off_IC_g_postIC = ps[9]
     tspan = np.array([0.1, 2980.1*scale_factor])
     downsample_factor = 1
 
@@ -88,7 +90,6 @@ def main(trial_number,ps,scale_factor):
     On_On_IC_t_ref = 1
     On_On_IC_t_ref_rel = 1
     On_On_IC_rec = 2
-    On_On_IC_g_postIC = 0.17
     On_On_IC_E_exc = 0
     Off_Off_IC_trial = 20
     Off_Off_IC_locNum = 15
@@ -96,7 +97,6 @@ def main(trial_number,ps,scale_factor):
     Off_Off_IC_t_ref = 1
     Off_Off_IC_t_ref_rel = 1
     Off_Off_IC_rec = 2
-    Off_Off_IC_g_postIC = 0.17
     Off_Off_IC_E_exc = 0
     R1On_On_PSC_ESYN = 0
     R1On_On_PSC_tauD = 1.5
@@ -165,6 +165,10 @@ def main(trial_number,ps,scale_factor):
     ROn_X_PSC3_netcon = 1
     ROn_SOnOff_PSC3_netcon = 1
     C_ROn_PSC3_netcon = 1
+    dv1dOn_V_holder = []
+    dv1dOff_V_holder = []
+    dv1dR1On_V_holder = []
+    dv1dS1OnOff_V_holder = []
     dGSYNR1On_On = np.zeros((400))
     dGSYNS1OnOff_On = np.zeros((400))
     dGSYNR1On_S1OnOff = np.zeros((400))
@@ -252,19 +256,19 @@ def main(trial_number,ps,scale_factor):
     R1On_R1On_iNoise_V3_xn = np.ones((400,2)) * [0, 0]
 
     #Monitor Declaration
-    On_tspike = -1e32*np.ones((400, 5, On_Npop))
+    On_tspike = -30*np.ones((400, 5, On_Npop))
     On_buffer_index = np.ones((400))
     On_V_spikes_holder = []
-    Off_tspike = -1e32*np.ones((400, 5, Off_Npop))
+    Off_tspike = -30*np.ones((400, 5, Off_Npop))
     Off_buffer_index = np.ones((400))
     Off_V_spikes_holder = []
-    R1On_tspike = -1e32*np.ones((400, 5, R1On_Npop))
+    R1On_tspike = -30*np.ones((400, 5, R1On_Npop))
     R1On_buffer_index = np.ones((400))
     R1On_V_spikes_holder = []
-    R1Off_tspike = -1e32*np.ones((400, 5, R1Off_Npop))
+    R1Off_tspike = -30*np.ones((400, 5, R1Off_Npop))
     R1Off_buffer_index = np.ones((400))
     R1Off_V_spikes_holder = []
-    S1OnOff_tspike = -1e32*np.ones((400, 5, S1OnOff_Npop))
+    S1OnOff_tspike = -30*np.ones((400, 5, S1OnOff_Npop))
     S1OnOff_buffer_index = np.ones((400))
     S1OnOff_V_spikes_holder = []
     On_On_IC_iIC = 0
@@ -601,26 +605,30 @@ def main(trial_number,ps,scale_factor):
         dv1dOn_V[:,0] = dv1dOn_V[:,1]
         dv1dOn_V[:,1] = ((1+np.exp(On_V[:,-1]-On_V_thresh))-((On_V[:,-1]-On_V_reset)*np.exp(On_V[:,-1]-On_V_thresh)))/(1+np.exp(On_V[:,-1]-On_V_thresh))**2
         dv2dOn_V[:,0] = dv2dOn_V[:,1]
-        dv2dOn_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(On_tspike)+On_t_ref[:,None])))),axis=1))
+        dv2dOn_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(On_tspike)+On_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2On_V = (-np.squeeze((np.max(On_tspike,axis=1)-np.partition(On_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(On_V[:,-1]-On_V_thresh)))*(1+np.exp((On_V[:,-2]-On_V_thresh))))/((1+np.exp(-(On_V[:,-1]-On_V_thresh)))*(1+np.exp((On_V[:,-2]-On_V_thresh))))**2
+        dv1dOn_V_holder.append(-np.squeeze((np.max(On_tspike,axis=1))))
         dspike_dOn_V = dukdv2On_V*dv2dOn_V[:,0]*dv1dOn_V[:,0]
         dv1dOff_V[:,0] = dv1dOff_V[:,1]
         dv1dOff_V[:,1] = ((1+np.exp(Off_V[:,-1]-Off_V_thresh))-((Off_V[:,-1]-Off_V_reset)*np.exp(Off_V[:,-1]-Off_V_thresh)))/(1+np.exp(Off_V[:,-1]-Off_V_thresh))**2
         dv2dOff_V[:,0] = dv2dOff_V[:,1]
-        dv2dOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(Off_tspike)+Off_t_ref[:,None])))),axis=1))
+        dv2dOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(Off_tspike)+Off_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2Off_V = (-np.squeeze((np.max(Off_tspike,axis=1)-np.partition(Off_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(Off_V[:,-1]-Off_V_thresh)))*(1+np.exp((Off_V[:,-2]-Off_V_thresh))))/((1+np.exp(-(Off_V[:,-1]-Off_V_thresh)))*(1+np.exp((Off_V[:,-2]-Off_V_thresh))))**2
+        dv1dOff_V_holder.append(-np.squeeze((np.max(Off_tspike,axis=1))))
         dspike_dOff_V = dukdv2Off_V*dv2dOff_V[:,0]*dv1dOff_V[:,0]
         dv1dR1On_V[:,0] = dv1dR1On_V[:,1]
         dv1dR1On_V[:,1] = ((1+np.exp(R1On_V[:,-1]-R1On_V_thresh))-((R1On_V[:,-1]-R1On_V_reset)*np.exp(R1On_V[:,-1]-R1On_V_thresh)))/(1+np.exp(R1On_V[:,-1]-R1On_V_thresh))**2
         dv2dR1On_V[:,0] = dv2dR1On_V[:,1]
-        dv2dR1On_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(R1On_tspike)+R1On_t_ref[:,None])))),axis=1))
+        dv2dR1On_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(R1On_tspike)+R1On_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2R1On_V = (-np.squeeze((np.max(R1On_tspike,axis=1)-np.partition(R1On_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(R1On_V[:,-1]-R1On_V_thresh)))*(1+np.exp((R1On_V[:,-2]-R1On_V_thresh))))/((1+np.exp(-(R1On_V[:,-1]-R1On_V_thresh)))*(1+np.exp((R1On_V[:,-2]-R1On_V_thresh))))**2
+        dv1dR1On_V_holder.append(-np.squeeze((np.max(R1On_tspike,axis=1))))
         dspike_dR1On_V = dukdv2R1On_V*dv2dR1On_V[:,0]*dv1dR1On_V[:,0]
         dv1dS1OnOff_V[:,0] = dv1dS1OnOff_V[:,1]
         dv1dS1OnOff_V[:,1] = ((1+np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh))-((S1OnOff_V[:,-1]-S1OnOff_V_reset)*np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))/(1+np.exp(S1OnOff_V[:,-1]-S1OnOff_V_thresh))**2
         dv2dS1OnOff_V[:,0] = dv2dS1OnOff_V[:,1]
-        dv2dS1OnOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(S1OnOff_tspike)+S1OnOff_t_ref[:,None])))),axis=1))
+        dv2dS1OnOff_V[:,1] = np.squeeze(np.sum(1/(1+np.exp(-(helper[t]-(np.squeeze(S1OnOff_tspike)+S1OnOff_t_ref[:,None])))),axis=1))/5 #Nominally 5
         dukdv2S1OnOff_V = (-np.squeeze((np.max(S1OnOff_tspike,axis=1)-np.partition(S1OnOff_tspike, -2, axis=1)[:, -2]))*(-np.exp(-(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))*(1+np.exp((S1OnOff_V[:,-2]-S1OnOff_V_thresh))))/((1+np.exp(-(S1OnOff_V[:,-1]-S1OnOff_V_thresh)))*(1+np.exp((S1OnOff_V[:,-2]-S1OnOff_V_thresh))))**2
+        dv1dS1OnOff_V_holder.append(-np.squeeze((np.max(S1OnOff_tspike,axis=1))))
         dspike_dS1OnOff_V = dukdv2S1OnOff_V*dv2dS1OnOff_V[:,0]*dv1dS1OnOff_V[:,0]
 
 
@@ -653,6 +661,11 @@ def main(trial_number,ps,scale_factor):
         dv2_dS1OnOff_tref[:,1] = np.squeeze(np.sum(-(S1OnOff_V[:,-1]-S1OnOff_V_reset)[:,None]*np.squeeze(np.exp(-(helper[t]-(np.squeeze(S1OnOff_tspike)+S1OnOff_t_ref[:,None]))))/(1+np.squeeze(np.exp(-(helper[t]-(np.squeeze(S1OnOff_tspike)+S1OnOff_t_ref[:,None])))))**2,axis=1))
         dspike_dS1OnOff_tref = dukdv2S1OnOff_V*dv2_dS1OnOff_tref[:,0]
 
+
+        #Input Related Derivates
+        dv_dOff_input = (-Off_R*Off_Off_IC_input[t]*Off_Off_IC_netcon*(Off_V[:,-1]-Off_Off_IC_E_exc)/Off_tau)/1000 #Nominally 1000
+        dv_dOn_input = (-On_R*On_On_IC_input[t]*On_On_IC_netcon*(On_V[:,-1]-On_On_IC_E_exc)/On_tau)/1000 #Nominally 1000
+
         #Build derivs
         dGSYNR1On_On += dspike_dR1On_V*dv_dR1On_On_PSC_gSYN
         dGSYNS1OnOff_On += dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC_gSYN
@@ -667,4 +680,9 @@ def main(trial_number,ps,scale_factor):
         dtref_S1OnOff = dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_tref
 
 
-    return R1On_V_spikes_holder, [dGSYNR1On_On, dGSYNS1OnOff_On, dGSYNR1On_S1OnOff, dGSYNS1OnOff_Off, dtref_On, dtref_Off, dtref_R1On, dtref_S1OnOff]
+        #Build Input derivs
+        dinput_On = dspike_dR1On_V*dv_dR1On_On_PSC*dR1On_On_PSC_dUk*dspike_dOn_V*dv_dOn_input+dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_On_PSC*dS1OnOff_On_PSC_dUk*dspike_dOn_V*dv_dOn_input
+        dinput_Off = dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_Off_PSC*dS1OnOff_Off_PSC_dUk*dspike_dOff_V*dv_dOff_input
+
+
+    return R1On_V_spikes_holder, [dGSYNR1On_On, dGSYNS1OnOff_On, dGSYNR1On_S1OnOff, dGSYNS1OnOff_Off, dtref_On, dtref_Off, dtref_R1On, dtref_S1OnOff, dinput_Off, dinput_On]

@@ -1,6 +1,7 @@
 %close all;
 
 filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/picture_fit.mat";
+%filename = "C:/Users/ipboy/Documents/GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting/PicturesToFit/picture_fit7contra.mat";
 data = load(filename).picture;
 
 addpath("results\")
@@ -13,7 +14,25 @@ addpath("results\")
 %m = matfile('run_2025-09-29_21-58-21.mat');
 
 %m = matfile('run_2025-09-30_10-21-33.mat');
-m = matfile('run_2025-09-30_11-11-12.mat');
+%m = matfile('run_2025-09-30_11-11-12.mat');
+%m = matfile('run_2025-09-30_15-51-21.mat');
+%m = matfile('run_2025-10-01_00-08-37.mat');
+
+%Layer 4
+m = matfile('run_2025-10-02_19-03-18.mat');
+
+make_raster(m,data)
+
+
+m = matfile('run_2025-10-02_21-17-42.mat');
+ 
+make_raster(m,data)
+ 
+m = matfile('run_2025-10-03_00-57-41.mat');
+% 
+%m = matfile('run_2025-10-01_23-08-57.mat');
+% 
+make_raster(m,data)
 
 %New Spiking
 %m = matfile('run_2025-09-23_11-50-39.mat');
@@ -33,6 +52,7 @@ m = matfile('run_2025-09-30_11-11-12.mat');
 %PSTH + VR 100ms
 %m = matfile('run_2025-09-11_20-28-42.mat');
 
+function make_raster(m,data)
 
 outputs = m.output;
 losses = m.losses;
@@ -140,6 +160,9 @@ plot(mean(losses(:,2,:),3),'LineWidth',2)
 xlabel('epochs')
 ylabel('PSTH L2 Loss')
 
+min(min(losses(:,2,:)))
+
+end
 
 
 

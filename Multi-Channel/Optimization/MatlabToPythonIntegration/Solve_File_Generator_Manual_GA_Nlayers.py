@@ -100,10 +100,41 @@ def build_ODE(parameters,batch_size,layer_name):
         def main(trial_number,ps,scale_factor):
     """)
 
+
     #Bring In params
     params = '\n    #Params\n'
     count_ps = 0
     for name, value in parameters.items():
+        if "_gSYN" in name and f"R{num_layers}Off" not in name:
+            #Initialize our parameters with the values we inherit from the learning
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
+
+    for name, value in parameters.items():
+        if "t_ref" in name and f"R{num_layers}Off" not in name and "On_On" not in name and "Off_Off" not in name:
+            #Initialize our parameters with the values we inherit from the learning
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
+    for name, value in parameters.items():
+        if "On_On_IC_g_postIC" in name or "Off_Off_IC_g_postIC" in name:
+            #Initialize our parameters with the values we inherit from the learning
+            params += f"    {name} = ps[{count_ps}]\n"
+            count_ps += 1
+
+    for name, value in parameters.items():
+        if "t_ref" in name and f"R{num_layers}Off" not in name and "On_On" not in name and "Off_Off" not in name:
+            nothing_here = 1
+        elif "_gSYN" in name and f"R{num_layers}Off" not in name:
+            nothing_here = 1
+        elif "On_On_IC_g_postIC" in name or "Off_Off_IC_g_postIC" in name:
+            nothing_here = 1
+        else:
+            params += f"    {name} = {value}\n"
+
+    #Bring In params
+    #params = '\n    #Params\n'
+    #count_ps = 0
+    #for name, value in parameters.items():
         #if "_gSYN" in name and  f"R{num_layers}Off" not in name:
             #Initialize our parameters with the values we inherit from the learning
         #    params += f"    {name} = ps[{count_ps}]\n"
@@ -123,13 +154,13 @@ def build_ODE(parameters,batch_size,layer_name):
         #    params += f"    {name} = ps[{count_ps}]\n"
         #    count_ps += 1
 
-        if "IC_g_postIC" in name:
-            #count_ps = 1
-            params += f"    {name} = ps[{count_ps}]\n"
-            #count_ps += 1
+        #if "IC_g_postIC" in name:
+        #    #count_ps = 1
+        #    params += f"    {name} = ps[{count_ps}]\n"
+        #    #count_ps += 1
 
-        else:
-            params += f"    {name} = {value}\n"
+        #else:
+        #    params += f"    {name} = {value}\n"
 
     
     #Initialize grads
@@ -295,7 +326,15 @@ def build_ODE(parameters,batch_size,layer_name):
             #    test2_string += f"        mask = np.any((helper[t] <= (np.squeeze({var_name}_tspike) + {var_name}_t_ref[:, None])), axis = 1)\n"#.astype(np.int8).tolist()\n"
             #else:
 
-            test2_string += f"        mask = np.any((helper[t] <= (np.squeeze({var_name}_tspike) + {var_name}_t_ref)), axis = 1)\n"#.astype(np.int8).tolist()\n"
+            #test2_string += f"        mask = np.any((helper[t] <= (np.squeeze({var_name}_tspike) + {var_name}_t_ref)), axis = 1)\n"#.astype(np.int8).tolist()\n"
+
+            if f"R{num_layers}Off" not in update_vars[k]:
+
+               test2_string += f"        mask = np.any((helper[t] <= (np.squeeze({var_name}_tspike) + {var_name}_t_ref[:, None])), axis = 1)\n"#.astype(np.int8).tolist()\n"
+            else:
+
+                test2_string += f"        mask = np.any((helper[t] <= (np.squeeze({var_name}_tspike) + {var_name}_t_ref)), axis = 1)\n"#.astype(np.int8).tolist()\n"
+
 
             #test2_string += f"        {var_base}_test2b = np.any(helper[t] <= {var_name}_tspike + {var_name}_t_ref)\n"
             test2_string += f"        if np.any(mask):\n"

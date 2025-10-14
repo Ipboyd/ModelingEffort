@@ -2,13 +2,26 @@
 import numpy as np
 from scipy.io import loadmat
 
-def pinit(batch_size, num_params, name, load_from_file):
+def pinit(batch_size, num_params, name, f_path = None):
 
-    if load_from_file:
-        #file = f_path
-        #mat = loadmat(file, squeeze_me=False, struct_as_record=False)["param_tracker"]
-        #p = mat[-1,:,:]
-        return
+    if f_path != None:
+        #print('here0')
+
+        params = loadmat(f_path, squeeze_me=False, struct_as_record=False)["param_tracker"]
+        losses = loadmat(f_path, squeeze_me=False, struct_as_record=False)["losses"]
+
+        losses_PSTH = losses[:,1,:]
+
+        min_idx = np.unravel_index(losses_PSTH.argmin(), losses_PSTH.shape)
+
+        #print(np.unravel_index(losses_PSTH.argmin(), losses_PSTH.shape))
+        #print(losses_PSTH[min_idx[0],min_idx[1]])
+
+        p = params[min_idx[0],:,min_idx[1]][:,None]*np.ones((num_params,batch_size))
+
+        #print(np.shape(p))
+
+        return p
 
         
 
@@ -21,9 +34,35 @@ def pinit(batch_size, num_params, name, load_from_file):
 
         if name == "generated_Grad_Layer4":
 
+            #print('here1')
+
             p[0:4,:] = rng.uniform(0.0, 0.08, size=(4, batch_size)).astype(np.float32) #GSYNs
             p[4:8,:] = rng.uniform(0.5, 15, size=(4, batch_size)).astype(np.float32) #T_refs
-            
+            p[8:10,:] = rng.uniform(0.05, 0.3, size=(2, batch_size)).astype(np.float32) #Input Gains
+
+            #print(np.shape(p))
+
+        elif name == "generated_Grad_Layer4v2":
+
+            p[0:5,:] = rng.uniform(0.0, 0.08, size=(5, batch_size)).astype(np.float32) #GSYNs
+            p[5:9,:] = rng.uniform(0.5, 15, size=(4, batch_size)).astype(np.float32) #T_refs
+            p[9:11,:] = rng.uniform(0.05, 0.3, size=(2, batch_size)).astype(np.float32) #Input Gains
+
+        elif name == "generated_Grad_Layer23":
+
+            print('here2')
+
+            p[0:10,:] = rng.uniform(0.0, 0.08, size=(10, batch_size)).astype(np.float32) #GSYNs
+            p[10:17,:] = rng.uniform(0.5, 15, size=(7, batch_size)).astype(np.float32) #T_refs
+            p[17:19,:] = rng.uniform(0.05, 0.3, size=(2, batch_size)).astype(np.float32) #Input Gains
+
+        elif name == "generated_Grad_Layer56":
+
+            print('here3')
+
+            p[0:16,:] = rng.uniform(0.0, 0.08, size=(16, batch_size)).astype(np.float32) #GSYNs
+            p[16:26,:] = rng.uniform(0.5, 15, size=(10, batch_size)).astype(np.float32) #T_refs
+            p[26:28,:] = rng.uniform(0.05, 0.3, size=(2, batch_size)).astype(np.float32) #Input Gains
 
         else:
         

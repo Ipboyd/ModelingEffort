@@ -4,7 +4,7 @@ options = struct;
 options.nCells = 1;
 options.opto = 0;
 
-%if options.opto, nSims = 5; else, nSims = 1; end
+%if options.opto, nSims =  5; else, nSims = 1; end
 nSims = 1;
 
 options.mex_flag = 0;
@@ -34,13 +34,13 @@ varies(end).range = 0.17;
 
 %Vary the synaptic depression (fp) between E->E conncections
 %varies(end+1).conxn = '(On->R1On,Off->R1Off)';
-varies(end+1).conxn = '(On->R1On,Off->R1Off)';
+varies(end+1).conxn = '(On->R1On,Off->R1On)';
 varies(end).param = 'fP';
 varies(end).range = 0.1;
 
 %Gsyn
 %varies(end+1).conxn = '(On->R1On,R1On->R2On,Off->R1Off,R1Off->R2Off)';
-varies(end+1).conxn = '(On->R1On,Off->R1Off)';
+varies(end+1).conxn = '(On->R1On,Off->R1On)';
 varies(end).param = 'gSYN';
 varies(end).range = 0.02;
 
@@ -48,12 +48,12 @@ varies(end).range = 0.02;
 
 %PVs
 %varies(end+1).conxn = '(S1OnOff->R1On,S1OnOff->R1Off,S2OnOff->R2On,S2OnOff->R2Off)';
-varies(end+1).conxn = '(S1OnOff->R1On,S1OnOff->R1Off)';
+varies(end+1).conxn = '(S1OnOff->R1On)';
 varies(end).param = 'gSYN';
 varies(end).range = 0.025;
 
 
-varies(end+1).conxn = '(S1OnOff->R1On,S1OnOff->R1Off)';
+varies(end+1).conxn = '(S1OnOff->R1On)';
 varies(end).param = 'fP';
 varies(end).range = 0.5;
 

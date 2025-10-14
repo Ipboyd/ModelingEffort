@@ -1,44 +1,104 @@
-%close all;
-
-addpath('results\')
-
-m = matfile('run_2025-09-24_12-23-46.mat');
-
-
-%PSTH with taus
-%m = matfile('run_2025-09-17_22-03-47.mat');
-
-%GA
-%m = matfile('run_2025-09-15_22-02-10.mat');
-
-%PSTH + VR 100ms
-%m = matfile('run_2025-09-11_20-28-42.mat');
-
-%PSTH Only
-%m = matfile('run_2025-09-05_22-19-39.mat');
-losses = m.losses;
-param_tracker = m.param_tracker;
-output = m.output;
-
+% %close all;
+% 
+% addpath('results\')
+% 
+% m = matfile('run_2025-09-24_12-23-46.mat');
+% 
+% 
+% %PSTH with taus
+% %m = matfile('run_2025-09-17_22-03-47.mat');
+% 
+% %GA
+% %m = matfile('run_2025-09-15_22-02-10.mat');
+% 
+% %PSTH + VR 100ms
+% %m = matfile('run_2025-09-11_20-28-42.mat');
+% 
+% %PSTH Only
+% %m = matfile('run_2025-09-05_22-19-39.mat');
+% losses = m.losses;
+% param_tracker = m.param_tracker;
+% output = m.output;
+% 
 %% ===== Probabilistic k-means via GMM + ellipse overlays =====
 K_range = 2:6;        % search range for number of clusters (adjust as you like)
 nsig    = 2;          % ellipse radius in std devs (2 ~ 95%)
 reg     = 1e-6;       % covariance regularization to avoid singular matrices
-
-% Helper to fit GMM by BIC
+% 
+% % Helper to fit GMM by BIC
 fit_gmm_bic = @(X) local_fit_gmm_bic(X, K_range, reg);
+% 
+% % P: n_runs x 10, loss: n_runs x 1
+% 
+% last_run = transpose(squeeze(param_tracker(50,:,:)));
+% last_loss = transpose(squeeze(losses(50,2,:)));
+% 
+% %last_run  = reshape(permute(param_tracker(291:300,:,:), [1 3 2]), [], P);
+% %last_loss = reshape(squeeze(losses(291:300,2,:)), [], 1);
+% 
+% %last_run = transpose(squeeze(reshape(param_tracker(291:300,:,:),[1,10,10*200])));
+% %last_loss = transpose(squeeze(reshape(losses(291:300,2,:),[1,1,10*200])));
 
-% P: n_runs x 10, loss: n_runs x 1
+addpath('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Multi-Channel\Optimization\MatlabToPythonIntegration\results_all_cells')
+addpath('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Multi-Channel\Plotting\OliverDataPlotting')
 
-last_run = transpose(squeeze(param_tracker(50,:,:)));
-last_loss = transpose(squeeze(losses(50,2,:)));
+load('all_units_info_with_polished_criteria_modified_perf.mat','all_data');
 
-%last_run  = reshape(permute(param_tracker(291:300,:,:), [1 3 2]), [], P);
-%last_loss = reshape(squeeze(losses(291:300,2,:)), [], 1);
+folder = 'C:\Users\ipboy\Documents\GitHub\ModelingEffort\Multi-Channel\Optimization\MatlabToPythonIntegration\results_all_cells';
+files  = dir(fullfile(folder,'*.mat'));
+[~,idx] = sort([files.datenum]);  % optional: sort by time
+files = files(idx);
 
-%last_run = transpose(squeeze(reshape(param_tracker(291:300,:,:),[1,10,10*200])));
-%last_loss = transpose(squeeze(reshape(losses(291:300,2,:),[1,1,10*200])));
 
+layers = ["L2/3","L4","L5/6","NaN"];
+cmap  = [ 57 106 177;   % L2/3  (blue-ish)
+          62 150  81;   % L4    (green-ish)
+         204  37  41;   % L5/6  (red-ish)
+         160 160 160 ] / 255;  % NaN  (gray)
+
+all_params = [];
+colors = [];
+for k = 1:numel(files)
+    fpath = fullfile(files(k).folder, files(k).name);
+    data  = load(fpath);                          % loads all vars into a struct
+    
+    %Find min loss
+    losses = squeeze(data.losses(:,2,:));
+    min_losses = min(min(losses));
+    %idx_val = find(losses<=min_losses+1000);
+
+    idx_val = find(losses==min_losses);
+    
+    %Allow for ties
+    for t = 1:length(idx_val)
+
+        sizes = size(losses);
+        
+        index2 = ceil(idx_val(t)/sizes(1));
+        index1 = idx_val(t) - ((index2-1)*sizes(1));
+        
+        all_params = [all_params;data.param_tracker(index1,1:4,index2)];
+        %all_params = [all_params;data.param_tracker(index1,:,index2)];
+        %Color by layer
+        %colors = [colors;cmap(find(layers == all_data(k).layer),:)];
+        %Color by FR
+        colors = [colors;length(vertcat(all_data(k).ctrl_tar1_timestamps{:,1}))];
+        %Color by loss?
+        %colors = [colors;data.losses(index1,2,index2)];
+    end
+
+end
+
+%% Load in Layer Data
+%cd(userpath);
+%cd('../GitHub/ModelingEffort/Multi-Channel/Plotting/OliverDataPlotting')
+
+
+%%
+
+%Not actually last run, this is the best fit parameters for each cell
+last_run = all_params;
+last_loss = colors;
 
 Z = zscore(last_run);
 

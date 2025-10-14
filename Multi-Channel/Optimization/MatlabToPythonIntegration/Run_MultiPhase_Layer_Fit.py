@@ -151,10 +151,10 @@ def run():
     p56 = params56["p"]
 
     #General Params
-    batch_size = 400  
+    batch_size = 400
     learning_mask = [1,0]
     #GA_Epochs = 10
-    Grad_Epochs = 30
+    Grad_Epochs = 50
     scale_factor = 1
     trials = 10
     n_procs = min(trials, os.cpu_count()) 
@@ -167,7 +167,7 @@ def run():
     #Grad Params
     beta1, beta2 = 0.99, 0.9995 
     eps = 1e-6
-    lr = 5e-3
+    lr = 5e-4
 
     selection_type = "tournament"
     crossover_type = "random_even"
@@ -255,8 +255,8 @@ def run():
 
 
 
-    num_params = 8
-    p = Init_Params_flexible.pinit(batch_size,num_params,"generated_Grad_Layer4",load_from_file=False);
+    num_params = 10
+    p = Init_Params_flexible.pinit(batch_size,num_params,"generated_Grad_Layer4");
 
     #Init mvt
     m = np.zeros((num_params,batch_size))
@@ -308,6 +308,118 @@ def run():
         }
     )
 
+
+    ParamsReturned = modules["Solve_File_Generator_Manual_Nlayers"].build_ODE(p23,batch_size,learning_mask,'Layer23') #Last Parameter is num_layers -- This could be compessed but for readability why bother
+    generated_23 = _import_and_reload("generated_Grad_Layer23")
+
+    num_params = 19
+    p = Init_Params_flexible.pinit(batch_size,num_params,"generated_Grad_Layer23");
+
+    #Init mvt
+    m = np.zeros((num_params,batch_size))
+    v = np.zeros((num_params,batch_size))
+    t = 0
+    
+    losses = []
+    param_tracker = []
+
+    t0 = time.perf_counter()
+    for epoch in range(Grad_Epochs):
+        param_tracker.append(p)
+        output = []
+        grads = np.zeros((num_params,batch_size))
+
+        with mp.get_context("spawn").Pool(processes=n_procs) as pool:
+            # build an argument tuple for each trial
+            args_iterable = [(k, p, scale_factor,"generated_Grad_Layer23") for k in range(trials)]
+        
+            # run trials in parallel and collect their return values
+            results = pool.starmap(_single_trial, args_iterable)
+
+           
+        for k in range(len(results)):
+
+            grads += np.array(results[k][1])
+
+            output.append(np.array(results[k][0]))
+        
+        output = np.stack(output, axis=0)
+
+        out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "PSTH")
+
+        m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
+
+        losses.append(loss)
+        print(f"epoch {epoch}: mean l2 loss = {np.mean(loss[0])}: mean l2-psth loss = {np.mean(loss[1])}",flush=True) 
+
+    t_post = time.perf_counter() - t0  
+
+    print(f"sim time: {t_post:.3f}s")
+
+
+    f_path = save_run(
+        {
+            "losses"        : np.asarray(losses, dtype=np.float32),
+            "output"        : np.asarray(output, dtype=np.float32),
+            "param_tracker" : np.asarray(param_tracker, dtype=np.float32),
+        }
+    )
+
+    ParamsReturned = modules["Solve_File_Generator_Manual_Nlayers"].build_ODE(p56,batch_size,learning_mask,'Layer56') #Last Parameter is num_layers -- This could be compessed but for readability why bother
+    generated_56 = _import_and_reload("generated_Grad_Layer56")
+
+    num_params = 28
+    p = Init_Params_flexible.pinit(batch_size,num_params,"generated_Grad_Layer56");
+
+    #Init mvt
+    m = np.zeros((num_params,batch_size))
+    v = np.zeros((num_params,batch_size))
+    t = 0
+    
+    losses = []
+    param_tracker = []
+
+    t0 = time.perf_counter()
+    for epoch in range(Grad_Epochs):
+        param_tracker.append(p)
+        output = []
+        grads = np.zeros((num_params,batch_size))
+
+        with mp.get_context("spawn").Pool(processes=n_procs) as pool:
+            # build an argument tuple for each trial
+            args_iterable = [(k, p, scale_factor,"generated_Grad_Layer56") for k in range(trials)]
+        
+            # run trials in parallel and collect their return values
+            results = pool.starmap(_single_trial, args_iterable)
+
+           
+        for k in range(len(results)):
+
+            grads += np.array(results[k][1])
+
+            output.append(np.array(results[k][0]))
+        
+        output = np.stack(output, axis=0)
+
+        out_grad, loss = Calc_output_grad.calculate(output, grads, scale_factor, "PSTH")
+
+        m, v, p, t = Update_params.adam_update(m, v, p, t, beta1, beta2, lr, eps, out_grad)
+
+        losses.append(loss)
+        print(f"epoch {epoch}: mean l2 loss = {np.mean(loss[0])}: mean l2-psth loss = {np.mean(loss[1])}",flush=True) 
+
+    t_post = time.perf_counter() - t0  
+
+    print(f"sim time: {t_post:.3f}s")
+
+
+    f_path = save_run(
+        {
+            "losses"        : np.asarray(losses, dtype=np.float32),
+            "output"        : np.asarray(output, dtype=np.float32),
+            "param_tracker" : np.asarray(param_tracker, dtype=np.float32),
+        }
+    )
 
 
 if __name__ == "__main__":         

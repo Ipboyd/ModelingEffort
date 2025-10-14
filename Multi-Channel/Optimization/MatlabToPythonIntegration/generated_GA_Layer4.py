@@ -9,6 +9,16 @@ import Update_params
 def main(trial_number,ps,scale_factor):
 
     #Params
+    R1On_On_PSC_gSYN = ps[0]
+    S1OnOff_On_PSC_gSYN = ps[1]
+    R1On_S1OnOff_PSC_gSYN = ps[2]
+    S1OnOff_Off_PSC_gSYN = ps[3]
+    On_t_ref = ps[4]
+    Off_t_ref = ps[5]
+    R1On_t_ref = ps[6]
+    S1OnOff_t_ref = ps[7]
+    On_On_IC_g_postIC = ps[8]
+    Off_Off_IC_g_postIC = ps[9]
     tspan = np.array([0.1, 2980.1*scale_factor])
     downsample_factor = 1
 
@@ -22,7 +32,6 @@ def main(trial_number,ps,scale_factor):
     On_g_L = 0.005
     On_E_L = -65
     On_noise = 0
-    On_t_ref = 1
     On_E_k = -80
     On_tau_ad = 5
     On_g_inc = 0
@@ -34,7 +43,6 @@ def main(trial_number,ps,scale_factor):
     Off_g_L = 0.005
     Off_E_L = -65
     Off_noise = 0
-    Off_t_ref = 1
     Off_E_k = -80
     Off_tau_ad = 5
     Off_g_inc = 0
@@ -46,7 +54,6 @@ def main(trial_number,ps,scale_factor):
     R1On_g_L = 0.005
     R1On_E_L = -65
     R1On_noise = 0
-    R1On_t_ref = 1
     R1On_E_k = -80
     R1On_tau_ad = 100
     R1On_g_inc = 0.0003
@@ -70,7 +77,6 @@ def main(trial_number,ps,scale_factor):
     S1OnOff_g_L = 0.01
     S1OnOff_E_L = -57
     S1OnOff_noise = 0
-    S1OnOff_t_ref = 0.5
     S1OnOff_E_k = -80
     S1OnOff_tau_ad = 5
     S1OnOff_g_inc = 0
@@ -84,7 +90,6 @@ def main(trial_number,ps,scale_factor):
     On_On_IC_t_ref = 1
     On_On_IC_t_ref_rel = 1
     On_On_IC_rec = 2
-    On_On_IC_g_postIC = ps[0]
     On_On_IC_E_exc = 0
     Off_Off_IC_trial = 20
     Off_Off_IC_locNum = 15
@@ -92,13 +97,11 @@ def main(trial_number,ps,scale_factor):
     Off_Off_IC_t_ref = 1
     Off_Off_IC_t_ref_rel = 1
     Off_Off_IC_rec = 2
-    Off_Off_IC_g_postIC = ps[0]
     Off_Off_IC_E_exc = 0
     R1On_On_PSC_ESYN = 0
     R1On_On_PSC_tauD = 1.5
     R1On_On_PSC_tauR = 0.7
     R1On_On_PSC_delay = 0
-    R1On_On_PSC_gSYN = 0.02
     R1On_On_PSC_fF = 0
     R1On_On_PSC_fP = 0.1
     R1On_On_PSC_tauF = 180
@@ -108,7 +111,6 @@ def main(trial_number,ps,scale_factor):
     S1OnOff_On_PSC_tauD = 1
     S1OnOff_On_PSC_tauR = 0.1
     S1OnOff_On_PSC_delay = 0
-    S1OnOff_On_PSC_gSYN = 0.085
     S1OnOff_On_PSC_fF = 0
     S1OnOff_On_PSC_fP = 0.2
     S1OnOff_On_PSC_tauF = 180
@@ -118,7 +120,6 @@ def main(trial_number,ps,scale_factor):
     R1On_S1OnOff_PSC_tauD = 4.5
     R1On_S1OnOff_PSC_tauR = 1
     R1On_S1OnOff_PSC_delay = 0
-    R1On_S1OnOff_PSC_gSYN = 0.025
     R1On_S1OnOff_PSC_fF = 0
     R1On_S1OnOff_PSC_fP = 0.5
     R1On_S1OnOff_PSC_tauF = 180
@@ -148,7 +149,6 @@ def main(trial_number,ps,scale_factor):
     S1OnOff_Off_PSC_tauD = 1
     S1OnOff_Off_PSC_tauR = 0.1
     S1OnOff_Off_PSC_delay = 0
-    S1OnOff_Off_PSC_gSYN = 0.045
     S1OnOff_Off_PSC_fF = 0
     S1OnOff_Off_PSC_fP = 0
     S1OnOff_Off_PSC_tauF = 180
@@ -165,10 +165,10 @@ def main(trial_number,ps,scale_factor):
     ROn_X_PSC3_netcon = 1
     ROn_SOnOff_PSC3_netcon = 1
     C_ROn_PSC3_netcon = 1
-    dGSYNR1On_On = np.zeros((400))
-    dGSYNS1OnOff_On = np.zeros((400))
-    dGSYNR1On_S1OnOff = np.zeros((400))
-    dGSYNS1OnOff_Off = np.zeros((400))
+    dGSYNR1On_On = np.zeros((2))
+    dGSYNS1OnOff_On = np.zeros((2))
+    dGSYNR1On_S1OnOff = np.zeros((2))
+    dGSYNS1OnOff_Off = np.zeros((2))
 
     #Fixed Param Declaration
     On_R = 1/On_g_L
@@ -208,64 +208,64 @@ def main(trial_number,ps,scale_factor):
     helper = np.arange(tspan[0],tspan[1]+(dt),dt)
 
     #State Variable Declaration
-    On_V = np.ones((400,2)) * [On_E_L, On_E_L]
-    On_g_ad = np.ones((400,2)) * [0,0]
-    Off_V = np.ones((400,2)) * [Off_E_L, Off_E_L]
-    Off_g_ad = np.ones((400,2)) * [0,0]
-    R1On_V = np.ones((400,2)) * [R1On_E_L, R1On_E_L]
-    R1On_g_ad = np.ones((400,2)) * [0,0]
-    R1Off_V = np.ones((400,2)) * [R1Off_E_L, R1Off_E_L]
-    R1Off_g_ad = np.ones((400,2)) * [0,0]
-    S1OnOff_V = np.ones((400,2)) * [S1OnOff_E_L, S1OnOff_E_L]
-    S1OnOff_g_ad = np.ones((400,2)) * [0,0]
-    R1On_On_PSC_s = np.ones((400,2)) * [0,0]
-    R1On_On_PSC_x = np.ones((400,2)) * [0,0]
-    R1On_On_PSC_F = np.ones((400,2)) * [1,1]
-    R1On_On_PSC_P = np.ones((400,2)) * [1,1]
-    R1On_On_PSC_q = np.ones((400,2)) * [1,1]
-    S1OnOff_On_PSC_s = np.ones((400,2)) * [0,0]
-    S1OnOff_On_PSC_x = np.ones((400,2)) * [0,0]
-    S1OnOff_On_PSC_F = np.ones((400,2)) * [1,1]
-    S1OnOff_On_PSC_P = np.ones((400,2)) * [1,1]
-    S1OnOff_On_PSC_q = np.ones((400,2)) * [1,1]
-    R1On_S1OnOff_PSC_s = np.ones((400,2)) * [0,0]
-    R1On_S1OnOff_PSC_x = np.ones((400,2)) * [0,0]
-    R1On_S1OnOff_PSC_F = np.ones((400,2)) * [1,1]
-    R1On_S1OnOff_PSC_P = np.ones((400,2)) * [1,1]
-    R1On_S1OnOff_PSC_q = np.ones((400,2)) * [1,1]
-    R1Off_S1OnOff_PSC_s = np.ones((400,2)) * [0,0]
-    R1Off_S1OnOff_PSC_x = np.ones((400,2)) * [0,0]
-    R1Off_S1OnOff_PSC_F = np.ones((400,2)) * [1,1]
-    R1Off_S1OnOff_PSC_P = np.ones((400,2)) * [1,1]
-    R1Off_S1OnOff_PSC_q = np.ones((400,2)) * [1,1]
-    R1Off_Off_PSC_s = np.ones((400,2)) * [0,0]
-    R1Off_Off_PSC_x = np.ones((400,2)) * [0,0]
-    R1Off_Off_PSC_F = np.ones((400,2)) * [1,1]
-    R1Off_Off_PSC_P = np.ones((400,2)) * [1,1]
-    R1Off_Off_PSC_q = np.ones((400,2)) * [1,1]
-    S1OnOff_Off_PSC_s = np.ones((400,2)) * [0,0]
-    S1OnOff_Off_PSC_x = np.ones((400,2)) * [0,0]
-    S1OnOff_Off_PSC_F = np.ones((400,2)) * [1,1]
-    S1OnOff_Off_PSC_P = np.ones((400,2)) * [1,1]
-    S1OnOff_Off_PSC_q = np.ones((400,2)) * [1,1]
-    R1On_R1On_iNoise_V3_sn = np.ones((400,2)) * [0, 0]
-    R1On_R1On_iNoise_V3_xn = np.ones((400,2)) * [0, 0]
+    On_V = np.ones((2,2)) * [On_E_L, On_E_L]
+    On_g_ad = np.ones((2,2)) * [0,0]
+    Off_V = np.ones((2,2)) * [Off_E_L, Off_E_L]
+    Off_g_ad = np.ones((2,2)) * [0,0]
+    R1On_V = np.ones((2,2)) * [R1On_E_L, R1On_E_L]
+    R1On_g_ad = np.ones((2,2)) * [0,0]
+    R1Off_V = np.ones((2,2)) * [R1Off_E_L, R1Off_E_L]
+    R1Off_g_ad = np.ones((2,2)) * [0,0]
+    S1OnOff_V = np.ones((2,2)) * [S1OnOff_E_L, S1OnOff_E_L]
+    S1OnOff_g_ad = np.ones((2,2)) * [0,0]
+    R1On_On_PSC_s = np.ones((2,2)) * [0,0]
+    R1On_On_PSC_x = np.ones((2,2)) * [0,0]
+    R1On_On_PSC_F = np.ones((2,2)) * [1,1]
+    R1On_On_PSC_P = np.ones((2,2)) * [1,1]
+    R1On_On_PSC_q = np.ones((2,2)) * [1,1]
+    S1OnOff_On_PSC_s = np.ones((2,2)) * [0,0]
+    S1OnOff_On_PSC_x = np.ones((2,2)) * [0,0]
+    S1OnOff_On_PSC_F = np.ones((2,2)) * [1,1]
+    S1OnOff_On_PSC_P = np.ones((2,2)) * [1,1]
+    S1OnOff_On_PSC_q = np.ones((2,2)) * [1,1]
+    R1On_S1OnOff_PSC_s = np.ones((2,2)) * [0,0]
+    R1On_S1OnOff_PSC_x = np.ones((2,2)) * [0,0]
+    R1On_S1OnOff_PSC_F = np.ones((2,2)) * [1,1]
+    R1On_S1OnOff_PSC_P = np.ones((2,2)) * [1,1]
+    R1On_S1OnOff_PSC_q = np.ones((2,2)) * [1,1]
+    R1Off_S1OnOff_PSC_s = np.ones((2,2)) * [0,0]
+    R1Off_S1OnOff_PSC_x = np.ones((2,2)) * [0,0]
+    R1Off_S1OnOff_PSC_F = np.ones((2,2)) * [1,1]
+    R1Off_S1OnOff_PSC_P = np.ones((2,2)) * [1,1]
+    R1Off_S1OnOff_PSC_q = np.ones((2,2)) * [1,1]
+    R1Off_Off_PSC_s = np.ones((2,2)) * [0,0]
+    R1Off_Off_PSC_x = np.ones((2,2)) * [0,0]
+    R1Off_Off_PSC_F = np.ones((2,2)) * [1,1]
+    R1Off_Off_PSC_P = np.ones((2,2)) * [1,1]
+    R1Off_Off_PSC_q = np.ones((2,2)) * [1,1]
+    S1OnOff_Off_PSC_s = np.ones((2,2)) * [0,0]
+    S1OnOff_Off_PSC_x = np.ones((2,2)) * [0,0]
+    S1OnOff_Off_PSC_F = np.ones((2,2)) * [1,1]
+    S1OnOff_Off_PSC_P = np.ones((2,2)) * [1,1]
+    S1OnOff_Off_PSC_q = np.ones((2,2)) * [1,1]
+    R1On_R1On_iNoise_V3_sn = np.ones((2,2)) * [0, 0]
+    R1On_R1On_iNoise_V3_xn = np.ones((2,2)) * [0, 0]
 
     #Monitor Declaration
-    On_tspike = -1e32*np.ones((400, 5, On_Npop))
-    On_buffer_index = np.ones((400))
+    On_tspike = -1e32*np.ones((2, 5, On_Npop))
+    On_buffer_index = np.ones((2))
     On_V_spikes_holder = []
-    Off_tspike = -1e32*np.ones((400, 5, Off_Npop))
-    Off_buffer_index = np.ones((400))
+    Off_tspike = -1e32*np.ones((2, 5, Off_Npop))
+    Off_buffer_index = np.ones((2))
     Off_V_spikes_holder = []
-    R1On_tspike = -1e32*np.ones((400, 5, R1On_Npop))
-    R1On_buffer_index = np.ones((400))
+    R1On_tspike = -1e32*np.ones((2, 5, R1On_Npop))
+    R1On_buffer_index = np.ones((2))
     R1On_V_spikes_holder = []
-    R1Off_tspike = -1e32*np.ones((400, 5, R1Off_Npop))
-    R1Off_buffer_index = np.ones((400))
+    R1Off_tspike = -1e32*np.ones((2, 5, R1Off_Npop))
+    R1Off_buffer_index = np.ones((2))
     R1Off_V_spikes_holder = []
-    S1OnOff_tspike = -1e32*np.ones((400, 5, S1OnOff_Npop))
-    S1OnOff_buffer_index = np.ones((400))
+    S1OnOff_tspike = -1e32*np.ones((2, 5, S1OnOff_Npop))
+    S1OnOff_buffer_index = np.ones((2))
     S1OnOff_V_spikes_holder = []
     On_On_IC_iIC = 0
     Off_Off_IC_iIC = 0
@@ -452,7 +452,7 @@ def main(trial_number,ps,scale_factor):
             On_V[spikers,-1] = On_V_reset 
             On_g_ad[spikers,-2] = On_g_ad[spikers,-1]
             On_g_ad[spikers,-1] = On_g_ad[spikers,-1] + On_g_inc
-        mask = np.any((helper[t] <= (np.squeeze(On_tspike) + On_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(On_tspike) + On_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             On_V[spikers,-2] = On_V[spikers,-1]
@@ -464,7 +464,7 @@ def main(trial_number,ps,scale_factor):
             Off_V[spikers,-1] = Off_V_reset 
             Off_g_ad[spikers,-2] = Off_g_ad[spikers,-1]
             Off_g_ad[spikers,-1] = Off_g_ad[spikers,-1] + Off_g_inc
-        mask = np.any((helper[t] <= (np.squeeze(Off_tspike) + Off_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(Off_tspike) + Off_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             Off_V[spikers,-2] = Off_V[spikers,-1]
@@ -476,7 +476,7 @@ def main(trial_number,ps,scale_factor):
             R1On_V[spikers,-1] = R1On_V_reset 
             R1On_g_ad[spikers,-2] = R1On_g_ad[spikers,-1]
             R1On_g_ad[spikers,-1] = R1On_g_ad[spikers,-1] + R1On_g_inc
-        mask = np.any((helper[t] <= (np.squeeze(R1On_tspike) + R1On_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(R1On_tspike) + R1On_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             R1On_V[spikers,-2] = R1On_V[spikers,-1]
@@ -500,7 +500,7 @@ def main(trial_number,ps,scale_factor):
             S1OnOff_V[spikers,-1] = S1OnOff_V_reset 
             S1OnOff_g_ad[spikers,-2] = S1OnOff_g_ad[spikers,-1]
             S1OnOff_g_ad[spikers,-1] = S1OnOff_g_ad[spikers,-1] + S1OnOff_g_inc
-        mask = np.any((helper[t] <= (np.squeeze(S1OnOff_tspike) + S1OnOff_t_ref)), axis = 1)
+        mask = np.any((helper[t] <= (np.squeeze(S1OnOff_tspike) + S1OnOff_t_ref[:, None])), axis = 1)
         if np.any(mask):
             spikers = np.flatnonzero(mask) 
             S1OnOff_V[spikers,-2] = S1OnOff_V[spikers,-1]
