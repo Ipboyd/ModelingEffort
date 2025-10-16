@@ -579,8 +579,8 @@ def main(trial_number,ps,scale_factor):
 
 
         #Input Related Derivates
-        dv_dOff_input = (-Off_R*Off_Off_IC_input[t]*Off_Off_IC_netcon*(Off_V[:,-1]-Off_Off_IC_E_exc)/Off_tau)/1000 #Nominally 1000
         dv_dOn_input = (-On_R*On_On_IC_input[t]*On_On_IC_netcon*(On_V[:,-1]-On_On_IC_E_exc)/On_tau)/1000 #Nominally 1000
+        dv_dOff_input = (-Off_R*Off_Off_IC_input[t]*Off_Off_IC_netcon*(Off_V[:,-1]-Off_Off_IC_E_exc)/Off_tau)/1000 #Nominally 1000
 
         #Build derivs
         dGSYNR1On_On += dspike_dR1On_V*dv_dR1On_On_PSC_gSYN
@@ -602,4 +602,4 @@ def main(trial_number,ps,scale_factor):
         dinput_Off = dspike_dR1On_V*dv_dR1On_Off_PSC*dR1On_Off_PSC_dUk*dspike_dOff_V*dv_dOff_input+dspike_dR1On_V*dv_dR1On_S1OnOff_PSC*dR1On_S1OnOff_PSC_dUk*dspike_dS1OnOff_V*dv_dS1OnOff_Off_PSC*dS1OnOff_Off_PSC_dUk*dspike_dOff_V*dv_dOff_input
 
 
-    return R1On_V_spikes_holder, [dGSYNR1On_On, dGSYNR1On_Off, dGSYNS1OnOff_On, dGSYNR1On_S1OnOff, dGSYNS1OnOff_Off, dtref_On, dtref_Off, dtref_R1On, dtref_S1OnOff, dinput_Off, dinput_On]
+    return R1On_V_spikes_holder, [dGSYNR1On_On, dGSYNR1On_Off, dGSYNS1OnOff_On, dGSYNR1On_S1OnOff, dGSYNS1OnOff_Off, dtref_On, dtref_Off, dtref_R1On, dtref_S1OnOff, dinput_On, dinput_Off]

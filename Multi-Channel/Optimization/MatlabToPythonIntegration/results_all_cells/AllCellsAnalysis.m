@@ -567,7 +567,7 @@ ylabel(ax,'OFF\rightarrow E strength','FontWeight','bold','Interpreter','tex')
 %disp(sum(nan_counter)/length(nan_counter))
 
 
-point1 = idx_tracker(47);
+point1 = idx_tracker(7);
 point2 = idx_tracker(1);
 
 %subplot(4,4,[3,4])

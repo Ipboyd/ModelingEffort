@@ -71,7 +71,7 @@ def _import_and_reload(module_name):
     return mod
 
 
-def save_run(results_dict, out_dir="results_all_cells_both"):
+def save_run(results_dict, out_dir="results_tau_ad"):
     """
     results_dict  : {"losses": ndarray, "output": ndarray, ...}
     out_dir       : folder to hold all .mat files
@@ -131,7 +131,7 @@ def run():
     #General Params
     batch_size = 400
     learning_mask = [1,0]
-    Grad_Epochs = 20
+    Grad_Epochs = 300
     scale_factor = 1
     trials = 10
     n_procs = min(trials, os.cpu_count()) 
@@ -148,7 +148,7 @@ def run():
     generated_4 = _import_and_reload("generated_Grad_Layer4v2")
 
 
-    for cell_num_counter in range(122,221):
+    for cell_num_counter in range(6,7):
     #for cell_num_counter in range(1):
 
         num_params = 11

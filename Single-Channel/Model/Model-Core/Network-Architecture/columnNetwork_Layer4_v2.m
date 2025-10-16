@@ -51,22 +51,25 @@ s = struct();
 s.populations(1).name = 'On';
 s.populations(1).equations = 'noconLIF';
 s.populations(1).size = nCells;
-s.populations(1).parameters = {'t_ref',1};
+s.populations(1).parameters = {'t_ref',1,'tau_ad',5};
 
 s.populations(end+1).name = 'Off';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'t_ref',1};
+s.populations(end).parameters = {'t_ref',1,'tau_ad',5};
 
 s.populations(end+1).name='R1On';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_inc',0.0003,'tau_ad',100,'t_ref',1};
+s.populations(end).parameters = {'g_inc',0.0003,'tau_ad',5,'t_ref',1};
+%s.populations(end).parameters = {'g_inc',0.0003,'tau_ad',100,'t_ref',1};
 
 s.populations(end+1).name='S1OnOff';
 s.populations(end).equations = 'noconLIF';
 s.populations(end).size = nCells;
-s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',0.5};
+s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',0.5,'tau_ad',1};
+%s.populations(end).parameters = {'g_L',1/100,'E_L',-57,'V_reset',-52,'t_ref',0.5};
+
 
 %% connections
 

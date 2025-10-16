@@ -1,0 +1,70 @@
+clear all
+
+addpath('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Multi-Channel\Optimization\MatlabToPythonIntegration\results_all_cells')
+addpath('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Multi-Channel\Plotting\OliverDataPlotting')
+addpath('C:\Users\ipboy\Documents\GitHub\ModelingEffort\Multi-Channel\Plotting\OliverDataPlotting\PicturesToFit')
+
+load('all_units_info_with_polished_criteria_modified_perf.mat','all_data');
+
+folder = 'C:\Users\ipboy\Documents\GitHub\ModelingEffort\Multi-Channel\Optimization\MatlabToPythonIntegration\results_all_cells_both';
+files  = dir(fullfile(folder,'*.mat'));
+[~,idx] = sort([files.datenum]);  % optional: sort by time
+
+%The following fixes this. Comment out if you do another new run.
+idx = idx - 1; %Shift everything one over
+idx(1) = 122; %Make the 122nd the first.
+idx(123:220) = 123:220;
+files = files(idx);
+
+label_struct = load('x_set_labels.mat');
+cmap  = [ 57 106 177;   % Both  (blue-ish)
+          62 150  81;   % Onset    (green-ish)
+         204  37  41;   % Offset  (red-ish)
+         160 160 160 ] / 255;  % Neither  (gray)
+
+%Extract parameters
+all_params = [];
+colors = [];
+for k = 1:182
+    fpath = fullfile(files(k).folder, files(k).name);
+    data  = load(fpath);
+    
+    %Find min loss
+    losses = squeeze(data.losses(:,2,:));
+    min_losses = min(min(losses));
+    idx_val = find(losses==min_losses);
+    
+    %Dont allow for ties
+    sizes = size(losses);
+    index2 = ceil(idx_val(1)/sizes(1));
+    index1 = idx_val(1) - ((index2-1)*sizes(1));
+    all_params = [all_params;data.param_tracker(index1,:,index2)];
+
+    cur_cell = label_struct.our_struct(k).n90;
+    colors = [colors;cmap(find([cur_cell.is_Both,cur_cell.is_Onset,cur_cell.is_Offset,cur_cell.is_Neither]),:)];
+end
+
+%%
+eps = 0.001;
+
+%Create a spectrum of relative "onsetness"
+rel_onsetness = all_params(:,1)./(all_params(:,1)+eps);
+
+%Create a specturm of absolute "onsetness"
+abs_onsetness = all_params(:,1);
+
+%Sort the arrays
+[rel_sort,rel_sort_idx] = sort(rel_onsetness);
+[abs_sort,abs_sort_idx] = sort(abs_onsetness);
+
+colors_sorted_rel = colors(rel_sort_idx,:);
+colors_sorted_abs = colors(abs_sort_idx,:);
+
+%Plot the spectrum
+figure;
+subplot(2,1,1)
+find(colors_sorted_rel(:,1) == cmap())
+subplot(2,1,2)
+scatter(rel_sort,zeros(1,length(rel_sort)),72,colors_sorted_rel,"filled","o","MarkerFaceAlpha",0.5)
+
+
